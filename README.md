@@ -31,7 +31,7 @@ Automatically set the first line as note title, just like in Apple Notes! Forget
 
 ## Install
 
-Until _First Line is Title_ is [made available](https://github.com/churnish/first-line-is-title) in the plugin directory, follow the steps below to install it:
+Until _First Line is Title_ is [made available](https://github.com/obsidianmd/obsidian-releases/pull/7429) in the plugin directory, follow the steps below to install it:
 
 1. Download and enable the community plugin [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
 2. Run _Add a beta plugin for testing_ in Command palette.
