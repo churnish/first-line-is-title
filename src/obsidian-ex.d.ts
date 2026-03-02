@@ -3,9 +3,9 @@
  * These extend the official API with unofficial/undocumented properties
  */
 
-import { Command, TFile, Editor, Menu, View, Setting } from "obsidian";
+import { Command, TFile, Editor, Menu, View, Setting } from 'obsidian';
 
-declare module "obsidian" {
+declare module 'obsidian' {
   export class SettingGroup {
     settingEl: HTMLElement;
     constructor(containerEl: HTMLElement);

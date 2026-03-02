@@ -1,44 +1,50 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { App, TFile, MarkdownView } from "../mockObsidian";
-import { DEFAULT_SETTINGS } from "../../src/constants";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { App, TFile, MarkdownView } from '../mockObsidian';
+import { DEFAULT_SETTINGS } from '../../src/constants';
 
 // Mock the i18n module
-vi.mock("../../src/i18n", () => ({
+vi.mock('../../src/i18n', () => ({
   t: vi.fn((key: string) => key),
 }));
 
 // Mock the utils module
-vi.mock("../../src/utils", () => ({
+vi.mock('../../src/utils', () => ({
   verboseLog: vi.fn(),
 }));
 
-// Mock the modals module
-vi.mock("../../src/modals", () => ({
-  RenameAllFilesModal: vi.fn().mockImplementation(() => ({
-    open: vi.fn(),
-  })),
+// Mock the modals module.
+// In vitest v4, mockImplementation for a class mock must use a regular function
+// (not an arrow function) so the mock is constructable with `new`.
+vi.mock('../../src/modals', () => ({
+  RenameAllFilesModal: vi.fn().mockImplementation(function () {
+    return { open: vi.fn() };
+  }),
 }));
 
 // Mock monkey-around
-vi.mock("monkey-around", () => ({
+vi.mock('monkey-around', () => ({
   around: vi.fn((obj, patches) => {
     // Apply patches and return cleanup function
     return vi.fn();
   }),
 }));
 
-// Mock file-creation-coordinator
-vi.mock("../../src/core/file-creation-coordinator", () => ({
-  FileCreationCoordinator: vi.fn().mockImplementation(() => ({
-    determineActions: vi.fn().mockResolvedValue({
-      shouldInsertTitle: false,
-      shouldMoveCursor: false,
-      placeCursorAtEnd: false,
-    }),
-  })),
+// Mock file-creation-coordinator.
+// In vitest v4, mockImplementation for a class mock must use a regular function
+// (not an arrow function) so the mock is constructable with `new`.
+vi.mock('../../src/core/file-creation-coordinator', () => ({
+  FileCreationCoordinator: vi.fn().mockImplementation(function () {
+    return {
+      determineActions: vi.fn().mockResolvedValue({
+        shouldInsertTitle: false,
+        shouldMoveCursor: false,
+        placeCursorAtEnd: false,
+      }),
+    };
+  }),
 }));
 
-describe("WorkspaceIntegration", () => {
+describe('WorkspaceIntegration', () => {
   let mockPlugin: any;
   let mockApp: App;
 
@@ -80,10 +86,10 @@ describe("WorkspaceIntegration", () => {
     vi.useRealTimers();
   });
 
-  describe("registerRibbonIcons", () => {
-    it("should register all three ribbon icons", async () => {
+  describe('registerRibbonIcons', () => {
+    it('should register all three ribbon icons', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       integration.registerRibbonIcons();
@@ -91,58 +97,58 @@ describe("WorkspaceIntegration", () => {
       expect(mockPlugin.addRibbonIcon).toHaveBeenCalledTimes(3);
     });
 
-    it("should register file-pen icon for rename", async () => {
+    it('should register file-type icon for rename', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       integration.registerRibbonIcons();
 
       expect(mockPlugin.addRibbonIcon).toHaveBeenCalledWith(
-        "file-pen",
-        "Put first line in title",
-        expect.any(Function),
+        'file-type',
+        'commands.putFirstLineInTitle',
+        expect.any(Function)
       );
     });
 
-    it("should register files icon for bulk rename", async () => {
+    it('should register files icon for bulk rename', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       integration.registerRibbonIcons();
 
       expect(mockPlugin.addRibbonIcon).toHaveBeenCalledWith(
-        "files",
-        "Put first line in title in all notes",
-        expect.any(Function),
+        'files',
+        'commands.putFirstLineInTitleAllNotes',
+        expect.any(Function)
       );
     });
 
-    it("should register file-cog icon for toggle", async () => {
+    it('should register file-cog icon for toggle', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       integration.registerRibbonIcons();
 
       expect(mockPlugin.addRibbonIcon).toHaveBeenCalledWith(
-        "file-cog",
-        "Toggle automatic renaming",
-        expect.any(Function),
+        'file-cog',
+        'commands.toggleAutomaticRenaming',
+        expect.any(Function)
       );
     });
 
-    it("should call executeRenameCurrentFile when file-pen ribbon is clicked", async () => {
+    it('should call executeRenameCurrentFile when file-type ribbon is clicked', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       integration.registerRibbonIcons();
 
-      // Get the callback for file-pen icon
+      // Get the callback for file-type icon
       const filePenCall = mockPlugin.addRibbonIcon.mock.calls.find(
-        (call: any[]) => call[0] === "file-pen",
+        (call: any[]) => call[0] === 'file-type'
       );
       const callback = filePenCall[2];
 
@@ -150,20 +156,20 @@ describe("WorkspaceIntegration", () => {
       callback();
 
       expect(
-        mockPlugin.commandRegistrar.executeRenameCurrentFile,
+        mockPlugin.commandRegistrar.executeRenameCurrentFile
       ).toHaveBeenCalled();
     });
 
-    it("should call executeToggleAutomaticRenaming when file-cog ribbon is clicked", async () => {
+    it('should call executeToggleAutomaticRenaming when file-cog ribbon is clicked', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       integration.registerRibbonIcons();
 
       // Get the callback for file-cog icon
       const fileCogCall = mockPlugin.addRibbonIcon.mock.calls.find(
-        (call: any[]) => call[0] === "file-cog",
+        (call: any[]) => call[0] === 'file-cog'
       );
       const callback = fileCogCall[2];
 
@@ -171,21 +177,21 @@ describe("WorkspaceIntegration", () => {
       callback();
 
       expect(
-        mockPlugin.commandRegistrar.executeToggleAutomaticRenaming,
+        mockPlugin.commandRegistrar.executeToggleAutomaticRenaming
       ).toHaveBeenCalled();
     });
 
-    it("should open RenameAllFilesModal when files ribbon is clicked", async () => {
+    it('should open RenameAllFilesModal when files ribbon is clicked', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
-      const { RenameAllFilesModal } = await import("../../src/modals");
+        await import('../../src/core/workspace-integration');
+      const { RenameAllFilesModal } = await import('../../src/modals');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       integration.registerRibbonIcons();
 
       // Get the callback for files icon
       const filesCall = mockPlugin.addRibbonIcon.mock.calls.find(
-        (call: any[]) => call[0] === "files",
+        (call: any[]) => call[0] === 'files'
       );
       const callback = filesCall[2];
 
@@ -196,32 +202,32 @@ describe("WorkspaceIntegration", () => {
     });
   });
 
-  describe("cleanup", () => {
-    it("should clear all creation delay timers on cleanup", async () => {
+  describe('cleanup', () => {
+    it('should clear all creation delay timers on cleanup', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       integration.cleanup();
 
       expect(
-        mockPlugin.editorLifecycle.clearAllCreationDelayTimers,
+        mockPlugin.editorLifecycle.clearAllCreationDelayTimers
       ).toHaveBeenCalled();
     });
   });
 
-  describe("rate limiting", () => {
-    it("should have rate limit constant defined", async () => {
+  describe('rate limiting', () => {
+    it('should have rate limit constant defined', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       expect(integration.TITLE_INSERTION_RATE_LIMIT_MS).toBe(1000);
     });
 
-    it("should track last title insertion time", async () => {
+    it('should track last title insertion time', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       expect(integration.lastTitleInsertionTime).toBe(0);
@@ -230,9 +236,9 @@ describe("WorkspaceIntegration", () => {
       expect(integration.lastTitleInsertionTime).toBe(12345);
     });
 
-    it("should allow insertion after rate limit window passes", async () => {
+    it('should allow insertion after rate limit window passes', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       // Set last insertion to now
@@ -248,27 +254,27 @@ describe("WorkspaceIntegration", () => {
     });
   });
 
-  describe("setupSaveEventHook", () => {
-    it("should setup save event hook when command exists", async () => {
+  describe('setupSaveEventHook', () => {
+    it('should setup save event hook when command exists', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       // Add save command to existing commands object
-      mockApp.commands.commands["editor:save-file"] = {
+      mockApp.commands.commands['editor:save-file'] = {
         checkCallback: vi.fn(),
       };
 
       integration.setupSaveEventHook();
 
       // The around function should have been called
-      const { around } = await import("monkey-around");
+      const { around } = await import('monkey-around');
       expect(around).toHaveBeenCalled();
     });
 
-    it("should not setup hook when command does not exist", async () => {
+    it('should not setup hook when command does not exist', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       // commands.commands is empty by default from mock
@@ -276,15 +282,15 @@ describe("WorkspaceIntegration", () => {
       integration.setupSaveEventHook();
 
       // Should not crash
-      const { around } = await import("monkey-around");
+      const { around } = await import('monkey-around');
       expect(around).not.toHaveBeenCalled();
     });
   });
 
-  describe("setupCursorPositioning", () => {
-    it("should wait for layout ready before setting up", async () => {
+  describe('setupCursorPositioning', () => {
+    it('should wait for layout ready before setting up', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       // onLayoutReady is now built into the mock Workspace
@@ -294,9 +300,9 @@ describe("WorkspaceIntegration", () => {
       expect(mockApp.workspace.onLayoutReady).toHaveBeenCalled();
     });
 
-    it("should register vault create event", async () => {
+    it('should register vault create event', async () => {
       const { WorkspaceIntegration } =
-        await import("../../src/core/workspace-integration");
+        await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       // onLayoutReady calls callback immediately (built into mock)

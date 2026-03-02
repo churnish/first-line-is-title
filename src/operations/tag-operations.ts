@@ -1,8 +1,8 @@
-import { App, Notice, TFile } from "obsidian";
-import { verboseLog } from "../utils";
-import { PluginSettings } from "../types";
-import { RenameEngine } from "../core/rename-engine";
-import { t } from "../i18n";
+import { App, Notice, TFile } from 'obsidian';
+import { verboseLog } from '../utils';
+import { PluginSettings } from '../types';
+import { RenameEngine } from '../core/rename-engine';
+import { t } from '../i18n';
 
 export class TagOperations {
   constructor(
@@ -10,15 +10,15 @@ export class TagOperations {
     public settings: PluginSettings,
     private renameEngine: RenameEngine,
     private saveSettings: () => Promise<void>,
-    private debugLog: (settingName: string, value: unknown) => void,
+    private debugLog: (settingName: string, value: unknown) => void
   ) {}
 
   async putFirstLineInTitleForTag(
     tagName: string,
     omitBodyTags: boolean = false,
-    omitNestedTags: boolean = false,
+    omitNestedTags: boolean = false
   ): Promise<void> {
-    const tagToFind = tagName.startsWith("#") ? tagName : `#${tagName}`;
+    const tagToFind = tagName.startsWith('#') ? tagName : `#${tagName}`;
     const files = this.app.vault.getMarkdownFiles();
     const matchingFiles: TFile[] = [];
 
@@ -41,8 +41,8 @@ export class TagOperations {
             return (
               tag === tagName ||
               tag === tagToFind ||
-              tag.startsWith(tagName + "/") ||
-              tag.startsWith(tagToFind + "/")
+              tag.startsWith(tagName + '/') ||
+              tag.startsWith(tagToFind + '/')
             );
           }
         });
@@ -66,7 +66,7 @@ export class TagOperations {
               tagMatches =
                 cacheTag === tagToFind ||
                 cacheTag === `#${tagName}` ||
-                cacheTag.startsWith(tagToFind + "/") ||
+                cacheTag.startsWith(tagToFind + '/') ||
                 cacheTag.startsWith(`#${tagName}/`);
             }
 
@@ -89,7 +89,7 @@ export class TagOperations {
                 }
               }
             }
-          },
+          }
         );
       }
 
@@ -106,20 +106,20 @@ export class TagOperations {
     if (matchingFiles.length === 0) {
       verboseLog(this, `Showing notice: No files found with tag ${tagToFind}.`);
       new Notice(
-        t("notifications.noNotesFoundWithTag").replace("{{tag}}", tagToFind),
+        t('notifications.noNotesFoundWithTag').replace('{{tag}}', tagToFind)
       );
       return;
     }
 
     verboseLog(
       this,
-      `Showing notice: Renaming ${matchingFiles.length} files with tag ${tagToFind}...`,
+      `Showing notice: Renaming ${matchingFiles.length} files with tag ${tagToFind}...`
     );
     new Notice(
-      t("notifications.renamingNNotes").replace(
-        "{{count}}",
-        String(matchingFiles.length),
-      ),
+      t('notifications.renamingNNotes').replace(
+        '{{count}}',
+        String(matchingFiles.length)
+      )
     );
 
     let processedCount = 0;
@@ -139,7 +139,7 @@ export class TagOperations {
           false,
           undefined,
           true,
-          exclusionOverrides,
+          exclusionOverrides
         );
         processedCount++;
       } catch (error) {
@@ -151,62 +151,62 @@ export class TagOperations {
     if (errorCount > 0) {
       verboseLog(
         this,
-        `Showing notice: Renamed ${processedCount}/${matchingFiles.length} notes with ${errorCount} errors. Check console for details.`,
+        `Showing notice: Renamed ${processedCount}/${matchingFiles.length} notes with ${errorCount} errors. Check console for details.`
       );
       new Notice(
-        t("notifications.renamedNotesWithErrors")
-          .replace("{{renamed}}", String(processedCount))
-          .replace("{{total}}", String(matchingFiles.length))
-          .replace("{{errors}}", String(errorCount)),
-        0,
+        t('notifications.renamedNotesWithErrors')
+          .replace('{{renamed}}', String(processedCount))
+          .replace('{{total}}', String(matchingFiles.length))
+          .replace('{{errors}}', String(errorCount)),
+        0
       );
     } else {
       verboseLog(
         this,
-        `Showing notice: Successfully processed ${processedCount} files with tag ${tagToFind}.`,
+        `Showing notice: Successfully processed ${processedCount} files with tag ${tagToFind}.`
       );
       new Notice(
-        t("notifications.renamedNotes")
-          .replace("{{renamed}}", String(processedCount))
-          .replace("{{total}}", String(matchingFiles.length)),
-        0,
+        t('notifications.renamedNotes')
+          .replace('{{renamed}}', String(processedCount))
+          .replace('{{total}}', String(matchingFiles.length)),
+        0
       );
     }
   }
 
   async toggleTagExclusion(tagName: string): Promise<void> {
-    const tagToFind = tagName.startsWith("#") ? tagName : `#${tagName}`;
+    const tagToFind = tagName.startsWith('#') ? tagName : `#${tagName}`;
     const isInList = this.settings.exclusions.excludedTags.includes(tagToFind);
     const isInverted =
-      this.settings.exclusions.tagScopeStrategy === "Exclude all except...";
+      this.settings.exclusions.tagScopeStrategy === 'Exclude all except...';
 
     if (isInList) {
       this.settings.exclusions.excludedTags =
         this.settings.exclusions.excludedTags.filter(
-          (tag) => tag !== tagToFind,
+          (tag) => tag !== tagToFind
         );
       // Ensure there's always at least one entry (even if empty)
       if (this.settings.exclusions.excludedTags.length === 0) {
-        this.settings.exclusions.excludedTags.push("");
+        this.settings.exclusions.excludedTags.push('');
       }
 
       if (isInverted) {
         // In inverted mode, removing from list = disabling renaming
         verboseLog(this, `Showing notice: Renaming disabled for ${tagToFind}`);
         new Notice(
-          t("notifications.disabledRenamingFor", { filename: tagToFind }),
+          t('notifications.disabledRenamingFor', { filename: tagToFind })
         );
       } else {
         // In normal mode, removing from list = enabling renaming
         verboseLog(this, `Showing notice: Renaming enabled for ${tagToFind}`);
         new Notice(
-          t("notifications.enabledRenamingFor", { filename: tagToFind }),
+          t('notifications.enabledRenamingFor', { filename: tagToFind })
         );
       }
     } else {
       if (
         this.settings.exclusions.excludedTags.length === 1 &&
-        this.settings.exclusions.excludedTags[0] === ""
+        this.settings.exclusions.excludedTags[0] === ''
       ) {
         this.settings.exclusions.excludedTags[0] = tagToFind;
       } else {
@@ -217,18 +217,18 @@ export class TagOperations {
         // In inverted mode, adding to list = enabling renaming
         verboseLog(this, `Showing notice: Renaming enabled for ${tagToFind}`);
         new Notice(
-          t("notifications.enabledRenamingFor", { filename: tagToFind }),
+          t('notifications.enabledRenamingFor', { filename: tagToFind })
         );
       } else {
         // In normal mode, adding to list = disabling renaming
         verboseLog(this, `Showing notice: Renaming disabled for ${tagToFind}`);
         new Notice(
-          t("notifications.disabledRenamingFor", { filename: tagToFind }),
+          t('notifications.disabledRenamingFor', { filename: tagToFind })
         );
       }
     }
 
-    this.debugLog("excludedTags", this.settings.exclusions.excludedTags);
+    this.debugLog('excludedTags', this.settings.exclusions.excludedTags);
     await this.saveSettings();
     verboseLog(this, `Tag exclusion toggled for: ${tagToFind}`, {
       isNowInList: !isInList,

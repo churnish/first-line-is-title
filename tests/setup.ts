@@ -3,12 +3,12 @@
  * Runs before all tests to configure the test environment
  */
 
-import { vi } from "vitest";
-import { JSDOM } from "jsdom";
+import { vi } from 'vitest';
+import { JSDOM } from 'jsdom';
 
 // Setup DOM environment for tests that need it
-const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", {
-  url: "http://localhost",
+const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
+  url: 'http://localhost',
   pretendToBeVisual: true,
 });
 
@@ -16,7 +16,7 @@ global.document = dom.window.document as any;
 global.window = dom.window as any;
 
 // Use defineProperty for navigator since it's read-only in newer Node.js
-Object.defineProperty(global, "navigator", {
+Object.defineProperty(global, 'navigator', {
   value: dom.window.navigator,
   writable: true,
   configurable: true,

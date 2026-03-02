@@ -12,54 +12,54 @@
  * the full display() method.
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { App } from "../mockObsidian";
-import { DEFAULT_SETTINGS } from "../../src/constants";
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { App } from '../mockObsidian';
+import { DEFAULT_SETTINGS } from '../../src/constants';
 
 // Mock i18n
-vi.mock("../../src/i18n", () => ({
+vi.mock('../../src/i18n', () => ({
   t: vi.fn((key: string) => key),
-  getCurrentLocale: vi.fn(() => "en"),
+  getCurrentLocale: vi.fn(() => 'en'),
 }));
 
 // Mock utils
-vi.mock("../../src/utils", () => ({
+vi.mock('../../src/utils', () => ({
   deduplicateExclusions: vi.fn((arr: unknown[]) => arr),
   verboseLog: vi.fn(),
 }));
 
 // Mock all tab classes
-vi.mock("../../src/settings/tab-general", () => ({
+vi.mock('../../src/settings/tab-general', () => ({
   GeneralTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
 }));
-vi.mock("../../src/settings/tab-exclusions", () => ({
+vi.mock('../../src/settings/tab-exclusions', () => ({
   IncludeExcludeTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
 }));
-vi.mock("../../src/settings/tab-alias", () => ({
+vi.mock('../../src/settings/tab-alias', () => ({
   PropertiesTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
 }));
-vi.mock("../../src/settings/tab-replace-characters", () => ({
+vi.mock('../../src/settings/tab-replace-characters', () => ({
   ForbiddenCharsTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
 }));
-vi.mock("../../src/settings/tab-strip-markup", () => ({
+vi.mock('../../src/settings/tab-strip-markup', () => ({
   StripMarkupTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
 }));
-vi.mock("../../src/settings/tab-custom-rules", () => ({
+vi.mock('../../src/settings/tab-custom-rules', () => ({
   CustomReplacementsTab: vi.fn().mockImplementation(() => ({
     display: vi.fn(),
   })),
 }));
-vi.mock("../../src/settings/tab-safewords", () => ({
+vi.mock('../../src/settings/tab-safewords', () => ({
   SafewordsTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
 }));
-vi.mock("../../src/settings/tab-commands", () => ({
+vi.mock('../../src/settings/tab-commands', () => ({
   CommandsTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
 }));
-vi.mock("../../src/settings/tab-other", () => ({
+vi.mock('../../src/settings/tab-other', () => ({
   OtherTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
 }));
 
-describe("Settings Tab Race Condition Patterns", () => {
+describe('Settings Tab Race Condition Patterns', () => {
   let mockApp: App;
   let mockPlugin: any;
 
@@ -74,10 +74,10 @@ describe("Settings Tab Race Condition Patterns", () => {
     };
   });
 
-  describe("FirstLineIsTitleSettings class initialization", () => {
-    it("should have race condition safeguards initialized", async () => {
+  describe('FirstLineIsTitleSettings class initialization', () => {
+    it('should have race condition safeguards initialized', async () => {
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       // Verify initialization of race condition safeguards
@@ -89,10 +89,10 @@ describe("Settings Tab Race Condition Patterns", () => {
     });
   });
 
-  describe("Generation counter pattern", () => {
-    it("should use generation counter to guard async operations", async () => {
+  describe('Generation counter pattern', () => {
+    it('should use generation counter to guard async operations', async () => {
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       // Simulate what happens during tab activation
@@ -107,10 +107,10 @@ describe("Settings Tab Race Condition Patterns", () => {
     });
   });
 
-  describe("AbortController pattern", () => {
-    it("should create new AbortController when null", async () => {
+  describe('AbortController pattern', () => {
+    it('should create new AbortController when null', async () => {
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       // Initially null
@@ -122,9 +122,9 @@ describe("Settings Tab Race Condition Patterns", () => {
       expect((settings as any).abortController.signal.aborted).toBe(false);
     });
 
-    it("should abort previous controller before creating new one", async () => {
+    it('should abort previous controller before creating new one', async () => {
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       // Create first controller
@@ -141,16 +141,16 @@ describe("Settings Tab Race Condition Patterns", () => {
     });
   });
 
-  describe("Cached tab rows pattern", () => {
-    it("should clear cached rows on new display cycle", async () => {
+  describe('Cached tab rows pattern', () => {
+    it('should clear cached rows on new display cycle', async () => {
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       // Simulate cached rows from previous display
       (settings as any).cachedTabRows = [
-        [document.createElement("div")],
-        [document.createElement("div")],
+        [document.createElement('div')],
+        [document.createElement('div')],
       ];
 
       expect((settings as any).cachedTabRows.length).toBe(2);
@@ -162,12 +162,12 @@ describe("Settings Tab Race Condition Patterns", () => {
     });
   });
 
-  describe("Resize timeout pattern", () => {
-    it("should clear resize timeout on new display cycle", async () => {
+  describe('Resize timeout pattern', () => {
+    it('should clear resize timeout on new display cycle', async () => {
       vi.useFakeTimers();
 
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       // Simulate a pending resize timeout
@@ -186,40 +186,40 @@ describe("Settings Tab Race Condition Patterns", () => {
     });
   });
 
-  describe("Order of operations in display()", () => {
-    it("should follow correct cleanup order: abort -> clear cache -> empty DOM", async () => {
+  describe('Order of operations in display()', () => {
+    it('should follow correct cleanup order: abort -> clear cache -> empty DOM', async () => {
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       // Set up initial state
       const oldController = new AbortController();
       (settings as any).abortController = oldController;
-      (settings as any).cachedTabRows = [[document.createElement("div")]];
+      (settings as any).cachedTabRows = [[document.createElement('div')]];
 
       const operations: string[] = [];
 
       // Simulate the order from display():
       // 1. Abort old listeners first
-      operations.push("abort");
+      operations.push('abort');
       oldController.abort();
 
       // 2. Then clear cached tab rows
-      operations.push("clearCache");
+      operations.push('clearCache');
       (settings as any).cachedTabRows = [];
 
       // 3. Then clean DOM (containerEl.empty())
-      operations.push("emptyDOM");
+      operations.push('emptyDOM');
 
       // 4. Then create new controller
-      operations.push("newController");
+      operations.push('newController');
       (settings as any).abortController = new AbortController();
 
       expect(operations).toEqual([
-        "abort",
-        "clearCache",
-        "emptyDOM",
-        "newController",
+        'abort',
+        'clearCache',
+        'emptyDOM',
+        'newController',
       ]);
       expect(oldController.signal.aborted).toBe(true);
       expect((settings as any).cachedTabRows).toEqual([]);
@@ -227,10 +227,10 @@ describe("Settings Tab Race Condition Patterns", () => {
     });
   });
 
-  describe("hide() cleanup", () => {
-    it("should abort controller on hide", async () => {
+  describe('hide() cleanup', () => {
+    it('should abort controller on hide', async () => {
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       // Set up state as if display() was called
@@ -245,11 +245,11 @@ describe("Settings Tab Race Condition Patterns", () => {
       expect(controller.signal.aborted).toBe(true);
     });
 
-    it("should clear resize timeout on hide", async () => {
+    it('should clear resize timeout on hide', async () => {
       vi.useFakeTimers();
 
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       // Set up state as if display() was called with pending resize
@@ -266,9 +266,9 @@ describe("Settings Tab Race Condition Patterns", () => {
       vi.useRealTimers();
     });
 
-    it("should set isDisplayed to false on hide", async () => {
+    it('should set isDisplayed to false on hide', async () => {
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       // Set up state as if display() was called
@@ -280,9 +280,9 @@ describe("Settings Tab Race Condition Patterns", () => {
       expect((settings as any).isDisplayed).toBe(false);
     });
 
-    it("should increment activationGeneration on hide to invalidate in-flight operations", async () => {
+    it('should increment activationGeneration on hide to invalidate in-flight operations', async () => {
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       // Set up state as if display() was called
@@ -294,15 +294,15 @@ describe("Settings Tab Race Condition Patterns", () => {
 
       // Generation should have incremented to invalidate any in-flight tab activations
       expect((settings as any).activationGeneration).toBe(
-        generationBeforeHide + 1,
+        generationBeforeHide + 1
       );
     });
   });
 
-  describe("RAF callback guard pattern", () => {
-    it("should skip callback if generation changes", async () => {
+  describe('RAF callback guard pattern', () => {
+    it('should skip callback if generation changes', async () => {
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       let callbackExecuted = false;
@@ -324,9 +324,9 @@ describe("Settings Tab Race Condition Patterns", () => {
       expect(callbackExecuted).toBe(false);
     });
 
-    it("should skip callback if aborted", async () => {
+    it('should skip callback if aborted', async () => {
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       let callbackExecuted = false;
@@ -347,9 +347,9 @@ describe("Settings Tab Race Condition Patterns", () => {
       expect(callbackExecuted).toBe(false);
     });
 
-    it("should execute callback if generation and abort signal are valid", async () => {
+    it('should execute callback if generation and abort signal are valid', async () => {
       const { FirstLineIsTitleSettings } =
-        await import("../../src/settings/settings-main");
+        await import('../../src/settings/settings-main');
       const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
 
       let callbackExecuted = false;

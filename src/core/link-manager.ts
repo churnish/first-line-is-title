@@ -1,8 +1,8 @@
-import { Notice } from "obsidian";
-import FirstLineIsTitle from "../../main";
-import { generateSafeLinkTarget, reverseSafeLinkTarget } from "../utils";
-import { InternalLinkModal } from "../modals";
-import { t } from "../i18n";
+import { Notice } from 'obsidian';
+import FirstLineIsTitle from '../../main';
+import { generateSafeLinkTarget, reverseSafeLinkTarget } from '../utils';
+import { InternalLinkModal } from '../modals';
+import { t } from '../i18n';
 
 export class LinkManager {
   private plugin: FirstLineIsTitle;
@@ -15,7 +15,7 @@ export class LinkManager {
     // Try to get active editor from any view type (markdown, canvas, etc.)
     const activeEditor = this.plugin.app.workspace.activeEditor?.editor;
     if (!activeEditor) {
-      new Notice(t("notifications.errorNoActiveNote"));
+      new Notice(t('notifications.errorNoActiveNote'));
       return;
     }
 
@@ -24,7 +24,7 @@ export class LinkManager {
     // Check if any selection has content (anchor != head means text is selected)
     const hasSelection = selections.some(
       (sel) =>
-        sel.anchor.line !== sel.head.line || sel.anchor.ch !== sel.head.ch,
+        sel.anchor.line !== sel.head.line || sel.anchor.ch !== sel.head.ch
     );
 
     if (hasSelection) {
@@ -58,11 +58,11 @@ export class LinkManager {
 
           // Check if selection is a wikilink - if so, toggle it off
           if (
-            trimmedSelection.startsWith("[[") &&
-            trimmedSelection.endsWith("]]")
+            trimmedSelection.startsWith('[[') &&
+            trimmedSelection.endsWith(']]')
           ) {
             const linkContent = trimmedSelection.slice(2, -2);
-            const pipeIndex = linkContent.indexOf("|");
+            const pipeIndex = linkContent.indexOf('|');
 
             if (pipeIndex !== -1) {
               // Has caption: [[target|caption]] → caption
@@ -71,14 +71,14 @@ export class LinkManager {
               // No caption: [[target]] → reverse(target)
               replacement = reverseSafeLinkTarget(
                 linkContent,
-                this.plugin.settings,
+                this.plugin.settings
               );
             }
           } else {
             // Plain text: text → [[safe(text)]]
             const safeLinkTarget = generateSafeLinkTarget(
               text,
-              this.plugin.settings,
+              this.plugin.settings
             );
             replacement = `[[${safeLinkTarget}]]`;
           }
@@ -94,11 +94,11 @@ export class LinkManager {
         (linkTarget: string) => {
           const safeLinkTarget = generateSafeLinkTarget(
             linkTarget,
-            this.plugin.settings,
+            this.plugin.settings
           );
           const wikiLink = `[[${safeLinkTarget}]]`;
           activeEditor.replaceSelection(wikiLink);
-        },
+        }
       );
       modal.open();
     }
@@ -108,7 +108,7 @@ export class LinkManager {
     // Try to get active editor from any view type (markdown, canvas, etc.)
     const activeEditor = this.plugin.app.workspace.activeEditor?.editor;
     if (!activeEditor) {
-      new Notice(t("notifications.errorNoActiveNote"));
+      new Notice(t('notifications.errorNoActiveNote'));
       return;
     }
 
@@ -117,7 +117,7 @@ export class LinkManager {
     // Check if any selection has content (anchor != head means text is selected)
     const hasSelection = selections.some(
       (sel) =>
-        sel.anchor.line !== sel.head.line || sel.anchor.ch !== sel.head.ch,
+        sel.anchor.line !== sel.head.line || sel.anchor.ch !== sel.head.ch
     );
 
     if (hasSelection) {
@@ -151,11 +151,11 @@ export class LinkManager {
 
           // Check if selection is a wikilink
           if (
-            trimmedSelection.startsWith("[[") &&
-            trimmedSelection.endsWith("]]")
+            trimmedSelection.startsWith('[[') &&
+            trimmedSelection.endsWith(']]')
           ) {
             const linkContent = trimmedSelection.slice(2, -2);
-            const pipeIndex = linkContent.indexOf("|");
+            const pipeIndex = linkContent.indexOf('|');
 
             if (pipeIndex !== -1) {
               // Has caption: [[target|caption]]
@@ -163,7 +163,7 @@ export class LinkManager {
               const caption = linkContent.slice(pipeIndex + 1);
               const reversedTarget = reverseSafeLinkTarget(
                 target,
-                this.plugin.settings,
+                this.plugin.settings
               );
 
               if (reversedTarget === caption) {
@@ -177,7 +177,7 @@ export class LinkManager {
               // No caption: [[Heyˆ]] → [[Heyˆ|Hey^]] (add caption as reversed target)
               const reversedTarget = reverseSafeLinkTarget(
                 linkContent,
-                this.plugin.settings,
+                this.plugin.settings
               );
               replacement = `[[${linkContent}|${reversedTarget}]]`;
             }
@@ -185,7 +185,7 @@ export class LinkManager {
             // Plain text: Hey^ → [[Heyˆ|Hey^]]
             const safeLinkTarget = generateSafeLinkTarget(
               text,
-              this.plugin.settings,
+              this.plugin.settings
             );
             replacement = `[[${safeLinkTarget}|${text}]]`;
           }
@@ -201,7 +201,7 @@ export class LinkManager {
         (linkTarget: string, linkCaption?: string) => {
           const safeLinkTarget = generateSafeLinkTarget(
             linkTarget,
-            this.plugin.settings,
+            this.plugin.settings
           );
           let wikiLink: string;
           if (linkCaption && linkCaption.trim()) {
@@ -211,7 +211,7 @@ export class LinkManager {
           }
           activeEditor.replaceSelection(wikiLink);
         },
-        true,
+        true
       ); // true for withCaption
       modal.open();
     }
@@ -221,7 +221,7 @@ export class LinkManager {
     // Try to get active editor from any view type (markdown, canvas, etc.)
     const activeEditor = this.plugin.app.workspace.activeEditor?.editor;
     if (!activeEditor) {
-      new Notice(t("notifications.errorNoActiveNote"));
+      new Notice(t('notifications.errorNoActiveNote'));
       return;
     }
 
@@ -230,7 +230,7 @@ export class LinkManager {
     // Check if any selection has content (anchor != head means text is selected)
     const hasSelection = selections.some(
       (sel) =>
-        sel.anchor.line !== sel.head.line || sel.anchor.ch !== sel.head.ch,
+        sel.anchor.line !== sel.head.line || sel.anchor.ch !== sel.head.ch
     );
 
     if (hasSelection) {
@@ -287,7 +287,7 @@ export class LinkManager {
           activeEditor.replaceSelection(wikiLink);
           // Position cursor after [[
           activeEditor.setCursor({ line: cursor.line, ch: cursor.ch + 2 });
-        },
+        }
       );
       modal.open();
     }

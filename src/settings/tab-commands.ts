@@ -1,6 +1,6 @@
-import { Setting, SettingGroup, setIcon, Notice } from "obsidian";
-import { SettingsTabBase, FirstLineIsTitlePlugin } from "./settings-base";
-import { t } from "../i18n";
+import { Setting, SettingGroup, setIcon, Notice } from 'obsidian';
+import { SettingsTabBase, FirstLineIsTitlePlugin } from './settings-base';
+import { t } from '../i18n';
 
 interface CommandConfig {
   nameKey: string;
@@ -26,17 +26,17 @@ export class CommandsTab extends SettingsTabBase {
     try {
       await this.plugin.saveSettings();
     } catch {
-      new Notice(t("settings.errors.saveFailed"));
+      new Notice(t('settings.errors.saveFailed'));
     }
   }
 
   private getNestedValue(obj: unknown, path: string[]): unknown {
     let current = obj;
     for (const key of path) {
-      if (current && typeof current === "object" && key in current) {
+      if (current && typeof current === 'object' && key in current) {
         current = (current as Record<string, unknown>)[key];
       } else {
-        console.warn(`[FLIT] Missing setting path: ${path.join(".")}`);
+        console.warn(`[FLIT] Missing setting path: ${path.join('.')}`);
         return undefined;
       }
     }
@@ -47,27 +47,27 @@ export class CommandsTab extends SettingsTabBase {
     let current = obj;
     for (let i = 0; i < path.length - 1; i++) {
       const key = path[i];
-      if (current && typeof current === "object" && key in current) {
+      if (current && typeof current === 'object' && key in current) {
         current = (current as Record<string, unknown>)[key];
       } else {
         console.warn(
-          `[FLIT] Cannot set value, missing path: ${path.join(".")}`,
+          `[FLIT] Cannot set value, missing path: ${path.join('.')}`
         );
         return;
       }
     }
-    if (current && typeof current === "object") {
+    if (current && typeof current === 'object') {
       (current as Record<string, unknown>)[path[path.length - 1]] = value;
     }
   }
 
   private createCommandSetting(
     container: HTMLElement,
-    config: CommandConfig,
+    config: CommandConfig
   ): void {
     const currentValue = this.getNestedValue(
       this.plugin.settings,
-      config.settingPath,
+      config.settingPath
     ) as boolean;
 
     const setting = new Setting(container)
@@ -76,12 +76,12 @@ export class CommandsTab extends SettingsTabBase {
       .addToggle((toggle) =>
         toggle.setValue(currentValue).onChange(async (value) => {
           this.setNestedValue(this.plugin.settings, config.settingPath, value);
-          this.plugin.debugLog(config.settingPath.join("."), value);
+          this.plugin.debugLog(config.settingPath.join('.'), value);
           await this.saveSettings();
-        }),
+        })
       );
 
-    const iconEl = setting.nameEl.createDiv({ cls: "setting-item-icon" });
+    const iconEl = setting.nameEl.createDiv({ cls: 'setting-item-icon' });
     setIcon(iconEl, config.icon);
     setting.nameEl.insertBefore(iconEl, setting.nameEl.firstChild);
   }
@@ -89,7 +89,7 @@ export class CommandsTab extends SettingsTabBase {
   private createSection(config: SectionConfig): void {
     const enableValue = this.getNestedValue(
       this.plugin.settings,
-      config.enableSettingPath,
+      config.enableSettingPath
     ) as boolean;
 
     const toggle = new Setting(this.containerEl)
@@ -101,18 +101,18 @@ export class CommandsTab extends SettingsTabBase {
           this.setNestedValue(
             this.plugin.settings,
             config.enableSettingPath,
-            value,
+            value
           );
-          this.plugin.debugLog(config.enableSettingPath.join("."), value);
+          this.plugin.debugLog(config.enableSettingPath.join('.'), value);
           await this.saveSettings();
           updateUI();
         });
       });
-    toggle.settingEl.addClass("flit-master-toggle");
+    toggle.settingEl.addClass('flit-master-toggle');
 
     new SettingGroup(this.containerEl).addClass(config.groupClass);
     const container = this.containerEl.querySelector<HTMLElement>(
-      `.${config.groupClass} .setting-items`,
+      `.${config.groupClass} .setting-items`
     );
 
     if (!container) {
@@ -123,7 +123,7 @@ export class CommandsTab extends SettingsTabBase {
     const updateUI = () => {
       const isEnabled = this.getNestedValue(
         this.plugin.settings,
-        config.enableSettingPath,
+        config.enableSettingPath
       ) as boolean;
       if (isEnabled) {
         container.show();
@@ -142,120 +142,120 @@ export class CommandsTab extends SettingsTabBase {
   render(): void {
     // File commands section
     this.createSection({
-      titleKey: "settings.commands.file.title",
-      descKey: "settings.commands.file.desc",
-      groupClass: "flit-file-group",
-      enableSettingPath: ["core", "enableFileCommands"],
+      titleKey: 'settings.commands.file.title',
+      descKey: 'settings.commands.file.desc',
+      groupClass: 'flit-file-group',
+      enableSettingPath: ['core', 'enableFileCommands'],
       commands: [
         {
-          nameKey: "commands.putFirstLineInTitle",
-          descKey: "commands.descriptions.renameNoteEvenExcluded",
-          icon: "file-pen",
-          settingPath: ["core", "commandVisibility", "filePutFirstLineInTitle"],
+          nameKey: 'commands.putFirstLineInTitle',
+          descKey: 'commands.descriptions.renameNoteEvenExcluded',
+          icon: 'file-type',
+          settingPath: ['core', 'commandVisibility', 'filePutFirstLineInTitle'],
         },
         {
-          nameKey: "commands.disableRenamingForNote",
-          descKey: "commands.descriptions.excludeNote",
-          icon: "square-x",
-          settingPath: ["core", "commandVisibility", "fileExclude"],
+          nameKey: 'commands.disableRenamingForNote',
+          descKey: 'commands.descriptions.excludeNote',
+          icon: 'square-x',
+          settingPath: ['core', 'commandVisibility', 'fileExclude'],
         },
         {
-          nameKey: "commands.enableRenamingForNote",
-          descKey: "commands.descriptions.stopExcludingNote",
-          icon: "square-check",
-          settingPath: ["core", "commandVisibility", "fileStopExcluding"],
+          nameKey: 'commands.enableRenamingForNote',
+          descKey: 'commands.descriptions.stopExcludingNote',
+          icon: 'square-check',
+          settingPath: ['core', 'commandVisibility', 'fileStopExcluding'],
         },
       ],
     });
 
     // Folder commands section
     this.createSection({
-      titleKey: "settings.commands.folder.title",
-      descKey: "settings.commands.folder.desc",
-      groupClass: "flit-folder-group",
-      enableSettingPath: ["core", "enableFolderCommands"],
+      titleKey: 'settings.commands.folder.title',
+      descKey: 'settings.commands.folder.desc',
+      groupClass: 'flit-folder-group',
+      enableSettingPath: ['core', 'enableFolderCommands'],
       commands: [
         {
-          nameKey: "commands.putFirstLineInTitle",
-          descKey: "commands.descriptions.renameAllNotesInFolder",
-          icon: "folder-pen",
+          nameKey: 'commands.putFirstLineInTitle',
+          descKey: 'commands.descriptions.renameAllNotesInFolder',
+          icon: 'folder-pen',
           settingPath: [
-            "core",
-            "commandVisibility",
-            "folderPutFirstLineInTitle",
+            'core',
+            'commandVisibility',
+            'folderPutFirstLineInTitle',
           ],
         },
         {
-          nameKey: "commands.disableRenamingInFolder",
-          descKey: "commands.descriptions.excludeFolder",
-          icon: "square-x",
-          settingPath: ["core", "commandVisibility", "folderExclude"],
+          nameKey: 'commands.disableRenamingInFolder',
+          descKey: 'commands.descriptions.excludeFolder',
+          icon: 'square-x',
+          settingPath: ['core', 'commandVisibility', 'folderExclude'],
         },
         {
-          nameKey: "commands.enableRenamingInFolder",
-          descKey: "commands.descriptions.stopExcludingFolder",
-          icon: "square-check",
-          settingPath: ["core", "commandVisibility", "folderStopExcluding"],
+          nameKey: 'commands.enableRenamingInFolder',
+          descKey: 'commands.descriptions.stopExcludingFolder',
+          icon: 'square-check',
+          settingPath: ['core', 'commandVisibility', 'folderStopExcluding'],
         },
       ],
     });
 
     // Tag commands section
     this.createSection({
-      titleKey: "settings.commands.tag.title",
-      descKey: "settings.commands.tag.desc",
-      groupClass: "flit-tag-group",
-      enableSettingPath: ["core", "enableTagCommands"],
+      titleKey: 'settings.commands.tag.title',
+      descKey: 'settings.commands.tag.desc',
+      groupClass: 'flit-tag-group',
+      enableSettingPath: ['core', 'enableTagCommands'],
       commands: [
         {
-          nameKey: "commands.putFirstLineInTitle",
-          descKey: "commands.descriptions.renameAllNotesWithTag",
-          icon: "file-pen",
-          settingPath: ["core", "commandVisibility", "tagPutFirstLineInTitle"],
+          nameKey: 'commands.putFirstLineInTitle',
+          descKey: 'commands.descriptions.renameAllNotesWithTag',
+          icon: 'file-type',
+          settingPath: ['core', 'commandVisibility', 'tagPutFirstLineInTitle'],
         },
         {
-          nameKey: "commands.disableRenamingForTag",
-          descKey: "commands.descriptions.excludeTag",
-          icon: "square-x",
-          settingPath: ["core", "commandVisibility", "tagExclude"],
+          nameKey: 'commands.disableRenamingForTag',
+          descKey: 'commands.descriptions.excludeTag',
+          icon: 'square-x',
+          settingPath: ['core', 'commandVisibility', 'tagExclude'],
         },
         {
-          nameKey: "commands.enableRenamingForTag",
-          descKey: "commands.descriptions.stopExcludingTag",
-          icon: "square-check",
-          settingPath: ["core", "commandVisibility", "tagStopExcluding"],
+          nameKey: 'commands.enableRenamingForTag',
+          descKey: 'commands.descriptions.stopExcludingTag',
+          icon: 'square-check',
+          settingPath: ['core', 'commandVisibility', 'tagStopExcluding'],
         },
       ],
     });
 
     // Search commands section
     this.createSection({
-      titleKey: "settings.commands.search.title",
-      descKey: "settings.commands.search.desc",
-      groupClass: "flit-search-group",
-      enableSettingPath: ["core", "enableVaultSearchContextMenu"],
+      titleKey: 'settings.commands.search.title',
+      descKey: 'settings.commands.search.desc',
+      groupClass: 'flit-search-group',
+      enableSettingPath: ['core', 'enableVaultSearchContextMenu'],
       commands: [
         {
-          nameKey: "commands.putFirstLineInTitle",
-          descKey: "commands.descriptions.renameAllNotesInSearchResults",
-          icon: "file-pen",
+          nameKey: 'commands.putFirstLineInTitle',
+          descKey: 'commands.descriptions.renameAllNotesInSearchResults',
+          icon: 'file-type',
           settingPath: [
-            "core",
-            "vaultSearchContextMenuVisibility",
-            "putFirstLineInTitle",
+            'core',
+            'vaultSearchContextMenuVisibility',
+            'putFirstLineInTitle',
           ],
         },
         {
-          nameKey: "commands.disableRenaming",
-          descKey: "commands.descriptions.excludeAllNotesInSearchResults",
-          icon: "square-x",
-          settingPath: ["core", "vaultSearchContextMenuVisibility", "disable"],
+          nameKey: 'commands.disableRenaming',
+          descKey: 'commands.descriptions.excludeAllNotesInSearchResults',
+          icon: 'square-x',
+          settingPath: ['core', 'vaultSearchContextMenuVisibility', 'disable'],
         },
         {
-          nameKey: "commands.enableRenaming",
-          descKey: "commands.descriptions.stopExcludingAllNotesInSearchResults",
-          icon: "square-check",
-          settingPath: ["core", "vaultSearchContextMenuVisibility", "enable"],
+          nameKey: 'commands.enableRenaming',
+          descKey: 'commands.descriptions.stopExcludingAllNotesInSearchResults',
+          icon: 'square-check',
+          settingPath: ['core', 'vaultSearchContextMenuVisibility', 'enable'],
         },
       ],
     });

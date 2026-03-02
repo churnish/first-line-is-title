@@ -1,10 +1,10 @@
-import { TFile, MarkdownView, ViewWithFileEditor } from "obsidian";
-import { around } from "monkey-around";
-import { verboseLog } from "../utils";
-import { RenameAllFilesModal } from "../modals";
-import FirstLineIsTitle from "../../main";
-import { FileCreationCoordinator } from "./file-creation-coordinator";
-import { t } from "../i18n";
+import { TFile, MarkdownView, ViewWithFileEditor } from 'obsidian';
+import { around } from 'monkey-around';
+import { verboseLog } from '../utils';
+import { RenameAllFilesModal } from '../modals';
+import FirstLineIsTitle from '../../main';
+import { FileCreationCoordinator } from './file-creation-coordinator';
+import { t } from '../i18n';
 
 /**
  * WorkspaceIntegration
@@ -56,25 +56,25 @@ export class WorkspaceIntegration {
    */
   registerRibbonIcons(): void {
     this.plugin.addRibbonIcon(
-      "file-pen",
-      t("commands.putFirstLineInTitle"),
+      'file-type',
+      t('commands.putFirstLineInTitle'),
       () => {
         void this.plugin.commandRegistrar.executeRenameCurrentFile();
-      },
+      }
     );
     this.plugin.addRibbonIcon(
-      "files",
-      t("commands.putFirstLineInTitleAllNotes"),
+      'files',
+      t('commands.putFirstLineInTitleAllNotes'),
       () => {
         new RenameAllFilesModal(this.app, this.plugin).open();
-      },
+      }
     );
     this.plugin.addRibbonIcon(
-      "file-cog",
-      t("commands.toggleAutomaticRenaming"),
+      'file-cog',
+      t('commands.toggleAutomaticRenaming'),
       () => {
         void this.plugin.commandRegistrar.executeToggleAutomaticRenaming();
-      },
+      }
     );
   }
 
@@ -83,7 +83,7 @@ export class WorkspaceIntegration {
    */
   setupSaveEventHook(): void {
     // Get the save command
-    const saveCommand = this.app.commands?.commands?.["editor:save-file"];
+    const saveCommand = this.app.commands?.commands?.['editor:save-file'];
     if (saveCommand?.checkCallback) {
       // Use monkey-around for safe patching that can be uninstalled in any order
       const plugin = this.plugin;
@@ -98,7 +98,7 @@ export class WorkspaceIntegration {
             // If not checking and save succeeded, run our rename logic - process immediately regardless of check interval
             if (!checking && settings.core.renameOnSave) {
               const activeFile = plugin.app.workspace.getActiveFile();
-              if (activeFile && activeFile.extension === "md") {
+              if (activeFile && activeFile.extension === 'md') {
                 // Run rename (unless excluded) with no delay and show notices like manual command
                 setTimeout(() => {
                   void plugin.commandRegistrar.executeRenameUnlessExcluded();
@@ -111,7 +111,7 @@ export class WorkspaceIntegration {
         },
       });
 
-      verboseLog(this.plugin, "Save event hook installed for rename on save");
+      verboseLog(this.plugin, 'Save event hook installed for rename on save');
     }
   }
 
@@ -124,8 +124,8 @@ export class WorkspaceIntegration {
     this.app.workspace.onLayoutReady(() => {
       // Listen for file creation events
       this.plugin.registerEvent(
-        this.app.vault.on("create", async (file) => {
-          if (!(file instanceof TFile) || file.extension !== "md") return;
+        this.app.vault.on('create', async (file) => {
+          if (!(file instanceof TFile) || file.extension !== 'md') return;
 
           // Capture plugin reference explicitly for inner function
           const plugin = this.plugin;
@@ -136,7 +136,7 @@ export class WorkspaceIntegration {
           if (!plugin?.fileOperations) {
             verboseLog(
               plugin,
-              `CREATE: Plugin not fully initialized, skipping ${file.name}`,
+              `CREATE: Plugin not fully initialized, skipping ${file.name}`
             );
             return;
           }
@@ -147,7 +147,7 @@ export class WorkspaceIntegration {
           if (!currentFile || !(currentFile instanceof TFile)) {
             verboseLog(
               plugin,
-              `CREATE: File no longer exists at original path (already renamed), skipping: ${file.path}`,
+              `CREATE: File no longer exists at original path (already renamed), skipping: ${file.path}`
             );
             return;
           }
@@ -157,7 +157,7 @@ export class WorkspaceIntegration {
           if (plugin.recentlyRenamedPaths.has(file.path)) {
             verboseLog(
               plugin,
-              `CREATE: Skipping recently renamed file: ${file.path}`,
+              `CREATE: Skipping recently renamed file: ${file.path}`
             );
             return;
           }
@@ -165,9 +165,9 @@ export class WorkspaceIntegration {
           // Define processing function first
           const processFileCreation = async () => {
             // Capture initial content immediately from the specific file's editor
-            let initialContent = "";
+            let initialContent = '';
             try {
-              const leaves = app.workspace.getLeavesOfType("markdown");
+              const leaves = app.workspace.getLeavesOfType('markdown');
               for (const leaf of leaves) {
                 if (!(leaf.view instanceof MarkdownView)) continue;
                 const view = leaf.view;
@@ -175,7 +175,7 @@ export class WorkspaceIntegration {
                   initialContent = view.editor.getValue();
                   verboseLog(
                     plugin,
-                    `CREATE: Captured initial editor content for ${file.path}: ${initialContent.length} chars`,
+                    `CREATE: Captured initial editor content for ${file.path}: ${initialContent.length} chars`
                   );
                   break;
                 }
@@ -183,20 +183,20 @@ export class WorkspaceIntegration {
             } catch {
               verboseLog(
                 plugin,
-                `CREATE: Could not read initial editor content`,
+                `CREATE: Could not read initial editor content`
               );
             }
 
             verboseLog(
               plugin,
-              `CREATE: New file created, processing: ${file.name}`,
+              `CREATE: New file created, processing: ${file.name}`
             );
 
             try {
               // Canvas rate limiting: prevent mass insertions when canvas creates many files
               const canvasIsActive =
                 app.workspace.getMostRecentLeaf()?.view?.getViewType?.() ===
-                "canvas";
+                'canvas';
               if (canvasIsActive) {
                 const now = Date.now();
                 const timeSinceLastInsertion =
@@ -208,7 +208,7 @@ export class WorkspaceIntegration {
                 ) {
                   verboseLog(
                     plugin,
-                    `CREATE: Skipping - rate limited (${timeSinceLastInsertion}ms since last): ${file.name}`,
+                    `CREATE: Skipping - rate limited (${timeSinceLastInsertion}ms since last): ${file.name}`
                   );
                   plugin.editorLifecycle.clearCreationDelayTimer(file.path);
                   return;
@@ -224,7 +224,7 @@ export class WorkspaceIntegration {
                   {
                     initialContent,
                     pluginLoadTime: plugin.pluginLoadTime,
-                  },
+                  }
                 );
 
               // Execute title insertion and cursor positioning immediately (not affected by newNoteDelay)
@@ -232,19 +232,19 @@ export class WorkspaceIntegration {
                 verboseLog(plugin, `CREATE: Inserting title for: ${file.path}`);
                 await plugin.fileOperations.insertTitleOnCreation(
                   file,
-                  initialContent,
+                  initialContent
                 );
               }
 
               if (actions.shouldMoveCursor) {
                 verboseLog(
                   plugin,
-                  `CREATE: Moving cursor for: ${file.path} (placeCursorAtEnd: ${actions.placeCursorAtEnd})`,
+                  `CREATE: Moving cursor for: ${file.path} (placeCursorAtEnd: ${actions.placeCursorAtEnd})`
                 );
 
                 setTimeout(() => {
                   // Re-check if file has a view after delay
-                  const leaves = app.workspace.getLeavesOfType("markdown");
+                  const leaves = app.workspace.getLeavesOfType('markdown');
                   let fileHasView = false;
                   for (const leaf of leaves) {
                     if (!(leaf.view instanceof MarkdownView)) continue;
@@ -260,12 +260,12 @@ export class WorkspaceIntegration {
                     void plugin.fileOperations.handleCursorPositioning(
                       file,
                       !actions.shouldInsertTitle,
-                      actions.placeCursorAtEnd,
+                      actions.placeCursorAtEnd
                     );
                   } else {
                     verboseLog(
                       plugin,
-                      `Skipping cursor positioning - no view found (canvas): ${file.path}`,
+                      `Skipping cursor positioning - no view found (canvas): ${file.path}`
                     );
                   }
                 }, 200);
@@ -275,17 +275,17 @@ export class WorkspaceIntegration {
               const processRename = async () => {
                 try {
                   if (
-                    settings.renameNotes === "automatically" &&
+                    settings.renameNotes === 'automatically' &&
                     plugin.isFullyLoaded
                   ) {
                     verboseLog(
                       plugin,
-                      `CREATE: Processing rename after delay: ${file.name}`,
+                      `CREATE: Processing rename after delay: ${file.name}`
                     );
 
                     // Get current editor content if file is open
                     let editorContent: string | undefined;
-                    const leaves = app.workspace.getLeavesOfType("markdown");
+                    const leaves = app.workspace.getLeavesOfType('markdown');
                     for (const leaf of leaves) {
                       // Cast to ViewWithFileEditor to access MarkdownView properties
                       const view = leaf.view as ViewWithFileEditor;
@@ -296,7 +296,7 @@ export class WorkspaceIntegration {
                         view.editor
                       ) {
                         const value = view.editor.getValue();
-                        if (typeof value === "string") {
+                        if (typeof value === 'string') {
                           editorContent = value;
                         }
                         break;
@@ -310,18 +310,18 @@ export class WorkspaceIntegration {
                       editorContent,
                       false,
                       undefined,
-                      true,
+                      true
                     );
                   }
 
                   verboseLog(
                     plugin,
-                    `CREATE: Completed processing new file: ${file.name}`,
+                    `CREATE: Completed processing new file: ${file.name}`
                   );
                 } catch (error) {
                   console.error(
                     `CREATE: Failed to process rename for ${file.path}:`,
-                    error,
+                    error
                   );
                 } finally {
                   plugin.editorLifecycle.clearCreationDelayTimer(file.path);
@@ -336,7 +336,7 @@ export class WorkspaceIntegration {
                 // Has delay - use timer and block events during delay
                 verboseLog(
                   plugin,
-                  `CREATE: Scheduling rename in ${settings.newNoteDelay}ms: ${file.name}`,
+                  `CREATE: Scheduling rename in ${settings.newNoteDelay}ms: ${file.name}`
                 );
                 const timer = setTimeout(() => {
                   void processRename();
@@ -346,14 +346,14 @@ export class WorkspaceIntegration {
             } catch (error) {
               console.error(
                 `CREATE: Failed to process new file ${file.path}:`,
-                error,
+                error
               );
               plugin.editorLifecycle.clearCreationDelayTimer(file.path);
             }
           }; // End processFileCreation
 
           await processFileCreation();
-        }),
+        })
       );
     });
   }

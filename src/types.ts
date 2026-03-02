@@ -1,4 +1,4 @@
-import { CharReplacements } from "./types/char-replacement";
+import { CharReplacements } from './types/char-replacement';
 
 export interface CustomReplacement {
   searchText: string;
@@ -27,27 +27,27 @@ export interface TitleRegionCache {
   lastUpdated: number;
 }
 
-export type OSPreset = "macOS" | "Windows" | "Linux";
-export type NotificationMode = "Always" | "On title change" | "Never";
-export type ExclusionStrategy = "Only exclude..." | "Exclude all except...";
+export type OSPreset = 'macOS' | 'Windows' | 'Linux';
+export type NotificationMode = 'Always' | 'On title change' | 'Never';
+export type ExclusionStrategy = 'Only exclude...' | 'Exclude all except...';
 export type TagPropertyExclusionStrategy =
-  | "Only exclude..."
-  | "Exclude all except...";
+  | 'Only exclude...'
+  | 'Exclude all except...';
 export type TagMatchingMode =
-  | "In Properties and note body"
-  | "In Properties only"
-  | "In note body only";
-export type FileReadMethod = "Editor" | "Cache" | "File";
+  | 'In Properties and note body'
+  | 'In Properties only'
+  | 'In note body only';
+export type FileReadMethod = 'Editor' | 'Cache' | 'File';
 
-export type PropertyHidingOption = "never" | "always" | "when_empty";
+export type PropertyHidingOption = 'never' | 'always' | 'when_empty';
 
 /**
  * Core plugin settings (General + Other tabs)
  */
 export interface CoreSettings {
   // Rename behavior
-  renameNotes: "automatically" | "manually";
-  titleCase: "preserve" | "uppercase" | "lowercase";
+  renameNotes: 'automatically' | 'manually';
+  titleCase: 'preserve' | 'uppercase' | 'lowercase';
   renameOnFocus: boolean;
   renameOnSave: boolean;
   onlyRenameIfHeading: boolean;

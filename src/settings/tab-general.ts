@@ -4,10 +4,10 @@ import {
   setIcon,
   Notice,
   ToggleComponent,
-} from "obsidian";
-import { SettingsTabBase, FirstLineIsTitlePlugin } from "./settings-base";
-import { RenameAllFilesModal } from "../modals";
-import { t, getCurrentLocale } from "../i18n";
+} from 'obsidian';
+import { SettingsTabBase, FirstLineIsTitlePlugin } from './settings-base';
+import { RenameAllFilesModal } from '../modals';
+import { t, getCurrentLocale } from '../i18n';
 
 export class GeneralTab extends SettingsTabBase {
   constructor(plugin: FirstLineIsTitlePlugin, containerEl: HTMLElement) {
@@ -29,7 +29,7 @@ export class GeneralTab extends SettingsTabBase {
 
     // Visibility update functions
     const updateAutomaticRenameVisibility = () => {
-      if (this.plugin.settings.core.renameNotes === "automatically") {
+      if (this.plugin.settings.core.renameNotes === 'automatically') {
         renameOnFocusContainer.show();
       } else {
         renameOnFocusContainer.hide();
@@ -54,264 +54,264 @@ export class GeneralTab extends SettingsTabBase {
 
     // General settings using SettingGroup
     new SettingGroup(this.containerEl)
-      .addClass("flit-general-group")
+      .addClass('flit-general-group')
       // 1. Rename notes
       .addSetting((s) => {
         renameNotesSetting = s;
-        s.setName(t("settings.general.renameNotes.name"))
-          .setDesc(t("settings.general.renameNotes.desc"))
+        s.setName(t('settings.general.renameNotes.name'))
+          .setDesc(t('settings.general.renameNotes.desc'))
           .addDropdown((dropdown) =>
             dropdown
               .addOption(
-                "automatically",
-                t("settings.general.renameNotes.automatically"),
+                'automatically',
+                t('settings.general.renameNotes.automatically')
               )
-              .addOption("manually", t("settings.general.renameNotes.manually"))
+              .addOption('manually', t('settings.general.renameNotes.manually'))
               .setValue(this.plugin.settings.core.renameNotes)
               .onChange((value) => {
                 void (async () => {
                   this.plugin.settings.core.renameNotes = value as
-                    | "automatically"
-                    | "manually";
-                  this.plugin.debugLog("renameNotes", value);
+                    | 'automatically'
+                    | 'manually';
+                  this.plugin.debugLog('renameNotes', value);
                   try {
                     await this.plugin.saveSettings();
                   } catch {
-                    new Notice(t("settings.errors.saveFailed"));
+                    new Notice(t('settings.errors.saveFailed'));
                   }
                   updateAutomaticRenameVisibility();
                 })();
-              }),
+              })
           );
       })
       // 2. Only rename if heading
       .addSetting((s) => {
-        s.setName(t("settings.general.onlyRenameIfHeading.name"))
-          .setDesc(t("settings.general.onlyRenameIfHeading.desc"))
+        s.setName(t('settings.general.onlyRenameIfHeading.name'))
+          .setDesc(t('settings.general.onlyRenameIfHeading.desc'))
           .addToggle((toggle) =>
             toggle
               .setValue(this.plugin.settings.core.onlyRenameIfHeading)
               .onChange((value) => {
                 void (async () => {
                   this.plugin.settings.core.onlyRenameIfHeading = value;
-                  this.plugin.debugLog("onlyRenameIfHeading", value);
+                  this.plugin.debugLog('onlyRenameIfHeading', value);
                   try {
                     await this.plugin.saveSettings();
                   } catch {
-                    new Notice(t("settings.errors.saveFailed"));
+                    new Notice(t('settings.errors.saveFailed'));
                   }
                 })();
-              }),
+              })
           );
       })
       // 3. Title case
       .addSetting((s) => {
-        s.setName(t("settings.general.titleCase.name"))
-          .setDesc(t("settings.general.titleCase.desc"))
+        s.setName(t('settings.general.titleCase.name'))
+          .setDesc(t('settings.general.titleCase.desc'))
           .addDropdown((dropdown) =>
             dropdown
-              .addOption("preserve", t("settings.general.titleCase.preserve"))
-              .addOption("uppercase", t("settings.general.titleCase.uppercase"))
-              .addOption("lowercase", t("settings.general.titleCase.lowercase"))
+              .addOption('preserve', t('settings.general.titleCase.preserve'))
+              .addOption('uppercase', t('settings.general.titleCase.uppercase'))
+              .addOption('lowercase', t('settings.general.titleCase.lowercase'))
               .setValue(this.plugin.settings.core.titleCase)
               .onChange((value) => {
                 void (async () => {
                   this.plugin.settings.core.titleCase = value as
-                    | "preserve"
-                    | "uppercase"
-                    | "lowercase";
-                  this.plugin.debugLog("titleCase", value);
+                    | 'preserve'
+                    | 'uppercase'
+                    | 'lowercase';
+                  this.plugin.debugLog('titleCase', value);
                   try {
                     await this.plugin.saveSettings();
                   } catch {
-                    new Notice(t("settings.errors.saveFailed"));
+                    new Notice(t('settings.errors.saveFailed'));
                   }
                 })();
-              }),
+              })
           );
       })
       // 4. Move cursor to first line
       .addSetting((s) => {
         moveCursorSetting = s;
-        s.setName(t("settings.general.moveCursorToFirstLine.name"))
-          .setDesc(t("settings.general.moveCursorToFirstLine.desc"))
+        s.setName(t('settings.general.moveCursorToFirstLine.name'))
+          .setDesc(t('settings.general.moveCursorToFirstLine.desc'))
           .addToggle((toggle) =>
             toggle
               .setValue(this.plugin.settings.core.moveCursorToFirstLine)
               .onChange((value) => {
                 void (async () => {
                   this.plugin.settings.core.moveCursorToFirstLine = value;
-                  this.plugin.debugLog("moveCursorToFirstLine", value);
+                  this.plugin.debugLog('moveCursorToFirstLine', value);
                   try {
                     await this.plugin.saveSettings();
                   } catch {
-                    new Notice(t("settings.errors.saveFailed"));
+                    new Notice(t('settings.errors.saveFailed'));
                   }
                   updateCursorOptionsVisibility();
                 })();
-              }),
+              })
           );
       })
       // 5. Insert title in first line on note creation
       .addSetting((s) => {
         insertTitleSetting = s;
-        s.setName(t("settings.general.insertTitleOnCreation.name")).addToggle(
+        s.setName(t('settings.general.insertTitleOnCreation.name')).addToggle(
           (toggle) =>
             toggle
               .setValue(this.plugin.settings.core.insertTitleOnCreation)
               .onChange((value) => {
                 void (async () => {
                   this.plugin.settings.core.insertTitleOnCreation = value;
-                  this.plugin.debugLog("insertTitleOnCreation", value);
+                  this.plugin.debugLog('insertTitleOnCreation', value);
                   try {
                     await this.plugin.saveSettings();
                   } catch {
-                    new Notice(t("settings.errors.saveFailed"));
+                    new Notice(t('settings.errors.saveFailed'));
                   }
                   updateInsertTitleOptionsVisibility();
                 })();
-              }),
+              })
         );
       })
       // 6. Rename on save
       .addSetting((s) => {
-        s.setName(t("settings.general.renameOnSave.name"))
-          .setDesc(t("settings.general.renameOnSave.desc"))
+        s.setName(t('settings.general.renameOnSave.name'))
+          .setDesc(t('settings.general.renameOnSave.desc'))
           .addToggle((toggle) =>
             toggle
               .setValue(this.plugin.settings.core.renameOnSave)
               .onChange((value) => {
                 void (async () => {
                   this.plugin.settings.core.renameOnSave = value;
-                  this.plugin.debugLog("renameOnSave", value);
+                  this.plugin.debugLog('renameOnSave', value);
                   try {
                     await this.plugin.saveSettings();
                   } catch {
-                    new Notice(t("settings.errors.saveFailed"));
+                    new Notice(t('settings.errors.saveFailed'));
                   }
                 })();
-              }),
+              })
           );
       })
       // 7. Rename all notes
       .addSetting((s) => {
-        s.setName(t("settings.general.renameAllNotes.name"))
-          .setDesc(t("settings.general.renameAllNotes.desc"))
+        s.setName(t('settings.general.renameAllNotes.name'))
+          .setDesc(t('settings.general.renameAllNotes.desc'))
           .addButton((button) =>
             button
-              .setButtonText(t("settings.general.renameAllNotes.button"))
+              .setButtonText(t('settings.general.renameAllNotes.button'))
               .onClick(() => {
                 new RenameAllFilesModal(this.plugin.app, this.plugin).open();
-              }),
+              })
           );
       });
 
     // Add styled description for insertTitleSetting
     const insertTitleDesc = insertTitleSetting!.descEl;
     insertTitleDesc.appendText(
-      t("settings.general.insertTitleOnCreation.desc.part1"),
+      t('settings.general.insertTitleOnCreation.desc.part1')
     );
-    if (getCurrentLocale() === "ru") {
+    if (getCurrentLocale() === 'ru') {
       insertTitleDesc.appendText(
-        "«" + t("settings.general.insertTitleOnCreation.desc.untitled") + "»",
+        '«' + t('settings.general.insertTitleOnCreation.desc.untitled') + '»'
       );
     } else {
-      insertTitleDesc.createEl("em", {
-        text: t("settings.general.insertTitleOnCreation.desc.untitled"),
+      insertTitleDesc.createEl('em', {
+        text: t('settings.general.insertTitleOnCreation.desc.untitled'),
       });
     }
     insertTitleDesc.appendText(
-      t("settings.general.insertTitleOnCreation.desc.part2"),
+      t('settings.general.insertTitleOnCreation.desc.part2')
     );
 
     // Get the setting-items container for sub-settings
     const settingItems = this.containerEl.querySelector(
-      ".flit-general-group .setting-items",
+      '.flit-general-group .setting-items'
     );
 
     // Create sub-settings containers inside setting-items
     // Position them after their parent settings
     renameOnFocusContainer = (settingItems ?? this.containerEl).createDiv(
-      "flit-sub-settings",
+      'flit-sub-settings'
     );
     renameNotesSetting!.settingEl.after(renameOnFocusContainer);
 
     cursorOptionsContainer = (settingItems ?? this.containerEl).createDiv(
-      "flit-sub-settings",
+      'flit-sub-settings'
     );
     moveCursorSetting!.settingEl.after(cursorOptionsContainer);
 
     insertTitleOptionsContainer = (settingItems ?? this.containerEl).createDiv(
-      "flit-sub-settings",
+      'flit-sub-settings'
     );
     insertTitleSetting!.settingEl.after(insertTitleOptionsContainer);
 
     // Sub-setting: Rename on focus
     new Setting(renameOnFocusContainer)
-      .setName(t("settings.general.renameOnFocus.name"))
-      .setDesc(t("settings.general.renameOnFocus.desc"))
+      .setName(t('settings.general.renameOnFocus.name'))
+      .setDesc(t('settings.general.renameOnFocus.desc'))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.core.renameOnFocus)
           .onChange((value) => {
             void (async () => {
               this.plugin.settings.core.renameOnFocus = value;
-              this.plugin.debugLog("renameOnFocus", value);
+              this.plugin.debugLog('renameOnFocus', value);
               try {
                 await this.plugin.saveSettings();
               } catch {
-                new Notice(t("settings.errors.saveFailed"));
+                new Notice(t('settings.errors.saveFailed'));
               }
             })();
-          }),
+          })
       );
 
     // Sub-setting: Place cursor at line end
     new Setting(cursorOptionsContainer)
-      .setName(t("settings.general.placeCursorAtLineEnd.name"))
-      .setDesc(t("settings.general.placeCursorAtLineEnd.desc"))
+      .setName(t('settings.general.placeCursorAtLineEnd.name'))
+      .setDesc(t('settings.general.placeCursorAtLineEnd.desc'))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.core.placeCursorAtLineEnd)
           .onChange((value) => {
             void (async () => {
               this.plugin.settings.core.placeCursorAtLineEnd = value;
-              this.plugin.debugLog("placeCursorAtLineEnd", value);
+              this.plugin.debugLog('placeCursorAtLineEnd', value);
               try {
                 await this.plugin.saveSettings();
               } catch {
-                new Notice(t("settings.errors.saveFailed"));
+                new Notice(t('settings.errors.saveFailed'));
               }
             })();
-          }),
+          })
       );
 
     // Sub-setting: Convert character replacements
     convertCharsSetting = new Setting(insertTitleOptionsContainer)
-      .setName(t("settings.general.convertReplacementCharactersInTitle.name"))
-      .setDesc("");
+      .setName(t('settings.general.convertReplacementCharactersInTitle.name'))
+      .setDesc('');
 
     const convertCharsDesc = convertCharsSetting.descEl;
     convertCharsDesc.appendText(
-      t("settings.general.convertReplacementCharactersInTitle.desc.part1"),
+      t('settings.general.convertReplacementCharactersInTitle.desc.part1')
     );
-    if (getCurrentLocale() === "ru") {
+    if (getCurrentLocale() === 'ru') {
       convertCharsDesc.appendText(
-        "«" +
+        '«' +
           t(
-            "settings.general.convertReplacementCharactersInTitle.desc.replaceCharacters",
+            'settings.general.convertReplacementCharactersInTitle.desc.replaceCharacters'
           ) +
-          "»",
+          '»'
       );
     } else {
-      convertCharsDesc.createEl("em", {
+      convertCharsDesc.createEl('em', {
         text: t(
-          "settings.general.convertReplacementCharactersInTitle.desc.replaceCharacters",
+          'settings.general.convertReplacementCharactersInTitle.desc.replaceCharacters'
         ),
       });
     }
     convertCharsDesc.appendText(
-      t("settings.general.convertReplacementCharactersInTitle.desc.part2"),
+      t('settings.general.convertReplacementCharactersInTitle.desc.part2')
     );
 
     convertCharsSetting.addToggle((toggle) => {
@@ -322,11 +322,11 @@ export class GeneralTab extends SettingsTabBase {
           void (async () => {
             this.plugin.settings.core.convertReplacementCharactersInTitle =
               value;
-            this.plugin.debugLog("convertReplacementCharactersInTitle", value);
+            this.plugin.debugLog('convertReplacementCharactersInTitle', value);
             try {
               await this.plugin.saveSettings();
             } catch {
-              new Notice(t("settings.errors.saveFailed"));
+              new Notice(t('settings.errors.saveFailed'));
             }
           })();
         });
@@ -334,22 +334,22 @@ export class GeneralTab extends SettingsTabBase {
 
     // Sub-setting: Format as heading
     new Setting(insertTitleOptionsContainer)
-      .setName(t("settings.general.formatAsHeading.name"))
-      .setDesc(t("settings.general.formatAsHeading.desc"))
+      .setName(t('settings.general.formatAsHeading.name'))
+      .setDesc(t('settings.general.formatAsHeading.desc'))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.markupStripping.addHeadingToTitle)
           .onChange((value) => {
             void (async () => {
               this.plugin.settings.markupStripping.addHeadingToTitle = value;
-              this.plugin.debugLog("addHeadingToTitle", value);
+              this.plugin.debugLog('addHeadingToTitle', value);
               try {
                 await this.plugin.saveSettings();
               } catch {
-                new Notice(t("settings.errors.saveFailed"));
+                new Notice(t('settings.errors.saveFailed'));
               }
             })();
-          }),
+          })
       );
 
     // Set initial visibility for all sub-settings
@@ -358,57 +358,57 @@ export class GeneralTab extends SettingsTabBase {
     updateInsertTitleOptionsVisibility();
 
     // Feedback button (commander-style)
-    const feedbackContainer = this.containerEl.createEl("div", {
-      cls: "flit-feedback-container",
+    const feedbackContainer = this.containerEl.createEl('div', {
+      cls: 'flit-feedback-container',
     });
 
-    const button = feedbackContainer.createEl("button", {
-      cls: "mod-cta flit-leave-feedback-button flit-feedback-button",
+    const button = feedbackContainer.createEl('button', {
+      cls: 'mod-cta flit-leave-feedback-button flit-feedback-button',
     });
-    button.addEventListener("click", () => {
+    button.addEventListener('click', () => {
       window.open(
-        "https://github.com/greetclammy/first-line-is-title/issues",
-        "_blank",
+        'https://github.com/greetclammy/first-line-is-title/issues',
+        '_blank'
       );
     });
 
     // Add icon (commander-style)
-    const iconDiv = button.createEl("div");
-    setIcon(iconDiv, "message-square-reply");
+    const iconDiv = button.createEl('div');
+    setIcon(iconDiv, 'message-square-reply');
 
     // Add text
-    button.appendText(t("settings.general.leaveFeedback"));
+    button.appendText(t('settings.general.leaveFeedback'));
 
     // Function to update conditional settings based on other tabs' settings
     const updateGeneralConditionalSettings = async () => {
       const forbiddenCharReplacementsEnabled =
         this.plugin.settings.replaceCharacters.enableForbiddenCharReplacements;
       convertCharsSetting.components[0].setDisabled(
-        !forbiddenCharReplacementsEnabled,
+        !forbiddenCharReplacementsEnabled
       );
       if (forbiddenCharReplacementsEnabled) {
-        convertCharsSetting.settingEl.classList.remove("flit-row-disabled");
+        convertCharsSetting.settingEl.classList.remove('flit-row-disabled');
         if (convertCharsToggle) {
           convertCharsToggle.toggleEl.tabIndex = 0;
-          convertCharsToggle.toggleEl.removeAttribute("aria-disabled");
-          convertCharsToggle.toggleEl.classList.remove("flit-pointer-none");
+          convertCharsToggle.toggleEl.removeAttribute('aria-disabled');
+          convertCharsToggle.toggleEl.classList.remove('flit-pointer-none');
         }
       } else {
-        convertCharsSetting.settingEl.classList.add("flit-row-disabled");
+        convertCharsSetting.settingEl.classList.add('flit-row-disabled');
         if (convertCharsToggle) {
           convertCharsToggle.toggleEl.tabIndex = -1;
-          convertCharsToggle.toggleEl.setAttribute("aria-disabled", "true");
-          convertCharsToggle.toggleEl.classList.add("flit-pointer-none");
+          convertCharsToggle.toggleEl.setAttribute('aria-disabled', 'true');
+          convertCharsToggle.toggleEl.classList.add('flit-pointer-none');
         }
         if (this.plugin.settings.core.convertReplacementCharactersInTitle) {
           this.plugin.settings.core.convertReplacementCharactersInTitle = false;
           try {
             await this.plugin.saveSettings();
           } catch {
-            new Notice(t("settings.errors.saveFailed"));
+            new Notice(t('settings.errors.saveFailed'));
           }
           (convertCharsSetting.components[0] as ToggleComponent).setValue(
-            false,
+            false
           );
         }
       }

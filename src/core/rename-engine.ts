@@ -1,6 +1,6 @@
-import { TFile, Editor, Notice, MarkdownView } from "obsidian";
-import { TitleRegionCache } from "../types";
-import { TIMING, LIMITS } from "../constants/timing";
+import { TFile, Editor, Notice, MarkdownView } from 'obsidian';
+import { TitleRegionCache } from '../types';
+import { TIMING, LIMITS } from '../constants/timing';
 import {
   verboseLog,
   detectOS,
@@ -12,12 +12,12 @@ import {
   findTitleSourceLine,
   processForbiddenChars,
   isOnlyFrontmatterChanged,
-} from "../utils";
-import { t } from "../i18n";
-import { RateLimiter } from "./rate-limiter";
-import { readFileContent } from "../utils/content-reader";
+} from '../utils';
+import { t } from '../i18n';
+import { RateLimiter } from './rate-limiter';
+import { readFileContent } from '../utils/content-reader';
 
-import FirstLineIsTitle from "../../main";
+import FirstLineIsTitle from '../../main';
 
 export class RenameEngine {
   private plugin: FirstLineIsTitle;
@@ -58,10 +58,10 @@ export class RenameEngine {
    */
   private async updateAliasWithCoordination(
     file: TFile,
-    isManualCommand: boolean,
+    _isManualCommand: boolean
   ): Promise<boolean> {
-    // Only update for manual commands when aliases are enabled
-    if (!isManualCommand || !this.plugin.settings.aliases.enableAliases) {
+    // Update alias when aliases are enabled (for both manual and automatic modes)
+    if (!this.plugin.settings.aliases.enableAliases) {
       return false;
     }
 
@@ -69,7 +69,7 @@ export class RenameEngine {
     if (this.plugin.eventHandlerManager?.isAliasUpdatePending(file.path)) {
       verboseLog(
         this.plugin,
-        `Skipping alias update - event handler already processing: ${file.path}`,
+        `Skipping alias update - event handler already processing: ${file.path}`
       );
       return false;
     }
@@ -85,22 +85,22 @@ export class RenameEngine {
 
       verboseLog(
         this.plugin,
-        `// EDITOR_LOOKUP (manual): activeView=${!!activeView}, activeView.file=${activeView?.file?.path ?? "none"}, target=${file.path}, match=${activeView?.file === file}`,
+        `// EDITOR_LOOKUP (manual): activeView=${!!activeView}, activeView.file=${activeView?.file?.path ?? 'none'}, target=${file.path}, match=${activeView?.file === file}`
       );
       verboseLog(
         this.plugin,
-        `// EDITOR_PASS (manual): Passing editor=${editor ? "defined" : "undefined"} to updateAliasIfNeeded`,
+        `// EDITOR_PASS (manual): Passing editor=${editor ? 'defined' : 'undefined'} to updateAliasIfNeeded`
       );
 
       const aliasResult = await this.plugin.aliasManager.updateAliasIfNeeded(
         file,
         undefined,
         undefined,
-        editor,
+        editor
       );
       this.plugin.fileStateManager.setLastAliasUpdateStatus(
         file.path,
-        aliasResult,
+        aliasResult
       );
       return aliasResult;
     } finally {
@@ -116,7 +116,7 @@ export class RenameEngine {
       if (this.plugin.cacheManager?.isLocked(file.path)) {
         if (this.plugin.settings.core.verboseLogging) {
           console.debug(
-            `Editor change ignored - file operation in progress: ${file.path}`,
+            `Editor change ignored - file operation in progress: ${file.path}`
           );
         }
         // Only mark for recheck if not from our own background editor sync
@@ -125,7 +125,7 @@ export class RenameEngine {
           this.plugin.cacheManager?.markPendingAliasRecheck(file.path);
         } else if (this.plugin.settings.core.verboseLogging) {
           console.debug(
-            `Skipping recheck - editor-change from background editor sync: ${file.path}`,
+            `Skipping recheck - editor-change from background editor sync: ${file.path}`
           );
         }
         return;
@@ -136,7 +136,7 @@ export class RenameEngine {
 
       // Detect if only frontmatter changed (skip processing to preserve YAML formatting)
       const previousContent = this.plugin.fileStateManager.getLastEditorContent(
-        file.path,
+        file.path
       );
       if (previousContent) {
         if (isOnlyFrontmatterChanged(currentContent, previousContent)) {
@@ -145,7 +145,7 @@ export class RenameEngine {
           }
           this.plugin.fileStateManager.setLastEditorContent(
             file.path,
-            currentContent,
+            currentContent
           );
           return;
         }
@@ -157,22 +157,22 @@ export class RenameEngine {
           // No body edits (or YAML-only edit) - skip processing
           if (this.plugin.settings.core.verboseLogging) {
             console.debug(
-              `Skipping - no body edits detected on first open: ${file.path}`,
+              `Skipping - no body edits detected on first open: ${file.path}`
             );
           }
           // Initialize tracking for next edit
           const currentTitleRegion = this.extractTitleRegion(
             editor,
             file,
-            currentContent,
+            currentContent
           );
           this.plugin.fileStateManager.setLastEditorContent(
             file.path,
-            currentContent,
+            currentContent
           );
           this.plugin.fileStateManager.setTitleRegionCache(
             file.path,
-            currentTitleRegion,
+            currentTitleRegion
           );
           return;
         }
@@ -187,7 +187,7 @@ export class RenameEngine {
       const currentTitleRegion = this.extractTitleRegion(
         editor,
         file,
-        currentContent,
+        currentContent
       );
       const cachedTitleRegion =
         this.plugin.fileStateManager.getTitleRegionCache(file.path);
@@ -200,7 +200,7 @@ export class RenameEngine {
       ) {
         if (this.plugin.settings.core.verboseLogging) {
           console.debug(
-            `Title region unchanged - skipping processing: ${file.path}`,
+            `Title region unchanged - skipping processing: ${file.path}`
           );
         }
 
@@ -213,11 +213,11 @@ export class RenameEngine {
       // (prevents alias/metadata handlers from incorrectly skipping)
       this.plugin.fileStateManager.setLastEditorContent(
         file.path,
-        currentContent,
+        currentContent
       );
       this.plugin.fileStateManager.setTitleRegionCache(
         file.path,
-        currentTitleRegion,
+        currentTitleRegion
       );
       if (this.plugin.settings.core.verboseLogging) {
         console.debug(`Title region changed - processing: ${file.path}`, {
@@ -230,7 +230,7 @@ export class RenameEngine {
       const timeSinceStart = Date.now() - startTime;
       if (this.plugin.settings.core.verboseLogging) {
         console.debug(
-          `[TIMING] Content changed in ${timeSinceStart}ms: ${file.path}`,
+          `[TIMING] Content changed in ${timeSinceStart}ms: ${file.path}`
         );
       }
       // Always pass fresh editor content (already read above with canvas delay if needed)
@@ -240,7 +240,7 @@ export class RenameEngine {
     } catch (error) {
       console.error(
         `Error in optimal editor-change processing for ${file.path}:`,
-        error,
+        error
       );
     }
   }
@@ -252,7 +252,7 @@ export class RenameEngine {
   extractTitleRegion(
     editor: Editor,
     file: TFile,
-    providedContent?: string,
+    providedContent?: string
   ): TitleRegionCache {
     const content = providedContent || editor.getValue();
     const metadata = this.plugin.app.metadataCache.getFileCache(file);
@@ -263,21 +263,21 @@ export class RenameEngine {
       startLine = metadata.frontmatterPosition.end.line + 1;
     }
 
-    const lines = content.split("\n");
+    const lines = content.split('\n');
 
     // Find first non-empty line
-    let firstNonEmptyLine = "";
+    let firstNonEmptyLine = '';
     for (let i = startLine; i < lines.length; i++) {
-      if (lines[i].trim() !== "") {
+      if (lines[i].trim() !== '') {
         firstNonEmptyLine = lines[i];
         break;
       }
     }
 
-    if (firstNonEmptyLine === "") {
+    if (firstNonEmptyLine === '') {
       return {
-        firstNonEmptyLine: "",
-        titleSourceLine: "",
+        firstNonEmptyLine: '',
+        titleSourceLine: '',
         lastUpdated: Date.now(),
       };
     }
@@ -289,7 +289,7 @@ export class RenameEngine {
     const titleSourceLine = findTitleSourceLine(
       contentLines,
       this.plugin.settings,
-      this.plugin,
+      this.plugin
     );
 
     return {
@@ -303,9 +303,9 @@ export class RenameEngine {
     file: TFile,
     content?: string,
     metadata?: unknown,
-    editor?: Editor,
+    editor?: Editor
   ): Promise<void> {
-    if (file.extension !== "md") {
+    if (file.extension !== 'md') {
       return;
     }
 
@@ -314,7 +314,7 @@ export class RenameEngine {
 
     verboseLog(
       this.plugin,
-      `PROCESS: Starting immediate processFile for ${file.path}`,
+      `PROCESS: Starting immediate processFile for ${file.path}`
     );
 
     try {
@@ -327,7 +327,7 @@ export class RenameEngine {
         false,
         undefined,
         true,
-        editor,
+        editor
       );
     } catch (error) {
       console.error(`Error in immediate process for ${file.path}:`, error);
@@ -336,18 +336,18 @@ export class RenameEngine {
 
   stripFrontmatterFromContent(
     content: string | undefined,
-    file: TFile,
+    file: TFile
   ): string {
-    if (!content) return "";
-    const lines = content.split("\n");
+    if (!content) return '';
+    const lines = content.split('\n');
 
-    if (lines.length > 0 && lines[0].trim() === "---") {
+    if (lines.length > 0 && lines[0].trim() === '---') {
       for (let i = 1; i < lines.length; i++) {
-        if (lines[i].trim() === "---") {
-          const strippedContent = lines.slice(i + 1).join("\n");
+        if (lines[i].trim() === '---') {
+          const strippedContent = lines.slice(i + 1).join('\n');
           verboseLog(
             this.plugin,
-            `Stripped frontmatter from ${file.path} (lines 0-${i} removed)`,
+            `Stripped frontmatter from ${file.path} (lines 0-${i} removed)`
           );
           return strippedContent;
         }
@@ -369,7 +369,7 @@ export class RenameEngine {
       ignoreProperty?: boolean;
     },
     hasActiveEditor?: boolean,
-    editor?: Editor,
+    editor?: Editor
   ): Promise<{ success: boolean; reason?: string }> {
     this.plugin.trackUsage();
     verboseLog(this.plugin, `Processing file: ${file.path}`, { noDelay });
@@ -380,16 +380,16 @@ export class RenameEngine {
     if (!currentFile || !(currentFile instanceof TFile)) {
       verboseLog(
         this.plugin,
-        `Skipping processing - file no longer exists or is not a TFile: ${file.path}`,
+        `Skipping processing - file no longer exists or is not a TFile: ${file.path}`
       );
-      return { success: false, reason: "file-not-found" };
+      return { success: false, reason: 'file-not-found' };
     }
 
     file = currentFile;
 
-    if (file.extension !== "md") {
+    if (file.extension !== 'md') {
       verboseLog(this.plugin, `Skipping non-markdown file: ${file.path}`);
-      return { success: false, reason: "not-markdown" };
+      return { success: false, reason: 'not-markdown' };
     }
 
     // Capture original path before acquiring lock (path may change during rename)
@@ -400,9 +400,9 @@ export class RenameEngine {
     if (!this.plugin.cacheManager?.acquireLock(originalPath)) {
       verboseLog(
         this.plugin,
-        `Skipping - file operation already in progress: ${originalPath}`,
+        `Skipping - file operation already in progress: ${originalPath}`
       );
-      return { success: false, reason: "already-processing" };
+      return { success: false, reason: 'already-processing' };
     }
 
     // Track all paths that may need unlocking (prevents orphaned locks on external renames)
@@ -417,12 +417,26 @@ export class RenameEngine {
         isBatchOperation,
         exclusionOverrides,
         hasActiveEditor,
-        editor,
+        editor
       );
 
       // If file path changed during processing, track new path for cleanup
       if (file.path !== originalPath) {
         pathsToUnlock.add(file.path);
+      }
+
+      // Handle alias in ONE place - after processFileInternal completes
+      // This consolidates alias logic instead of scattering it across multiple code paths
+      const aliasHandlingReasons = [
+        'success',
+        'no-rename-needed',
+        'empty-content-retained',
+      ];
+      if (
+        aliasHandlingReasons.includes(result.reason || '') &&
+        this.plugin.settings.aliases.enableAliases
+      ) {
+        await this.updateAliasWithCoordination(file, showNotices);
       }
 
       return result;
@@ -440,7 +454,7 @@ export class RenameEngine {
       ) {
         verboseLog(
           this.plugin,
-          `Content changed during processing with pending alias: ${originalPath}`,
+          `Content changed during processing with pending alias: ${originalPath}`
         );
 
         // Check if file is in active view (main editor)
@@ -471,7 +485,7 @@ export class RenameEngine {
                 ) {
                   await this.processEditorChangeOptimal(
                     view.editor,
-                    recheckFile,
+                    recheckFile
                   );
                 }
               }
@@ -481,7 +495,7 @@ export class RenameEngine {
           // File in popover or not in view - preserve flag for modify/metadata handlers
           verboseLog(
             this.plugin,
-            `Preserving pending alias flag for popover-close detection: ${newPath}`,
+            `Preserving pending alias flag for popover-close detection: ${newPath}`
           );
         }
       }
@@ -500,7 +514,7 @@ export class RenameEngine {
       ignoreProperty?: boolean;
     },
     hasActiveEditor?: boolean,
-    editor?: Editor,
+    editor?: Editor
   ): Promise<{ success: boolean; reason?: string }> {
     // Central gate: check policy requirements and always-on safeguards
     const { canModify, reason } = canModifyFile(
@@ -509,7 +523,7 @@ export class RenameEngine {
       this.plugin.settings.exclusions.disableRenamingKey,
       this.plugin.settings.exclusions.disableRenamingValue,
       showNotices, // showNotices indicates manual command
-      hasActiveEditor, // From editor-change event or auto-detected
+      hasActiveEditor // From editor-change event or auto-detected
     );
 
     if (!canModify) {
@@ -519,20 +533,20 @@ export class RenameEngine {
       try {
         const content =
           providedContent || (await this.plugin.app.vault.read(file));
-        this.plugin.outputDebugFileContent(file, "BLOCKED", content);
+        this.plugin.outputDebugFileContent(file, 'BLOCKED', content);
       } catch (error) {
         console.error(
           `Error reading file content for debug output: ${file.path}`,
-          error,
+          error
         );
       }
 
       if (showNotices && !isBatchOperation) {
         new Notice(
-          t("notifications.notRenamedExcluded", { filename: file.basename }),
+          t('notifications.notRenamedExcluded', { filename: file.basename })
         );
       }
-      return { success: false, reason: "property-disabled" };
+      return { success: false, reason: 'property-disabled' };
     }
 
     let contentForRateLimit: string;
@@ -547,15 +561,15 @@ export class RenameEngine {
       // Output debug file content if enabled
       this.plugin.outputDebugFileContent(
         file,
-        "PROCESSING",
-        contentForRateLimit,
+        'PROCESSING',
+        contentForRateLimit
       );
     } catch (error) {
       console.error(
         `Error reading file for rate limit check: ${file.path}`,
-        error,
+        error
       );
-      return { success: false, reason: "read-error" };
+      return { success: false, reason: 'read-error' };
     }
 
     // Skip processing when editing in footnote popover
@@ -575,28 +589,28 @@ export class RenameEngine {
         if (ratio < LIMITS.FOOTNOTE_SIZE_THRESHOLD) {
           verboseLog(
             this.plugin,
-            `Skipping - editing in footnote popover (editor/disk ratio ${(ratio * 100).toFixed(1)}%): ${file.path}`,
+            `Skipping - editing in footnote popover (editor/disk ratio ${(ratio * 100).toFixed(1)}%): ${file.path}`
           );
-          return { success: false, reason: "footnote-popover-edit" };
+          return { success: false, reason: 'footnote-popover-edit' };
         }
       }
     } catch (error) {
       // If we can't read disk content, continue with normal processing
       verboseLog(
         this.plugin,
-        `Could not read disk content for footnote check: ${error}`,
+        `Could not read disk content for footnote check: ${error}`
       );
     }
 
     // Time-based rate limiting (per-file always enforced, global bypassed for batches)
     if (!this.checkFileTimeLimit(file)) {
-      return { success: false, reason: "time-rate-limited" };
+      return { success: false, reason: 'time-rate-limited' };
     }
 
     // Global rate limiting bypassed for batch operations to avoid blocking legitimate bulk operations
     if (!isBatchOperation) {
       if (!this.checkGlobalRateLimit()) {
-        return { success: false, reason: "global-rate-limited" };
+        return { success: false, reason: 'global-rate-limited' };
       }
     }
 
@@ -611,14 +625,14 @@ export class RenameEngine {
         this.plugin.app,
         initialContent,
         exclusionOverrides,
-        this.plugin,
+        this.plugin
       )
     ) {
       verboseLog(
         this.plugin,
-        `Skipping file based on include/exclude strategy: ${file.path}`,
+        `Skipping file based on include/exclude strategy: ${file.path}`
       );
-      return { success: false, reason: "excluded" };
+      return { success: false, reason: 'excluded' };
     }
 
     const startTime = Date.now();
@@ -640,63 +654,63 @@ export class RenameEngine {
         if (this.plugin.fileStateManager.canShowSafewordNotice(file.path)) {
           verboseLog(
             this.plugin,
-            `Showing notice: Safeword prevented rename of: ${file.basename}`,
+            `Showing notice: Safeword prevented rename of: ${file.basename}`
           );
           new Notice(
-            t("notifications.safewordPreventedRename").replace(
-              "{{filename}}",
-              file.basename,
-            ),
+            t('notifications.safewordPreventedRename').replace(
+              '{{filename}}',
+              file.basename
+            )
           );
           this.plugin.fileStateManager.setLastSafewordNotice(file.path);
         }
       }
       verboseLog(this.plugin, `Skipping file with safeword: ${file.path}`);
-      return { success: false, reason: "safeword" };
+      return { success: false, reason: 'safeword' };
     }
 
     const currentName = file.basename;
     const contentWithoutFrontmatter = this.stripFrontmatterFromContent(
       content,
-      file,
+      file
     );
-    const lines = contentWithoutFrontmatter.split("\n");
-    let firstNonEmptyLine = "";
+    const lines = contentWithoutFrontmatter.split('\n');
+    let firstNonEmptyLine = '';
     for (const line of lines) {
-      if (line.trim() !== "") {
+      if (line.trim() !== '') {
         firstNonEmptyLine = line;
         break;
       }
     }
 
     // If first line is empty (no content after frontmatter)
-    if (firstNonEmptyLine === "") {
+    if (firstNonEmptyLine === '') {
       // Check if file had previous content
       const previousContentWithoutFrontmatter = previousFileContent
         ? this.stripFrontmatterFromContent(previousFileContent, file)
-        : "";
+        : '';
       const hadPreviousContent =
-        previousContentWithoutFrontmatter.trim() !== "";
+        previousContentWithoutFrontmatter.trim() !== '';
 
       if (hadPreviousContent) {
         // Content was deleted - rename to Untitled
         verboseLog(
           this.plugin,
-          `Content became empty - renaming to ${t("untitled")}: ${file.path}`,
+          `Content became empty - renaming to ${t('untitled')}: ${file.path}`
         );
-        firstNonEmptyLine = t("untitled");
+        firstNonEmptyLine = t('untitled');
       } else {
         // File was always empty - retain current filename
         cacheManager?.setContent(file.path, content);
 
-        // Don't call removePluginAliasesFromFile - no content means no plugin aliases exist
-        // Calling processFrontMatter here races with template plugins (Templater)
+        // Alias handling moved to processFile - called via updateAliasWithCoordination
+        // which will remove stale aliases when content is empty
 
         verboseLog(
           this.plugin,
-          `Skipping rename for empty file - retaining current filename: ${file.path}`,
+          `Skipping rename for empty file - retaining current filename: ${file.path}`
         );
-        return { success: false, reason: "empty-content-retained" };
+        return { success: false, reason: 'empty-content-retained' };
       }
     }
 
@@ -704,22 +718,22 @@ export class RenameEngine {
     if (this.plugin.settings.core.onlyRenameIfHeading) {
       // Skip validation for the "Untitled" fallback (when content became empty)
       if (
-        firstNonEmptyLine !== t("untitled") &&
+        firstNonEmptyLine !== t('untitled') &&
         !isValidHeading(firstNonEmptyLine)
       ) {
         verboseLog(
           this.plugin,
-          `Skipping file - first line is not a valid heading: ${file.path}`,
+          `Skipping file - first line is not a valid heading: ${file.path}`
         );
 
         // Show notice if requested and not in batch operation
         if (showNotices && !isBatchOperation) {
           new Notice(
-            t("notifications.notRenamedNoHeading", { filename: file.basename }),
+            t('notifications.notRenamedNoHeading', { filename: file.basename })
           );
         }
 
-        return { success: false, reason: "not-heading" };
+        return { success: false, reason: 'not-heading' };
       }
     }
 
@@ -728,14 +742,14 @@ export class RenameEngine {
     const titleSourceLine = findTitleSourceLine(
       lines,
       this.plugin.settings,
-      this.plugin,
+      this.plugin
     );
 
     // Store current content for next check in cache (only if not handled above)
     // Don't update cache if content became empty and we're renaming to Untitled (prevents cache poisoning)
     const contentBecameEmpty =
-      contentWithoutFrontmatter.trim() === "" &&
-      firstNonEmptyLine === t("untitled");
+      contentWithoutFrontmatter.trim() === '' &&
+      firstNonEmptyLine === t('untitled');
     if (!contentBecameEmpty) {
       cacheManager?.setContent(file.path, content);
     }
@@ -744,14 +758,14 @@ export class RenameEngine {
     content = contentWithoutFrontmatter;
 
     // Check for self-referencing links BEFORE custom replacements to prevent character mismatch
-    const escapedName = currentName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const pathWithoutExt = file.path.replace(/\.md$/, "");
-    const escapedPath = pathWithoutExt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const escapedName = currentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pathWithoutExt = file.path.replace(/\.md$/, '');
+    const escapedPath = pathWithoutExt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     // Match [[filename]], [[filename#heading]], [[filename#^block]], [[path/filename#heading]], with optional |alias
     // Need to check both basename and full path (some users link with path)
     const wikiLinkRegex = new RegExp(
-      `\\[\\[(${escapedName}|${escapedPath})(#[^\\]|]*?)?(\\|.*?)?\\]\\]`,
+      `\\[\\[(${escapedName}|${escapedPath})(#[^\\]|]*?)?(\\|.*?)?\\]\\]`
     );
     // Match markdown links including empty link text: [text](url) or [](url)
     // Regex is ReDoS-safe: uses negated character classes [^\]] and [^)] which don't backtrack
@@ -764,7 +778,7 @@ export class RenameEngine {
       isSelfReferencing = true;
       verboseLog(
         this.plugin,
-        `Found self-referencing wikilink in ${file.path} before custom replacements`,
+        `Found self-referencing wikilink in ${file.path} before custom replacements`
       );
     }
 
@@ -785,17 +799,17 @@ export class RenameEngine {
       // 1. Fragment-only: #heading
       // 2. Relative path with .md: filename.md or path/filename.md
       // 3. Relative path without extension: filename
-      if (url.startsWith("#") && url.includes(currentName)) {
+      if (url.startsWith('#') && url.includes(currentName)) {
         isSelfReferencing = true;
         verboseLog(
           this.plugin,
-          `Found self-referencing markdown link (fragment) in ${file.path} before custom replacements`,
+          `Found self-referencing markdown link (fragment) in ${file.path} before custom replacements`
         );
         break;
       }
 
       // Check if decoded URL matches current file (with or without .md extension)
-      const urlWithoutFragment = decodedUrl.split("#")[0];
+      const urlWithoutFragment = decodedUrl.split('#')[0];
       if (
         urlWithoutFragment &&
         (urlWithoutFragment === `${currentName}.md` ||
@@ -806,7 +820,7 @@ export class RenameEngine {
         isSelfReferencing = true;
         verboseLog(
           this.plugin,
-          `Found self-referencing markdown link (percent-encoded) in ${file.path} before custom replacements`,
+          `Found self-referencing markdown link (percent-encoded) in ${file.path} before custom replacements`
         );
         break;
       }
@@ -819,7 +833,7 @@ export class RenameEngine {
       if (cache?.links) {
         // Calculate absolute title line number (including frontmatter)
         const titleLineIndexInStripped = lines.findIndex(
-          (l) => l === titleSourceLine,
+          (l) => l === titleSourceLine
         );
 
         // Skip if titleSourceLine not found in stripped content
@@ -832,14 +846,14 @@ export class RenameEngine {
             frontmatterLineCount + titleLineIndexInStripped;
 
           // currentName includes .md extension, get basename without it
-          const basenameWithoutExt = currentName.replace(/\.md$/, "");
+          const basenameWithoutExt = currentName.replace(/\.md$/, '');
 
           for (const link of cache.links) {
             // Check if link is on title line
             if (link.position.start.line === absoluteTitleLine) {
               // Compare resolved link to current file (handles URL-encoded paths)
               // link.link is the resolved target (e.g., "note" or "folder/note")
-              const linkTarget = link.link.replace(/\.md$/, "");
+              const linkTarget = link.link.replace(/\.md$/, '');
               if (
                 linkTarget === basenameWithoutExt ||
                 linkTarget === pathWithoutExt ||
@@ -849,7 +863,7 @@ export class RenameEngine {
                 isSelfReferencing = true;
                 verboseLog(
                   this.plugin,
-                  `Found cached self-referencing link in ${file.path}`,
+                  `Found cached self-referencing link in ${file.path}`
                 );
                 break;
               }
@@ -863,14 +877,14 @@ export class RenameEngine {
     let newTitle = titleSourceLine;
     verboseLog(
       this.plugin,
-      `Custom replacements enabled: ${this.plugin.settings.customRules.enableCustomReplacements}, count: ${this.plugin.settings.customRules.customReplacements?.length || 0}`,
+      `Custom replacements enabled: ${this.plugin.settings.customRules.enableCustomReplacements}, count: ${this.plugin.settings.customRules.customReplacements?.length || 0}`
     );
 
     const applyCustomRules = () => {
       if (this.plugin.settings.customRules.enableCustomReplacements) {
         for (const replacement of this.plugin.settings.customRules
           .customReplacements) {
-          if (replacement.searchText === "" || !replacement.enabled) continue;
+          if (replacement.searchText === '' || !replacement.enabled) continue;
 
           verboseLog(this.plugin, `Checking custom replacement:`, {
             searchText: replacement.searchText,
@@ -906,7 +920,7 @@ export class RenameEngine {
             const beforeReplace = tempLine;
             tempLine = tempLine.replaceAll(
               replacement.searchText,
-              replacement.replaceText,
+              replacement.replaceText
             );
             if (beforeReplace !== tempLine) {
               verboseLog(this.plugin, `Applied general replacement:`, {
@@ -921,8 +935,8 @@ export class RenameEngine {
       }
 
       // If custom replacements resulted in empty string or whitespace only, use "Untitled"
-      if (newTitle.trim() === "") {
-        newTitle = t("untitled");
+      if (newTitle.trim() === '') {
+        newTitle = t('untitled');
       }
     };
 
@@ -930,14 +944,14 @@ export class RenameEngine {
       this.plugin,
       isSelfReferencing
         ? `Self-reference found in ${file.path}`
-        : `No self-reference found in ${file.path}`,
+        : `No self-reference found in ${file.path}`
     );
 
     // Define forbidden char replacement function
     const applyForbiddenCharReplacement = () => {
       const currentOS = detectOS();
       const windowsAndroidEnabled =
-        currentOS === "Windows" ||
+        currentOS === 'Windows' ||
         this.plugin.settings.replaceCharacters.windowsAndroidEnabled;
 
       newTitle = processForbiddenChars(newTitle, this.plugin.settings, {
@@ -947,39 +961,39 @@ export class RenameEngine {
 
       // Check if filename is empty or a forbidden name
       const forbiddenNames: string[] = [
-        "CON",
-        "PRN",
-        "AUX",
-        "NUL",
-        "COM1",
-        "COM2",
-        "COM3",
-        "COM4",
-        "COM5",
-        "COM6",
-        "COM7",
-        "COM8",
-        "COM9",
-        "COM0",
-        "LPT1",
-        "LPT2",
-        "LPT3",
-        "LPT4",
-        "LPT5",
-        "LPT6",
-        "LPT7",
-        "LPT8",
-        "LPT9",
-        "LPT0",
+        'CON',
+        'PRN',
+        'AUX',
+        'NUL',
+        'COM1',
+        'COM2',
+        'COM3',
+        'COM4',
+        'COM5',
+        'COM6',
+        'COM7',
+        'COM8',
+        'COM9',
+        'COM0',
+        'LPT1',
+        'LPT2',
+        'LPT3',
+        'LPT4',
+        'LPT5',
+        'LPT6',
+        'LPT7',
+        'LPT8',
+        'LPT9',
+        'LPT0',
       ];
 
       const isForbiddenName =
-        newTitle === "" || forbiddenNames.includes(newTitle.toUpperCase());
+        newTitle === '' || forbiddenNames.includes(newTitle.toUpperCase());
       if (isForbiddenName) {
-        newTitle = t("untitled");
+        newTitle = t('untitled');
         verboseLog(
           this.plugin,
-          `Using fallback name \`${t("untitled")}\` for ${file.path}`,
+          `Using fallback name \`${t('untitled')}\` for ${file.path}`
         );
       }
     };
@@ -1013,43 +1027,42 @@ export class RenameEngine {
       extracted: newTitle,
     });
 
-    const parentPath = file.parent?.path === "/" ? "" : file.parent?.path + "/";
+    const parentPath = file.parent?.path === '/' ? '' : file.parent?.path + '/';
 
     let newPath: string = `${parentPath}${newTitle}.md`;
 
     verboseLog(
       this.plugin,
-      `Initial target path: ${newPath} for file: ${file.path}`,
+      `Initial target path: ${newPath} for file: ${file.path}`
     );
     if (file.path == newPath) {
       verboseLog(
         this.plugin,
-        `No rename needed for ${file.path} - already has correct name`,
+        `No rename needed for ${file.path} - already has correct name`
       );
-      // For manual commands, update alias even when no rename needed
-      await this.updateAliasWithCoordination(file, showNotices);
+      // Alias handling moved to processFile - single code path for all outcomes
 
       if (showNotices && !isBatchOperation) {
         const finalFileName =
-          newPath.replace(/\.md$/, "").split("/").pop() || newTitle;
+          newPath.replace(/\.md$/, '').split('/').pop() || newTitle;
         const titleChanged = currentName !== finalFileName;
         const shouldShowNotice =
-          this.plugin.settings.core.manualNotificationMode === "Always" ||
+          this.plugin.settings.core.manualNotificationMode === 'Always' ||
           (this.plugin.settings.core.manualNotificationMode ===
-            "On title change" &&
+            'On title change' &&
             titleChanged);
 
         if (shouldShowNotice) {
           verboseLog(
             this.plugin,
-            `Showing notice: Title unchanged: ${finalFileName}`,
+            `Showing notice: Title unchanged: ${finalFileName}`
           );
           new Notice(
-            t("notifications.renamedTo").replace("{{filename}}", finalFileName),
+            t('notifications.renamedTo').replace('{{filename}}', finalFileName)
           );
         }
       }
-      return { success: true, reason: "no-rename-needed" };
+      return { success: true, reason: 'no-rename-needed' };
     }
 
     // Skip rename if file was recently renamed AND reading from disk (not fresh editor content)
@@ -1060,9 +1073,9 @@ export class RenameEngine {
     ) {
       verboseLog(
         this.plugin,
-        `Skipping rename - file was recently renamed, disk may be stale: ${file.path}`,
+        `Skipping rename - file was recently renamed, disk may be stale: ${file.path}`
       );
-      return { success: false, reason: "recently-renamed" };
+      return { success: false, reason: 'recently-renamed' };
     }
 
     let counter: number = 0;
@@ -1070,12 +1083,12 @@ export class RenameEngine {
 
     verboseLog(
       this.plugin,
-      `Conflict check for ${newPath}: fileExists=${fileExists}`,
+      `Conflict check for ${newPath}: fileExists=${fileExists}`
     );
     if (fileExists) {
       verboseLog(
         this.plugin,
-        `Found conflicts for ${newPath}, starting counter loop`,
+        `Found conflicts for ${newPath}, starting counter loop`
       );
       let conflictCount = 0;
       const MAX_CONFLICT_ITERATIONS = 10000;
@@ -1086,42 +1099,41 @@ export class RenameEngine {
           if (conflictCount > 1) {
             verboseLog(
               this.plugin,
-              `Checked ${conflictCount} conflicts for ${newPath}`,
+              `Checked ${conflictCount} conflicts for ${newPath}`
             );
           }
           verboseLog(
             this.plugin,
-            `No rename needed for ${file.path} - already has correct name with counter`,
+            `No rename needed for ${file.path} - already has correct name with counter`
           );
-          // For manual commands, update alias even when no rename needed
-          await this.updateAliasWithCoordination(file, showNotices);
+          // Alias handling moved to processFile - single code path for all outcomes
 
           if (showNotices && !isBatchOperation) {
             // Extract actual final filename from newPath (includes counter)
             const finalFileName =
-              newPath.replace(/\.md$/, "").split("/").pop() || newTitle;
+              newPath.replace(/\.md$/, '').split('/').pop() || newTitle;
             const titleChanged = currentName !== finalFileName;
             const shouldShowNotice =
-              this.plugin.settings.core.manualNotificationMode === "Always" ||
+              this.plugin.settings.core.manualNotificationMode === 'Always' ||
               (this.plugin.settings.core.manualNotificationMode ===
-                "On title change" &&
+                'On title change' &&
                 titleChanged);
 
             if (shouldShowNotice) {
               verboseLog(
                 this.plugin,
-                `Showing notice: Updated title: ${currentName} → ${finalFileName}`,
+                `Showing notice: Updated title: ${currentName} → ${finalFileName}`
               );
               new Notice(
-                t("notifications.renamedTo").replace(
-                  "{{filename}}",
-                  finalFileName,
-                ),
+                t('notifications.renamedTo').replace(
+                  '{{filename}}',
+                  finalFileName
+                )
               );
             }
           }
 
-          return { success: true, reason: "no-rename-needed" };
+          return { success: true, reason: 'no-rename-needed' };
         }
         counter += 1;
         newPath = `${parentPath}${newTitle} ${counter}.md`;
@@ -1131,19 +1143,19 @@ export class RenameEngine {
       // Check if we hit the safety limit
       if (conflictCount >= MAX_CONFLICT_ITERATIONS) {
         console.error(
-          `Max conflict iterations (${MAX_CONFLICT_ITERATIONS}) reached for ${file.path}. Aborting rename to prevent infinite loop.`,
+          `Max conflict iterations (${MAX_CONFLICT_ITERATIONS}) reached for ${file.path}. Aborting rename to prevent infinite loop.`
         );
-        return { success: false, reason: "max-conflicts-exceeded" };
+        return { success: false, reason: 'max-conflicts-exceeded' };
       }
 
       verboseLog(
         this.plugin,
-        `Found available filename with counter ${counter} after checking ${conflictCount} conflicts`,
+        `Found available filename with counter ${counter} after checking ${conflictCount} conflicts`
       );
     } else {
       verboseLog(
         this.plugin,
-        `No conflicts found for ${newPath}, proceeding without counter`,
+        `No conflicts found for ${newPath}, proceeding without counter`
       );
     }
     if (isSelfReferencing) {
@@ -1152,19 +1164,19 @@ export class RenameEngine {
         if (this.plugin.fileStateManager.canShowSelfRefNotice(file.path)) {
           verboseLog(
             this.plugin,
-            `Showing notice: File not renamed due to self-referential link in first line: ${file.basename}`,
+            `Showing notice: File not renamed due to self-referential link in first line: ${file.basename}`
           );
           new Notice(
-            t("notifications.notRenamedSelfReference").replace(
-              "{{filename}}",
-              file.basename,
-            ),
+            t('notifications.notRenamedSelfReference').replace(
+              '{{filename}}',
+              file.basename
+            )
           );
           this.plugin.fileStateManager.setLastSelfRefNotice(file.path);
         }
       }
       verboseLog(this.plugin, `Skipping self-referencing file: ${file.path}`);
-      return { success: false, reason: "self-referential" };
+      return { success: false, reason: 'self-referential' };
     }
 
     if (noDelay) {
@@ -1177,7 +1189,7 @@ export class RenameEngine {
       const processingTime = Date.now() - startTime;
       verboseLog(
         this.plugin,
-        `Successfully renamed ${oldPath} to ${newPath} (${processingTime}ms)`,
+        `Successfully renamed ${oldPath} to ${newPath} (${processingTime}ms)`
       );
 
       // Track rename to prevent stale CREATE events from processing this file
@@ -1201,27 +1213,26 @@ export class RenameEngine {
       this.updateTitleRegionCacheKey(oldPath, newPath);
       cacheManager?.notifyFileRenamed(oldPath, newPath);
 
-      // For manual commands, update alias after successful rename
-      await this.updateAliasWithCoordination(file, showNotices);
+      // Alias handling moved to processFile - single code path for all outcomes
 
       if (showNotices && !isBatchOperation) {
         // Extract actual final filename from newPath (includes counter if added)
         const finalFileName =
-          newPath.replace(/\.md$/, "").split("/").pop() || newTitle;
+          newPath.replace(/\.md$/, '').split('/').pop() || newTitle;
         const titleChanged = currentName !== finalFileName;
         const shouldShowNotice =
-          this.plugin.settings.core.manualNotificationMode === "Always" ||
+          this.plugin.settings.core.manualNotificationMode === 'Always' ||
           (this.plugin.settings.core.manualNotificationMode ===
-            "On title change" &&
+            'On title change' &&
             titleChanged);
 
         if (shouldShowNotice) {
           verboseLog(
             this.plugin,
-            `Showing notice: Updated title: ${currentName} → ${finalFileName}`,
+            `Showing notice: Updated title: ${currentName} → ${finalFileName}`
           );
           new Notice(
-            t("notifications.renamedTo").replace("{{filename}}", finalFileName),
+            t('notifications.renamedTo').replace('{{filename}}', finalFileName)
           );
         }
       }
@@ -1229,13 +1240,13 @@ export class RenameEngine {
       return { success: true };
     } catch (error) {
       console.error(`Failed to rename file ${file.path} to ${newPath}:`, error);
-      return { success: false, reason: "error" };
+      return { success: false, reason: 'error' };
     }
   }
 
   checkFileExistsCaseInsensitive(
     path: string,
-    logConflict: boolean = true,
+    logConflict: boolean = true
   ): boolean {
     // Performance: Fast path for exact match (O(1) hash lookup)
     const exactMatch = this.plugin.app.vault.getAbstractFileByPath(path);
@@ -1243,7 +1254,7 @@ export class RenameEngine {
       if (logConflict) {
         verboseLog(
           this.plugin,
-          `Exact file conflict found: ${path} (existing file: ${exactMatch.path})`,
+          `Exact file conflict found: ${path} (existing file: ${exactMatch.path})`
         );
       }
       return true;
@@ -1260,7 +1271,7 @@ export class RenameEngine {
         if (logConflict) {
           verboseLog(
             this.plugin,
-            `Case-insensitive file conflict found: ${path} (existing file: ${file.path})`,
+            `Case-insensitive file conflict found: ${path} (existing file: ${file.path})`
           );
         }
         return true;
@@ -1272,14 +1283,14 @@ export class RenameEngine {
 
   clearTitleRegionCache(): void {
     this.plugin.fileStateManager.clearAllTitleRegionCaches();
-    verboseLog(this.plugin, "Cleared title region cache");
+    verboseLog(this.plugin, 'Cleared title region cache');
   }
 
   updateTitleRegionCacheKey(oldPath: string, newPath: string): void {
     this.plugin.fileStateManager.updateTitleRegionCacheKey(oldPath, newPath);
     verboseLog(
       this.plugin,
-      `Updated title region cache key: ${oldPath} → ${newPath}`,
+      `Updated title region cache key: ${oldPath} → ${newPath}`
     );
   }
 }

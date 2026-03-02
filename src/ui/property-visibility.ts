@@ -1,5 +1,5 @@
-import { PluginSettings } from "../types";
-import FirstLineIsTitle from "../../main";
+import { PluginSettings } from '../types';
+import FirstLineIsTitle from '../../main';
 
 export class PropertyVisibility {
   private propertyObserver?: MutationObserver;
@@ -16,9 +16,9 @@ export class PropertyVisibility {
    */
   private getAliasPropertyKeys(): string[] {
     const aliasPropertyKey =
-      this.settings.aliases.aliasPropertyKey || "aliases";
+      this.settings.aliases.aliasPropertyKey || 'aliases';
     return aliasPropertyKey
-      .split(",")
+      .split(',')
       .map((key) => key.trim())
       .filter((key) => key.length > 0);
   }
@@ -41,7 +41,7 @@ export class PropertyVisibility {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-property-key"],
+      attributeFilter: ['data-property-key'],
     });
 
     propertyKeys.forEach((propertyKey) => {
@@ -54,14 +54,14 @@ export class PropertyVisibility {
    */
   private hideProperties(propertyKey: string): void {
     const properties = document.querySelectorAll(
-      `[data-property-key="${propertyKey}"]`,
+      `[data-property-key="${propertyKey}"]`
     );
 
     properties.forEach((property) => {
       // Skip if in source view (check for CodeMirror editor context)
       const isInSourceView =
-        property.closest(".cm-editor") &&
-        !property.closest(".metadata-container");
+        property.closest('.cm-editor') &&
+        !property.closest('.metadata-container');
       if (isInSourceView) {
         return;
       }
@@ -69,15 +69,15 @@ export class PropertyVisibility {
       // Detect context: sidebar vs in-note
       // Sidebar properties are typically in workspace-leaf-content but NOT in markdown views
       const isInSidebar =
-        property.closest(".workspace-leaf-content") &&
+        property.closest('.workspace-leaf-content') &&
         !property.closest('.workspace-leaf-content[data-type="markdown"]') &&
-        !property.closest(".markdown-source-view") &&
-        !property.closest(".markdown-preview-view");
+        !property.closest('.markdown-source-view') &&
+        !property.closest('.markdown-preview-view');
 
       // Determine if this property should be hidden based on the mode and context
       let shouldHide = false;
 
-      if (this.settings.aliases.hideAliasProperty === "always") {
+      if (this.settings.aliases.hideAliasProperty === 'always') {
         // Always hide, regardless of emptiness, but consider sidebar setting
         if (isInSidebar && !this.settings.aliases.hideAliasInSidebar) {
           // In sidebar but sidebar hiding is disabled - don't hide
@@ -86,14 +86,14 @@ export class PropertyVisibility {
           // Either not in sidebar, or sidebar hiding is enabled - hide it
           shouldHide = true;
         }
-      } else if (this.settings.aliases.hideAliasProperty === "when_empty") {
+      } else if (this.settings.aliases.hideAliasProperty === 'when_empty') {
         // Only hide if property is empty, and consider sidebar setting
         const valueContainer = property.querySelector(
-          ".metadata-property-value",
+          '.metadata-property-value'
         );
         const isEmpty =
           !valueContainer ||
-          valueContainer.textContent?.trim() === "" ||
+          valueContainer.textContent?.trim() === '' ||
           valueContainer.children.length === 0;
 
         if (isEmpty) {
@@ -110,82 +110,82 @@ export class PropertyVisibility {
         }
       }
 
-      const metadataContainer = property.closest(".metadata-container");
-      const metadataProperties = property.closest(".metadata-properties");
+      const metadataContainer = property.closest('.metadata-container');
+      const metadataProperties = property.closest('.metadata-properties');
 
       if (shouldHide) {
         // Property should be hidden - apply context-specific logic
         if (metadataProperties) {
           const allProperties = metadataProperties.querySelectorAll(
-            ".metadata-property[data-property-key]",
+            '.metadata-property[data-property-key]'
           );
 
           if (allProperties.length === 1 && allProperties[0] === property) {
             // This is the only property and it should be hidden
             if (isInSidebar) {
               // SIDEBAR: Only hide .metadata-properties, preserve "Add property" button
-              metadataProperties.addClass("flit-container-hidden");
-              metadataProperties.removeClass("flit-container-visible");
+              metadataProperties.addClass('flit-container-hidden');
+              metadataProperties.removeClass('flit-container-visible');
             } else {
               // IN-NOTE: Hide entire .metadata-container including "Add property" button
               if (metadataContainer) {
-                metadataContainer.addClass("flit-container-hidden");
-                metadataContainer.removeClass("flit-container-visible");
+                metadataContainer.addClass('flit-container-hidden');
+                metadataContainer.removeClass('flit-container-visible');
               } else {
                 // Fallback if no container found
-                metadataProperties.addClass("flit-container-hidden");
-                metadataProperties.removeClass("flit-container-visible");
+                metadataProperties.addClass('flit-container-hidden');
+                metadataProperties.removeClass('flit-container-visible');
               }
             }
           } else {
             // There are other properties - hide this individual property
-            property.addClass("flit-property-hidden");
-            property.removeClass("flit-property-visible");
+            property.addClass('flit-property-hidden');
+            property.removeClass('flit-property-visible');
 
             // Check if ALL properties are now hidden
             const visibleProperties = metadataProperties.querySelectorAll(
-              ".metadata-property[data-property-key]:not(.flit-property-hidden)",
+              '.metadata-property[data-property-key]:not(.flit-property-hidden)'
             );
 
             if (visibleProperties.length === 0) {
               // All properties hidden - hide the entire container
               if (isInSidebar) {
-                metadataProperties.addClass("flit-container-hidden");
-                metadataProperties.removeClass("flit-container-visible");
+                metadataProperties.addClass('flit-container-hidden');
+                metadataProperties.removeClass('flit-container-visible');
               } else {
                 if (metadataContainer) {
-                  metadataContainer.addClass("flit-container-hidden");
-                  metadataContainer.removeClass("flit-container-visible");
+                  metadataContainer.addClass('flit-container-hidden');
+                  metadataContainer.removeClass('flit-container-visible');
                 }
               }
             } else {
               // Some properties still visible - ensure container visible
-              metadataProperties.removeClass("flit-container-hidden");
-              metadataProperties.addClass("flit-container-visible");
+              metadataProperties.removeClass('flit-container-hidden');
+              metadataProperties.addClass('flit-container-visible');
               if (metadataContainer) {
-                metadataContainer.removeClass("flit-container-hidden");
-                metadataContainer.addClass("flit-container-visible");
+                metadataContainer.removeClass('flit-container-hidden');
+                metadataContainer.addClass('flit-container-visible');
               }
             }
           }
         } else {
           // Fallback: just hide the individual property
-          property.addClass("flit-property-hidden");
-          property.removeClass("flit-property-visible");
+          property.addClass('flit-property-hidden');
+          property.removeClass('flit-property-visible');
         }
       } else {
         // Property should be shown
-        property.removeClass("flit-property-hidden");
-        property.addClass("flit-property-visible");
+        property.removeClass('flit-property-hidden');
+        property.addClass('flit-property-visible');
 
         // Ensure containers are visible since we have a property that should be shown
         if (metadataProperties) {
-          metadataProperties.removeClass("flit-container-hidden");
-          metadataProperties.addClass("flit-container-visible");
+          metadataProperties.removeClass('flit-container-hidden');
+          metadataProperties.addClass('flit-container-visible');
         }
         if (metadataContainer) {
-          metadataContainer.removeClass("flit-container-hidden");
-          metadataContainer.addClass("flit-container-visible");
+          metadataContainer.removeClass('flit-container-hidden');
+          metadataContainer.addClass('flit-container-visible');
         }
       }
     });
@@ -200,18 +200,18 @@ export class PropertyVisibility {
       this.propertyObserver = undefined;
     }
 
-    const hiddenProperties = document.querySelectorAll(".flit-property-hidden");
+    const hiddenProperties = document.querySelectorAll('.flit-property-hidden');
     hiddenProperties.forEach((property) => {
-      property.removeClass("flit-property-hidden");
-      property.addClass("flit-property-visible");
+      property.removeClass('flit-property-hidden');
+      property.addClass('flit-property-visible');
     });
 
     const hiddenContainers = document.querySelectorAll(
-      ".flit-container-hidden",
+      '.flit-container-hidden'
     );
     hiddenContainers.forEach((container) => {
-      container.removeClass("flit-container-hidden");
-      container.addClass("flit-container-visible");
+      container.removeClass('flit-container-hidden');
+      container.addClass('flit-container-visible');
     });
   }
 
@@ -219,19 +219,19 @@ export class PropertyVisibility {
    * Updates property visibility based on current settings
    */
   updatePropertyVisibility(): void {
-    document.head.querySelector("#flit-hide-property-style")?.remove();
+    document.head.querySelector('#flit-hide-property-style')?.remove();
 
     this.cleanupPropertyObserver();
 
-    if (this.settings.aliases.hideAliasProperty === "never") {
+    if (this.settings.aliases.hideAliasProperty === 'never') {
       return; // No hiding needed
     }
 
     const propertyKeys = this.getAliasPropertyKeys();
 
     if (
-      this.settings.aliases.hideAliasProperty === "always" ||
-      this.settings.aliases.hideAliasProperty === "when_empty"
+      this.settings.aliases.hideAliasProperty === 'always' ||
+      this.settings.aliases.hideAliasProperty === 'when_empty'
     ) {
       // Use DOM observation for both modes to handle container hiding properly
       this.setupPropertyHiding(propertyKeys);

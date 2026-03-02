@@ -1,13 +1,13 @@
-import { PluginSettings } from "../types";
-import { CharKey } from "../types/char-replacement";
-import { UNIVERSAL_FORBIDDEN_CHARS, WINDOWS_ANDROID_CHARS } from "../constants";
+import { PluginSettings } from '../types';
+import { CharKey } from '../types/char-replacement';
+import { UNIVERSAL_FORBIDDEN_CHARS, WINDOWS_ANDROID_CHARS } from '../constants';
 
 /**
  * Filter out empty/whitespace-only strings from array
  * Common utility for filtering settings arrays
  */
 export function filterNonEmpty(items: string[]): string[] {
-  return items.filter((item) => item.trim() !== "");
+  return items.filter((item) => item.trim() !== '');
 }
 
 /**
@@ -17,24 +17,24 @@ export function filterNonEmpty(items: string[]): string[] {
 export function processForbiddenChars(
   text: string,
   settings: PluginSettings,
-  options?: { maxLength?: number; windowsAndroidEnabled?: boolean },
+  options?: { maxLength?: number; windowsAndroidEnabled?: boolean }
 ): string {
   const charMap: { [key: string]: string } = {
-    "/": settings.replaceCharacters.charReplacements.slash.replacement,
-    ":": settings.replaceCharacters.charReplacements.colon.replacement,
-    "|": settings.replaceCharacters.charReplacements.pipe.replacement,
-    "#": settings.replaceCharacters.charReplacements.hash.replacement,
-    "[": settings.replaceCharacters.charReplacements.leftBracket.replacement,
-    "]": settings.replaceCharacters.charReplacements.rightBracket.replacement,
-    "^": settings.replaceCharacters.charReplacements.caret.replacement,
-    "*": settings.replaceCharacters.charReplacements.asterisk.replacement,
-    "?": settings.replaceCharacters.charReplacements.question.replacement,
-    "<": settings.replaceCharacters.charReplacements.lessThan.replacement,
-    ">": settings.replaceCharacters.charReplacements.greaterThan.replacement,
+    '/': settings.replaceCharacters.charReplacements.slash.replacement,
+    ':': settings.replaceCharacters.charReplacements.colon.replacement,
+    '|': settings.replaceCharacters.charReplacements.pipe.replacement,
+    '#': settings.replaceCharacters.charReplacements.hash.replacement,
+    '[': settings.replaceCharacters.charReplacements.leftBracket.replacement,
+    ']': settings.replaceCharacters.charReplacements.rightBracket.replacement,
+    '^': settings.replaceCharacters.charReplacements.caret.replacement,
+    '*': settings.replaceCharacters.charReplacements.asterisk.replacement,
+    '?': settings.replaceCharacters.charReplacements.question.replacement,
+    '<': settings.replaceCharacters.charReplacements.lessThan.replacement,
+    '>': settings.replaceCharacters.charReplacements.greaterThan.replacement,
     '"': settings.replaceCharacters.charReplacements.quote.replacement,
     [String.fromCharCode(92)]:
       settings.replaceCharacters.charReplacements.backslash.replacement,
-    ".": settings.replaceCharacters.charReplacements.dot.replacement,
+    '.': settings.replaceCharacters.charReplacements.dot.replacement,
   };
 
   // Get forbidden chars - universal chars are always forbidden
@@ -49,27 +49,27 @@ export function processForbiddenChars(
   if (useWindowsAndroid) {
     allForbiddenChars.push(...windowsAndroidChars);
   }
-  const forbiddenChars = [...new Set(allForbiddenChars)].join("");
+  const forbiddenChars = [...new Set(allForbiddenChars)].join('');
 
-  let result = "";
+  let result = '';
   const maxLength = options?.maxLength;
 
   for (let i = 0; i < text.length; i++) {
     if (maxLength && result.length >= maxLength - 1) {
       result = result.trimEnd();
-      result += "…";
+      result += '…';
       break;
     }
     let char = text[i];
 
-    if (char === ".") {
+    if (char === '.') {
       // Check if dot should be replaced (applies at any position if enabled)
       if (
         settings.replaceCharacters.enableForbiddenCharReplacements &&
         settings.replaceCharacters.charReplacements.dot.enabled
       ) {
-        const replacement = charMap["."] || "";
-        if (replacement !== "") {
+        const replacement = charMap['.'] || '';
+        if (replacement !== '') {
           // Has replacement - use it at any position
           if (settings.replaceCharacters.charReplacements.dot.trimRight) {
             // Skip upcoming whitespace characters
@@ -80,60 +80,60 @@ export function processForbiddenChars(
           result += replacement;
         }
         // Replacement is empty - strip dot at any position (don't add anything)
-      } else if (result === "") {
+      } else if (result === '') {
         // Dot replacement is disabled and dot is at start - strip it (leading dots are forbidden)
         // Don't add anything
       } else {
         // Dot replacement is disabled but dot is not at start - keep it
-        result += ".";
+        result += '.';
       }
     } else if (forbiddenChars.includes(char)) {
       let shouldReplace = false;
-      let replacement = "";
+      let replacement = '';
 
       // Check if master toggle is on AND individual toggle is on
       if (settings.replaceCharacters.enableForbiddenCharReplacements) {
         // Map character to setting key
         let settingKey: CharKey | null = null;
         switch (char) {
-          case "/":
-            settingKey = "slash";
+          case '/':
+            settingKey = 'slash';
             break;
           case String.fromCharCode(92):
-            settingKey = "backslash";
+            settingKey = 'backslash';
             break;
-          case ":":
-            settingKey = "colon";
+          case ':':
+            settingKey = 'colon';
             break;
-          case "|":
-            settingKey = "pipe";
+          case '|':
+            settingKey = 'pipe';
             break;
-          case "#":
-            settingKey = "hash";
+          case '#':
+            settingKey = 'hash';
             break;
-          case "[":
-            settingKey = "leftBracket";
+          case '[':
+            settingKey = 'leftBracket';
             break;
-          case "]":
-            settingKey = "rightBracket";
+          case ']':
+            settingKey = 'rightBracket';
             break;
-          case "^":
-            settingKey = "caret";
+          case '^':
+            settingKey = 'caret';
             break;
-          case "*":
-            settingKey = "asterisk";
+          case '*':
+            settingKey = 'asterisk';
             break;
-          case "?":
-            settingKey = "question";
+          case '?':
+            settingKey = 'question';
             break;
-          case "<":
-            settingKey = "lessThan";
+          case '<':
+            settingKey = 'lessThan';
             break;
-          case ">":
-            settingKey = "greaterThan";
+          case '>':
+            settingKey = 'greaterThan';
             break;
           case '"':
-            settingKey = "quote";
+            settingKey = 'quote';
             break;
         }
 
@@ -148,10 +148,10 @@ export function processForbiddenChars(
 
         if (canReplace && settingKey) {
           shouldReplace = true;
-          replacement = charMap[char] || "";
+          replacement = charMap[char] || '';
 
           // Check for whitespace trimming
-          if (replacement !== "") {
+          if (replacement !== '') {
             // Trim whitespace to the left
             if (
               settings.replaceCharacters.charReplacements[settingKey].trimLeft
@@ -173,7 +173,7 @@ export function processForbiddenChars(
         }
       }
 
-      if (shouldReplace && replacement !== "") {
+      if (shouldReplace && replacement !== '') {
         result += replacement;
       }
       // If master toggle is off, individual toggle is off, or replacement is empty, omit the character
@@ -182,7 +182,7 @@ export function processForbiddenChars(
     }
   }
 
-  result = result.trim().replace(/\s+/g, " ");
+  result = result.trim().replace(/\s+/g, ' ');
 
   return result;
 }
@@ -193,7 +193,7 @@ export function processForbiddenChars(
  */
 export function generateSafeLinkTarget(
   text: string,
-  settings: PluginSettings,
+  settings: PluginSettings
 ): string {
   return processForbiddenChars(text, settings);
 }
@@ -204,7 +204,7 @@ export function generateSafeLinkTarget(
  */
 export function reverseSafeLinkTarget(
   text: string,
-  settings: PluginSettings,
+  settings: PluginSettings
 ): string {
   let result = text;
 
@@ -212,18 +212,18 @@ export function reverseSafeLinkTarget(
   if (settings.replaceCharacters.enableForbiddenCharReplacements) {
     // Universal forbidden characters (all OSes)
     const universalMappings = {
-      "/": settings.replaceCharacters.charReplacements.slash,
-      ":": settings.replaceCharacters.charReplacements.colon,
-      "|": settings.replaceCharacters.charReplacements.pipe,
-      "\\": settings.replaceCharacters.charReplacements.backslash,
-      "#": settings.replaceCharacters.charReplacements.hash,
-      "[": settings.replaceCharacters.charReplacements.leftBracket,
-      "]": settings.replaceCharacters.charReplacements.rightBracket,
-      "^": settings.replaceCharacters.charReplacements.caret,
+      '/': settings.replaceCharacters.charReplacements.slash,
+      ':': settings.replaceCharacters.charReplacements.colon,
+      '|': settings.replaceCharacters.charReplacements.pipe,
+      '\\': settings.replaceCharacters.charReplacements.backslash,
+      '#': settings.replaceCharacters.charReplacements.hash,
+      '[': settings.replaceCharacters.charReplacements.leftBracket,
+      ']': settings.replaceCharacters.charReplacements.rightBracket,
+      '^': settings.replaceCharacters.charReplacements.caret,
     };
 
     for (const [forbiddenChar, replacementConfig] of Object.entries(
-      universalMappings,
+      universalMappings
     )) {
       if (replacementConfig.enabled && replacementConfig.replacement) {
         result = result
@@ -235,15 +235,15 @@ export function reverseSafeLinkTarget(
     // Windows/Android additional characters
     if (settings.replaceCharacters.windowsAndroidEnabled) {
       const windowsAndroidMappings = {
-        "*": settings.replaceCharacters.charReplacements.asterisk,
-        "?": settings.replaceCharacters.charReplacements.question,
-        "<": settings.replaceCharacters.charReplacements.lessThan,
-        ">": settings.replaceCharacters.charReplacements.greaterThan,
+        '*': settings.replaceCharacters.charReplacements.asterisk,
+        '?': settings.replaceCharacters.charReplacements.question,
+        '<': settings.replaceCharacters.charReplacements.lessThan,
+        '>': settings.replaceCharacters.charReplacements.greaterThan,
         '"': settings.replaceCharacters.charReplacements.quote,
       };
 
       for (const [forbiddenChar, replacementConfig] of Object.entries(
-        windowsAndroidMappings,
+        windowsAndroidMappings
       )) {
         if (replacementConfig.enabled && replacementConfig.replacement) {
           result = result

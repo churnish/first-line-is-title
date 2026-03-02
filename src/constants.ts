@@ -1,18 +1,18 @@
-import { PluginSettings, TagMatchingMode } from "./types";
+import { PluginSettings, TagMatchingMode } from './types';
 
 export const DEFAULT_SETTINGS: PluginSettings = {
   core: {
     // Rename behavior
-    renameNotes: "automatically",
-    titleCase: "preserve",
+    renameNotes: 'automatically',
+    titleCase: 'preserve',
     renameOnFocus: false,
     renameOnSave: false,
     onlyRenameIfHeading: false,
-    manualNotificationMode: "Always",
+    manualNotificationMode: 'Always',
     preserveModificationDate: true,
     charCount: 100,
     checkInterval: 0,
-    fileReadMethod: "Editor",
+    fileReadMethod: 'Editor',
 
     // New file handling
     insertTitleOnCreation: false,
@@ -49,12 +49,12 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     // Internal state and debugging
     verboseLogging: false,
     debugOutputFullContent: false,
-    debugEnabledTimestamp: "",
+    debugEnabledTimestamp: '',
     hasShownFirstTimeNotice: false,
     hasSetupExclusions: false,
     hasSetPropertyType: false,
-    lastUsageDate: "",
-    currentSettingsTab: "general",
+    lastUsageDate: '',
+    currentSettingsTab: 'general',
     hasEnabledForbiddenChars: false,
     hasEnabledWindowsAndroid: false,
     hasEnabledCustomReplacements: false,
@@ -87,58 +87,58 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     },
   },
   exclusions: {
-    folderScopeStrategy: "Only exclude...",
-    tagScopeStrategy: "Only exclude...",
-    propertyScopeStrategy: "Only exclude...",
-    excludedFolders: [""],
-    excludedTags: [""],
+    folderScopeStrategy: 'Only exclude...',
+    tagScopeStrategy: 'Only exclude...',
+    propertyScopeStrategy: 'Only exclude...',
+    excludedFolders: [''],
+    excludedTags: [''],
     excludedProperties: [],
     excludeSubfolders: true,
     includeSubfolders: true,
     includeBodyTags: true,
     includeNestedTags: true,
-    tagMatchingMode: "In Properties and note body" as TagMatchingMode,
+    tagMatchingMode: 'In Properties and note body' as TagMatchingMode,
     excludeChildTags: true,
-    disableRenamingKey: "no rename",
-    disableRenamingValue: "true",
+    disableRenamingKey: 'no rename',
+    disableRenamingValue: 'true',
   },
   replaceCharacters: {
     enableForbiddenCharReplacements: false,
     windowsAndroidEnabled: false,
-    osPreset: "macOS",
+    osPreset: 'macOS',
     charReplacements: {
       slash: {
-        replacement: " ∕ ",
+        replacement: ' ∕ ',
         enabled: false,
         trimLeft: false,
         trimRight: false,
       },
       colon: {
-        replacement: "։",
+        replacement: '։',
         enabled: false,
         trimLeft: false,
         trimRight: false,
       },
       asterisk: {
-        replacement: "∗",
+        replacement: '∗',
         enabled: false,
         trimLeft: false,
         trimRight: false,
       },
       question: {
-        replacement: "﹖",
+        replacement: '﹖',
         enabled: false,
         trimLeft: false,
         trimRight: false,
       },
       lessThan: {
-        replacement: "‹",
+        replacement: '‹',
         enabled: false,
         trimLeft: false,
         trimRight: false,
       },
       greaterThan: {
-        replacement: "›",
+        replacement: '›',
         enabled: false,
         trimLeft: false,
         trimRight: false,
@@ -150,43 +150,43 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         trimRight: false,
       },
       pipe: {
-        replacement: "❘",
+        replacement: '❘',
         enabled: false,
         trimLeft: false,
         trimRight: false,
       },
       hash: {
-        replacement: "＃",
+        replacement: '＃',
         enabled: false,
         trimLeft: false,
         trimRight: false,
       },
       leftBracket: {
-        replacement: "［",
+        replacement: '［',
         enabled: false,
         trimLeft: true,
         trimRight: true,
       },
       rightBracket: {
-        replacement: "］",
+        replacement: '］',
         enabled: false,
         trimLeft: true,
         trimRight: true,
       },
       caret: {
-        replacement: "ˆ",
+        replacement: 'ˆ',
         enabled: false,
         trimLeft: false,
         trimRight: false,
       },
       backslash: {
-        replacement: "⧵",
+        replacement: '⧵',
         enabled: false,
         trimLeft: false,
         trimRight: false,
       },
       dot: {
-        replacement: "․",
+        replacement: '․',
         enabled: true,
         trimLeft: false,
         trimRight: false,
@@ -197,15 +197,15 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     enableCustomReplacements: false,
     customReplacements: [
       {
-        searchText: "- [ ] ",
-        replaceText: "✔️ ",
+        searchText: '- [ ] ',
+        replaceText: '✔️ ',
         onlyAtStart: true,
         onlyWholeLine: false,
         enabled: false,
       },
       {
-        searchText: "- [x] ",
-        replaceText: "✅ ",
+        searchText: '- [x] ',
+        replaceText: '✅ ',
         onlyAtStart: true,
         onlyWholeLine: false,
         enabled: false,
@@ -217,7 +217,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     enableSafewords: false,
     safewords: [
       {
-        text: "To do",
+        text: 'To do',
         onlyAtStart: false,
         onlyWholeLine: false,
         enabled: false,
@@ -264,8 +264,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     enableAliases: false,
     truncateAlias: false,
     addAliasOnlyIfFirstLineDiffers: false,
-    aliasPropertyKey: "aliases",
-    hideAliasProperty: "never" as const,
+    aliasPropertyKey: 'aliases',
+    hideAliasProperty: 'never' as const,
     hideAliasInSidebar: false,
     keepEmptyAliasProperty: true,
     placeAliasLast: true,
@@ -274,31 +274,31 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 // OS-specific forbidden characters
 export const UNIVERSAL_FORBIDDEN_CHARS = [
-  "/",
-  ":",
-  "|",
+  '/',
+  ':',
+  '|',
   String.fromCharCode(92),
-  "#",
-  "[",
-  "]",
-  "^",
+  '#',
+  '[',
+  ']',
+  '^',
 ];
-export const WINDOWS_ANDROID_CHARS = ["*", "?", "<", ">", '"'];
+export const WINDOWS_ANDROID_CHARS = ['*', '?', '<', '>', '"'];
 
 // Character reversal mapping for title insertion (reverse forbidden char replacements)
 export const TITLE_CHAR_REVERSAL_MAP: Record<string, string> = {
-  "∕": "/", // Unicode: \u2215 -> slash
-  "։": ":", // Unicode: \u0589 -> colon
-  "∗": "*", // Unicode: \u2217 -> asterisk
-  "﹖": "?", // Unicode: \uFE56 -> question
-  "‹": "<", // Unicode: \u2039 -> lessThan
-  "›": ">", // Unicode: \u203A -> greaterThan
-  "＂": '"', // Unicode: \uFF02 -> quote
-  "❘": "|", // Unicode: \u2758 -> pipe
-  "＃": "#", // Unicode: \uFF03 -> hash
-  "［": "[", // Unicode: \uFF3B -> leftBracket
-  "］": "]", // Unicode: \uFF3D -> rightBracket
-  ˆ: "^", // Unicode: \u02C6 -> caret
-  "⧵": "\\", // Unicode: \u29F5 -> backslash
-  "․": ".", // Unicode: \u2024 -> dot
+  '∕': '/', // Unicode: \u2215 -> slash
+  '։': ':', // Unicode: \u0589 -> colon
+  '∗': '*', // Unicode: \u2217 -> asterisk
+  '﹖': '?', // Unicode: \uFE56 -> question
+  '‹': '<', // Unicode: \u2039 -> lessThan
+  '›': '>', // Unicode: \u203A -> greaterThan
+  '＂': '"', // Unicode: \uFF02 -> quote
+  '❘': '|', // Unicode: \u2758 -> pipe
+  '＃': '#', // Unicode: \uFF03 -> hash
+  '［': '[', // Unicode: \uFF3B -> leftBracket
+  '］': ']', // Unicode: \uFF3D -> rightBracket
+  ˆ: '^', // Unicode: \u02C6 -> caret
+  '⧵': '\\', // Unicode: \u29F5 -> backslash
+  '․': '.', // Unicode: \u2024 -> dot
 };

@@ -2,21 +2,22 @@
  * Test utilities and helper functions
  */
 
-import { TFile, TFolder, App } from "./mockObsidian";
-import { PluginSettings } from "../src/types";
-import { DEFAULT_SETTINGS } from "../src/constants";
+import { vi } from 'vitest';
+import { TFile, TFolder, App } from './mockObsidian';
+import { PluginSettings } from '../src/types';
+import { DEFAULT_SETTINGS } from '../src/constants';
 
 /**
  * Create a mock TFile for testing
  */
-export function createMockFile(path: string = "test.md"): TFile {
+export function createMockFile(path: string = 'test.md'): TFile {
   return new TFile(path);
 }
 
 /**
  * Create a mock TFolder for testing
  */
-export function createMockFolder(path: string = "test-folder"): TFolder {
+export function createMockFolder(path: string = 'test-folder'): TFolder {
   return new TFolder(path);
 }
 
@@ -31,7 +32,7 @@ export function createMockApp(): App {
  * Create test settings with optional overrides
  */
 export function createTestSettings(
-  overrides: Partial<PluginSettings> = {},
+  overrides: Partial<PluginSettings> = {}
 ): PluginSettings {
   return {
     ...DEFAULT_SETTINGS,
@@ -45,7 +46,7 @@ export function createTestSettings(
 export function createFileWithProperties(
   path: string,
   basename: string,
-  extension: string = "md",
+  extension: string = 'md'
 ): TFile {
   const file = new TFile(path);
   file.basename = basename;
@@ -59,7 +60,7 @@ export function createFileWithProperties(
  */
 export function createFolderWithChildren(
   path: string,
-  children: (TFile | TFolder)[] = [],
+  children: (TFile | TFolder)[] = []
 ): TFolder {
   const folder = new TFolder(path);
   folder.children = children;
@@ -73,18 +74,18 @@ export function createFolderWithChildren(
  * Mock file content for testing
  */
 export const mockFileContent = {
-  simple: "Simple Title\n\nBody content",
-  withMarkdown: "# Heading Title\n\nBody with **bold** and *italic*",
-  withForbiddenChars: "Title/with:forbidden*chars\n\nBody",
+  simple: 'Simple Title\n\nBody content',
+  withMarkdown: '# Heading Title\n\nBody with **bold** and *italic*',
+  withForbiddenChars: 'Title/with:forbidden*chars\n\nBody',
   withFrontmatter:
-    "---\ntitle: Frontmatter Title\n---\n\nFirst Line Title\n\nBody",
-  empty: "",
-  onlyWhitespace: "   \n\n  \t  \n",
-  multiline: "First Line\nSecond Line\nThird Line",
-  withHeading: "## Heading 2\n\nContent below",
-  withCode: "`inline code` in title\n\nBody",
-  withLinks: "[[Internal Link]] in title\n\nBody",
-  withTags: "#tag in title\n\nBody",
+    '---\ntitle: Frontmatter Title\n---\n\nFirst Line Title\n\nBody',
+  empty: '',
+  onlyWhitespace: '   \n\n  \t  \n',
+  multiline: 'First Line\nSecond Line\nThird Line',
+  withHeading: '## Heading 2\n\nContent below',
+  withCode: '`inline code` in title\n\nBody',
+  withLinks: '[[Internal Link]] in title\n\nBody',
+  withTags: '#tag in title\n\nBody',
 };
 
 /**
@@ -108,9 +109,9 @@ export function createSpy<
  */
 export function assertDefined<T>(
   value: T | null | undefined,
-  message?: string,
+  message?: string
 ): asserts value is T {
   if (value === null || value === undefined) {
-    throw new Error(message || "Value is null or undefined");
+    throw new Error(message || 'Value is null or undefined');
   }
 }

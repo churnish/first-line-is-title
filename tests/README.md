@@ -43,23 +43,23 @@ Tests run automatically on push via GitHub Actions (Node 18 & 20).
 
 ### Core modules
 
-| Module | Tests | Coverage |
-|--------|-------|----------|
-| Rename Engine | 60 | Rate limiting, frontmatter stripping, title extraction, cache management, editor change processing |
-| Cache Manager | 52 | LRU cache, path reservation, file existence cache, lock management |
-| Rate Limiter | 60 | Per-key/global limits, time windows, expiration, performance |
-| i18n | 80 | Locale switching, translations, variable replacement, English/Russian plurals |
+| Module        | Tests | Coverage                                                                                           |
+| ------------- | ----- | -------------------------------------------------------------------------------------------------- |
+| Rename Engine | 60    | Rate limiting, frontmatter stripping, title extraction, cache management, editor change processing |
+| Cache Manager | 52    | LRU cache, path reservation, file existence cache, lock management                                 |
+| Rate Limiter  | 60    | Per-key/global limits, time windows, expiration, performance                                       |
+| i18n          | 80    | Locale switching, translations, variable replacement, English/Russian plurals                      |
 
 ### Utility modules
 
-| Module | Tests | Coverage |
-|--------|-------|----------|
-| String Processing | 45 | Forbidden chars, replacements, safe links, maxLength |
-| File Exclusions | 85 | Folders (+subfolders), tags (frontmatter + inline), properties, strategies |
-| Tag Utilities | 63 | Normalization, YAML parsing, frontmatter stripping, child tag matching |
-| Content Reader | 48 | All read strategies (Editor/Cache/File), workspace search, popover handling |
-| Core Utilities | 42 | Logging, headings, safewords, disable properties |
-| Debug Utilities | 41 | Setting logs, content output, dumps |
+| Module            | Tests | Coverage                                                                    |
+| ----------------- | ----- | --------------------------------------------------------------------------- |
+| String Processing | 45    | Forbidden chars, replacements, safe links, maxLength                        |
+| File Exclusions   | 85    | Folders (+subfolders), tags (frontmatter + inline), properties, strategies  |
+| Tag Utilities     | 63    | Normalization, YAML parsing, frontmatter stripping, child tag matching      |
+| Content Reader    | 48    | All read strategies (Editor/Cache/File), workspace search, popover handling |
+| Core Utilities    | 42    | Logging, headings, safewords, disable properties                            |
+| Debug Utilities   | 41    | Setting logs, content output, dumps                                         |
 
 **Total: 490+ tests**
 
@@ -112,7 +112,7 @@ app.vault.rename = vi.fn().mockResolvedValue(undefined);
 
 // Mock metadata cache
 app.metadataCache.getFileCache = vi.fn().mockReturnValue({
-  frontmatter: { tags: ['test'] }
+  frontmatter: { tags: ['test'] },
 });
 ```
 
@@ -143,7 +143,7 @@ it('should handle errors', async () => {
 
 ```typescript
 const settings = createTestSettings({
-  core: { renameNotes: 'manually' }
+  core: { renameNotes: 'manually' },
 });
 ```
 
@@ -208,6 +208,7 @@ it('should work', () => {
 ## Common pitfalls
 
 **Forgetting async/await**
+
 ```typescript
 // Wrong
 const result = readFileContent(plugin, file);
@@ -217,6 +218,7 @@ const result = await readFileContent(plugin, file);
 ```
 
 **Not mocking API calls**
+
 ```typescript
 // Will fail - no mock
 const cache = app.metadataCache.getFileCache(file);
@@ -226,15 +228,22 @@ app.metadataCache.getFileCache = vi.fn().mockReturnValue({...});
 ```
 
 **Shared state between tests**
+
 ```typescript
 // Wrong - mutates shared object
 let settings = createTestSettings();
-it('test 1', () => { settings.core.renameNotes = 'manually'; });
-it('test 2', () => { /* settings is mutated */ });
+it('test 1', () => {
+  settings.core.renameNotes = 'manually';
+});
+it('test 2', () => {
+  /* settings is mutated */
+});
 
 // Correct - fresh state
 let settings: PluginSettings;
-beforeEach(() => { settings = createTestSettings(); });
+beforeEach(() => {
+  settings = createTestSettings();
+});
 ```
 
 ---

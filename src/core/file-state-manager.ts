@@ -1,7 +1,7 @@
-import type {} from "obsidian";
-import FirstLineIsTitlePlugin from "../../main";
-import { TIMING } from "../constants/timing";
-import { TitleRegionCache } from "../types";
+import type {} from 'obsidian';
+import FirstLineIsTitlePlugin from '../../main';
+import { TIMING } from '../constants/timing';
+import { TitleRegionCache } from '../types';
 
 /**
  * Operation tracking data for a file
@@ -196,7 +196,7 @@ export class FileStateManager {
    */
   isEditorContentStale(
     path: string,
-    maxAgeMs: number = 5 * 60 * 1000,
+    maxAgeMs: number = 5 * 60 * 1000
   ): boolean {
     const state = this.fileStates.get(path);
     if (!state?.lastEditorContentTimestamp) return true;
@@ -682,7 +682,7 @@ export class FileStateManager {
 
       // Remove completely empty state entries (only has path field)
       const stateKeys = Object.keys(state).filter(
-        (k) => k !== "path" && state[k as keyof FileState] !== undefined,
+        (k) => k !== 'path' && state[k as keyof FileState] !== undefined
       );
       if (stateKeys.length === 0) {
         this.fileStates.delete(path);

@@ -1,15 +1,15 @@
-import { Setting, SettingGroup, setIcon, Notice } from "obsidian";
-import { SettingsTabBase, FirstLineIsTitlePlugin } from "./settings-base";
-import { NotificationMode, FileReadMethod } from "../types";
-import { DEFAULT_SETTINGS } from "../constants";
-import { ClearSettingsModal } from "../modals";
-import { verboseLog } from "../utils";
-import { t, getCurrentLocale } from "../i18n";
-import { PluginInitializer } from "../core/plugin-initializer";
+import { Setting, SettingGroup, setIcon, Notice } from 'obsidian';
+import { SettingsTabBase, FirstLineIsTitlePlugin } from './settings-base';
+import { NotificationMode, FileReadMethod } from '../types';
+import { DEFAULT_SETTINGS } from '../constants';
+import { ClearSettingsModal } from '../modals';
+import { verboseLog } from '../utils';
+import { t, getCurrentLocale } from '../i18n';
+import { PluginInitializer } from '../core/plugin-initializer';
 
 // Plugin names (proper nouns, not subject to sentence case)
-const PLUGIN_AUTO_CARD_LINK = "Auto Card Link";
-const PLUGIN_LINK_EMBED = "Link Embed";
+const PLUGIN_AUTO_CARD_LINK = 'Auto Card Link';
+const PLUGIN_LINK_EMBED = 'Link Embed';
 
 export class OtherTab extends SettingsTabBase {
   private conditionalSettings: Setting[] = [];
@@ -44,140 +44,140 @@ export class OtherTab extends SettingsTabBase {
 
     // Other settings using SettingGroup
     new SettingGroup(this.containerEl)
-      .addClass("flit-other-group")
+      .addClass('flit-other-group')
       // 1. Character count
       .addSetting((s) => {
         charCountSetting = s;
-        s.setName(t("settings.other.charCount.name"));
+        s.setName(t('settings.other.charCount.name'));
       })
       // 2. Notification mode
       .addSetting((s) => {
-        s.setName(t("settings.other.notificationMode.name"))
-          .setDesc(t("settings.other.notificationMode.desc"))
+        s.setName(t('settings.other.notificationMode.name'))
+          .setDesc(t('settings.other.notificationMode.desc'))
           .addDropdown((dropdown) =>
             dropdown
-              .addOption("Always", t("settings.other.notificationMode.always"))
+              .addOption('Always', t('settings.other.notificationMode.always'))
               .addOption(
-                "On title change",
-                t("settings.other.notificationMode.onTitleChange"),
+                'On title change',
+                t('settings.other.notificationMode.onTitleChange')
               )
-              .addOption("Never", t("settings.other.notificationMode.never"))
+              .addOption('Never', t('settings.other.notificationMode.never'))
               .setValue(this.plugin.settings.core.manualNotificationMode)
               .onChange((value: NotificationMode) => {
                 void (async () => {
                   this.plugin.settings.core.manualNotificationMode = value;
-                  this.plugin.debugLog("manualNotificationMode", value);
+                  this.plugin.debugLog('manualNotificationMode', value);
                   try {
                     await this.plugin.saveSettings();
                   } catch {
-                    new Notice(t("settings.errors.saveFailed"));
+                    new Notice(t('settings.errors.saveFailed'));
                   }
                 })();
-              }),
+              })
           );
       })
       // 3. Preserve modification date
       .addSetting((s) => {
-        s.setName(t("settings.other.preserveModificationDate.name"))
-          .setDesc(t("settings.other.preserveModificationDate.desc"))
+        s.setName(t('settings.other.preserveModificationDate.name'))
+          .setDesc(t('settings.other.preserveModificationDate.desc'))
           .addToggle((toggle) =>
             toggle
               .setValue(this.plugin.settings.core.preserveModificationDate)
               .onChange((value) => {
                 void (async () => {
                   this.plugin.settings.core.preserveModificationDate = value;
-                  this.plugin.debugLog("preserveModificationDate", value);
+                  this.plugin.debugLog('preserveModificationDate', value);
                   try {
                     await this.plugin.saveSettings();
                   } catch {
-                    new Notice(t("settings.errors.saveFailed"));
+                    new Notice(t('settings.errors.saveFailed'));
                   }
                 })();
-              }),
+              })
           );
       })
       // 4. Grab card link
       .addSetting((s) => {
         cardLinkSetting = s;
-        s.setName(t("settings.other.grabCardLink.name")).addToggle((toggle) =>
+        s.setName(t('settings.other.grabCardLink.name')).addToggle((toggle) =>
           toggle
             .setValue(
-              this.plugin.settings.markupStripping.grabTitleFromCardLink,
+              this.plugin.settings.markupStripping.grabTitleFromCardLink
             )
             .onChange((value) => {
               void (async () => {
                 this.plugin.settings.markupStripping.grabTitleFromCardLink =
                   value;
-                this.plugin.debugLog("grabTitleFromCardLink", value);
+                this.plugin.debugLog('grabTitleFromCardLink', value);
                 try {
                   await this.plugin.saveSettings();
                 } catch {
-                  new Notice(t("settings.errors.saveFailed"));
+                  new Notice(t('settings.errors.saveFailed'));
                 }
               })();
-            }),
+            })
         );
       })
       // 5. New note delay
       .addSetting((s) => {
         newNoteDelaySetting = s;
-        s.setName(t("settings.other.newNoteDelay.name"));
+        s.setName(t('settings.other.newNoteDelay.name'));
       })
       // 6. Content read method
       .addSetting((s) => {
         contentReadMethodSetting = s;
-        s.setName(t("settings.other.contentReadMethod.name"));
+        s.setName(t('settings.other.contentReadMethod.name'));
       })
       // 7. Debug
       .addSetting((s) => {
         debugSetting = s;
-        s.setName(t("settings.other.debug.name"))
-          .setDesc(t("settings.other.debug.desc"))
+        s.setName(t('settings.other.debug.name'))
+          .setDesc(t('settings.other.debug.desc'))
           .addToggle((toggle) =>
             toggle
               .setValue(this.plugin.settings.core.verboseLogging)
               .onChange((value) => {
                 void (async () => {
-                  this.plugin.debugLog("verboseLogging", value);
+                  this.plugin.debugLog('verboseLogging', value);
                   this.plugin.settings.core.verboseLogging = value;
                   if (value) {
                     this.plugin.settings.core.debugEnabledTimestamp =
-                      this.plugin.getCurrentTimestamp?.() || "";
+                      this.plugin.getCurrentTimestamp?.() || '';
                   } else {
-                    this.plugin.settings.core.debugEnabledTimestamp = "";
+                    this.plugin.settings.core.debugEnabledTimestamp = '';
                   }
                   try {
                     await this.plugin.saveSettings();
                   } catch {
-                    new Notice(t("settings.errors.saveFailed"));
+                    new Notice(t('settings.errors.saveFailed'));
                   }
                   updateDebugSubOptionVisibility();
                   if (value) {
                     this.plugin.outputAllSettings?.();
                   }
                 })();
-              }),
+              })
           );
       });
 
     // Configuration section
     new SettingGroup(this.containerEl)
-      .setHeading(t("settings.other.configuration.title"))
+      .setHeading(t('settings.other.configuration.title'))
       .addSetting((s) => {
-        s.setName(t("settings.other.manageSettings.name"))
-          .setDesc(t("settings.other.manageSettings.desc"))
+        s.setName(t('settings.other.manageSettings.name'))
+          .setDesc(t('settings.other.manageSettings.desc'))
           .addButton((button) =>
             button
-              .setButtonText(t("settings.other.manageSettings.import"))
+              .setButtonText(t('settings.other.manageSettings.import'))
               .onClick(() => {
-                const input = document.createElement("input");
+                const input = document.createElement('input');
                 input.setAttrs({
-                  type: "file",
-                  accept: ".json",
+                  type: 'file',
+                  accept: '.json',
                 });
 
                 // Cleanup handled by cancel event and browser GC
-                input.addEventListener("cancel", () => {
+                input.addEventListener('cancel', () => {
                   input.remove();
                 });
 
@@ -187,31 +187,31 @@ export class OtherTab extends SettingsTabBase {
                   if (selectedFile) {
                     const reader = new FileReader();
                     reader.onerror = () => {
-                      console.error("FileReader error:", reader.error);
+                      console.error('FileReader error:', reader.error);
                       new Notice(
-                        t("settings.errors.importFailed") ??
-                          "Failed to read file",
+                        t('settings.errors.importFailed') ??
+                          'Failed to read file'
                       );
                       input.remove();
                     };
-                    reader.readAsText(selectedFile, "UTF-8");
+                    reader.readAsText(selectedFile, 'UTF-8');
                     reader.onload = (readerEvent) => {
                       void (async () => {
                         let importedJson;
                         const content = readerEvent.target?.result;
-                        if (typeof content === "string") {
+                        if (typeof content === 'string') {
                           try {
                             importedJson = JSON.parse(content);
                           } catch {
-                            new Notice(t("notifications.invalidImportFile"));
-                            console.error(t("notifications.invalidImportFile"));
+                            new Notice(t('notifications.invalidImportFile'));
+                            console.error(t('notifications.invalidImportFile'));
                             input.remove();
                             return;
                           }
                         } else {
                           new Notice(
-                            t("settings.errors.importFailed") ??
-                              "Invalid file format",
+                            t('settings.errors.importFailed') ??
+                              'Invalid file format'
                           );
                           input.remove();
                           return;
@@ -220,7 +220,7 @@ export class OtherTab extends SettingsTabBase {
                         if (importedJson) {
                           const newSettings = Object.assign(
                             {},
-                            DEFAULT_SETTINGS,
+                            DEFAULT_SETTINGS
                           );
                           for (const setting in this.plugin.settings) {
                             if (setting in importedJson) {
@@ -237,7 +237,7 @@ export class OtherTab extends SettingsTabBase {
                                 newSettings[setting] = importedValue;
                               } else {
                                 console.warn(
-                                  `Import: skipping ${setting} due to type mismatch (expected ${typeof existingValue}, got ${typeof importedValue})`,
+                                  `Import: skipping ${setting} due to type mismatch (expected ${typeof existingValue}, got ${typeof importedValue})`
                                 );
                               }
                             }
@@ -247,12 +247,12 @@ export class OtherTab extends SettingsTabBase {
                           let previousSettings;
                           try {
                             previousSettings = structuredClone(
-                              this.plugin.settings,
+                              this.plugin.settings
                             );
                           } catch {
                             // Fallback for non-cloneable values (shouldn't happen with settings)
                             previousSettings = JSON.parse(
-                              JSON.stringify(this.plugin.settings),
+                              JSON.stringify(this.plugin.settings)
                             );
                           }
                           try {
@@ -261,12 +261,12 @@ export class OtherTab extends SettingsTabBase {
                           } catch {
                             // Rollback to previous settings on save failure
                             this.plugin.settings = previousSettings;
-                            new Notice(t("settings.errors.saveFailed"));
+                            new Notice(t('settings.errors.saveFailed'));
                             input.remove();
                             return;
                           }
 
-                          new Notice(t("notifications.settingsImported"));
+                          new Notice(t('notifications.settingsImported'));
 
                           // Refresh UI - wrap in try-finally to ensure input cleanup
                           try {
@@ -294,42 +294,42 @@ export class OtherTab extends SettingsTabBase {
                 };
 
                 input.click();
-              }),
+              })
           )
           .addButton((button) =>
             button
-              .setButtonText(t("settings.other.manageSettings.export"))
+              .setButtonText(t('settings.other.manageSettings.export'))
               .onClick(() => {
                 void (async () => {
                   const settingsText = JSON.stringify(
                     this.plugin.settings,
                     null,
-                    2,
+                    2
                   );
-                  const fileName = "first-line-is-title-settings.json";
+                  const fileName = 'first-line-is-title-settings.json';
 
                   if (navigator.share && navigator.canShare) {
                     try {
                       const blob = new Blob([settingsText], {
-                        type: "application/json",
+                        type: 'application/json',
                       });
                       const file = new File([blob], fileName, {
-                        type: "application/json",
+                        type: 'application/json',
                       });
 
                       if (navigator.canShare({ files: [file] })) {
                         await navigator.share({
                           files: [file],
-                          title: "First Line is Title Settings",
+                          title: 'First Line is Title Settings',
                         });
                         return;
                       }
                     } catch (error) {
-                      console.error("Share failed:", error);
+                      console.error('Share failed:', error);
                     }
                   }
 
-                  const exportLink = document.createElement("a");
+                  const exportLink = document.createElement('a');
                   exportLink.setAttrs({
                     download: fileName,
                     href: `data:application/json;charset=utf-8,${encodeURIComponent(settingsText)}`,
@@ -337,15 +337,15 @@ export class OtherTab extends SettingsTabBase {
                   exportLink.click();
                   exportLink.remove();
                 })();
-              }),
+              })
           );
       })
       .addSetting((s) => {
-        s.setName(t("settings.other.clearSettings.name"))
-          .setDesc(t("settings.other.clearSettings.desc"))
+        s.setName(t('settings.other.clearSettings.name'))
+          .setDesc(t('settings.other.clearSettings.desc'))
           .addButton((button) => {
             button
-              .setButtonText(t("modals.buttons.clear"))
+              .setButtonText(t('modals.buttons.clear'))
               .setWarning()
               .onClick(() => {
                 new ClearSettingsModal(
@@ -359,7 +359,7 @@ export class OtherTab extends SettingsTabBase {
                     } catch {
                       // Fallback for non-cloneable values (shouldn't happen with settings)
                       previousSettings = JSON.parse(
-                        JSON.stringify(this.plugin.settings),
+                        JSON.stringify(this.plugin.settings)
                       );
                     }
                     let newSettings;
@@ -368,20 +368,20 @@ export class OtherTab extends SettingsTabBase {
                     } catch {
                       // Fallback for non-cloneable values (shouldn't happen with settings)
                       newSettings = JSON.parse(
-                        JSON.stringify(DEFAULT_SETTINGS),
+                        JSON.stringify(DEFAULT_SETTINGS)
                       );
                     }
 
                     const locale = getCurrentLocale();
-                    if (locale === "ru") {
-                      newSettings.safewords.safewords[0].text = "Задачи";
+                    if (locale === 'ru') {
+                      newSettings.safewords.safewords[0].text = 'Задачи';
                     } else {
-                      newSettings.safewords.safewords[0].text = "To do";
+                      newSettings.safewords.safewords[0].text = 'To do';
                     }
 
                     newSettings.core.hasShownFirstTimeNotice = true;
                     newSettings.core.lastUsageDate =
-                      this.plugin.getTodayDateString?.() || "";
+                      this.plugin.getTodayDateString?.() || '';
 
                     try {
                       this.plugin.settings = newSettings;
@@ -389,21 +389,21 @@ export class OtherTab extends SettingsTabBase {
                     } catch {
                       // Rollback to previous settings on save failure
                       this.plugin.settings = previousSettings;
-                      new Notice(t("settings.errors.saveFailed"));
+                      new Notice(t('settings.errors.saveFailed'));
                       return;
                     }
 
                     const pluginInitializer = new PluginInitializer(
-                      this.plugin,
+                      this.plugin
                     );
                     await pluginInitializer.initializeFirstEnableLogic();
                     await pluginInitializer.checkFirstTimeExclusionsSetup();
 
                     verboseLog(
                       this.plugin,
-                      `Showing notice: ${t("notifications.settingsCleared")}`,
+                      `Showing notice: ${t('notifications.settingsCleared')}`
                     );
-                    new Notice(t("notifications.settingsCleared"));
+                    new Notice(t('notifications.settingsCleared'));
 
                     const settingsTab = (
                       this.plugin as typeof this.plugin & {
@@ -416,7 +416,7 @@ export class OtherTab extends SettingsTabBase {
                       this.containerEl.empty();
                       this.render();
                     }
-                  },
+                  }
                 ).open();
               });
           });
@@ -426,21 +426,21 @@ export class OtherTab extends SettingsTabBase {
 
     // Character count setting - add styled description and slider
     const charCountDesc = charCountSetting!.descEl;
-    charCountDesc.appendText(t("settings.other.charCount.desc"));
-    charCountDesc.createEl("br");
+    charCountDesc.appendText(t('settings.other.charCount.desc'));
+    charCountDesc.createEl('br');
     charCountDesc
-      .createEl("small")
-      .createEl("strong", { text: t("settings.other.charCount.default") });
+      .createEl('small')
+      .createEl('strong', { text: t('settings.other.charCount.default') });
 
     const charCountContainer = charCountSetting!.controlEl.createDiv({
-      cls: "flit-char-text-input-container",
+      cls: 'flit-char-text-input-container',
     });
 
-    const charCountRestoreButton = charCountContainer.createEl("div", {
-      cls: "clickable-icon extra-setting-button",
-      attr: { "aria-label": t("ariaLabels.restoreDefault") },
+    const charCountRestoreButton = charCountContainer.createEl('div', {
+      cls: 'clickable-icon extra-setting-button',
+      attr: { 'aria-label': t('ariaLabels.restoreDefault') },
     });
-    setIcon(charCountRestoreButton, "rotate-ccw");
+    setIcon(charCountRestoreButton, 'rotate-ccw');
 
     sliderDiv = charCountContainer.createDiv();
 
@@ -452,11 +452,11 @@ export class OtherTab extends SettingsTabBase {
         .onChange((value) => {
           void (async () => {
             this.plugin.settings.core.charCount = value;
-            this.plugin.debugLog("charCount", value);
+            this.plugin.debugLog('charCount', value);
             try {
               await this.plugin.saveSettings();
             } catch {
-              new Notice(t("settings.errors.saveFailed"));
+              new Notice(t('settings.errors.saveFailed'));
             }
           })();
         });
@@ -464,57 +464,57 @@ export class OtherTab extends SettingsTabBase {
       sliderDiv.appendChild(slider.sliderEl);
     });
 
-    charCountRestoreButton.addEventListener("click", () => {
+    charCountRestoreButton.addEventListener('click', () => {
       void (async () => {
         this.plugin.settings.core.charCount = DEFAULT_SETTINGS.core.charCount;
-        this.plugin.debugLog("charCount", this.plugin.settings.core.charCount);
+        this.plugin.debugLog('charCount', this.plugin.settings.core.charCount);
         try {
           await this.plugin.saveSettings();
         } catch {
-          new Notice(t("settings.errors.saveFailed"));
+          new Notice(t('settings.errors.saveFailed'));
         }
 
         const sliderInput = sliderDiv.querySelector(
-          'input[type="range"]',
+          'input[type="range"]'
         ) as HTMLInputElement;
         if (sliderInput) {
           sliderInput.value = String(DEFAULT_SETTINGS.core.charCount);
-          sliderInput.dispatchEvent(new Event("input", { bubbles: true }));
+          sliderInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
       })();
     });
 
     // Card link setting - add styled description
     const cardLinkDesc = cardLinkSetting!.descEl;
-    cardLinkDesc.appendText(t("settings.other.grabCardLink.desc.part1"));
-    const autoCardLink = cardLinkDesc.createEl("a", {
-      href: "obsidian://show-plugin?id=auto-card-link",
+    cardLinkDesc.appendText(t('settings.other.grabCardLink.desc.part1'));
+    const autoCardLink = cardLinkDesc.createEl('a', {
+      href: 'obsidian://show-plugin?id=auto-card-link',
     });
     autoCardLink.textContent = PLUGIN_AUTO_CARD_LINK;
-    cardLinkDesc.appendText(t("settings.other.grabCardLink.desc.part2"));
-    const linkEmbedLink = cardLinkDesc.createEl("a", {
-      href: "obsidian://show-plugin?id=obsidian-link-embed",
+    cardLinkDesc.appendText(t('settings.other.grabCardLink.desc.part2'));
+    const linkEmbedLink = cardLinkDesc.createEl('a', {
+      href: 'obsidian://show-plugin?id=obsidian-link-embed',
     });
     linkEmbedLink.textContent = PLUGIN_LINK_EMBED;
-    cardLinkDesc.appendText(t("settings.other.grabCardLink.desc.part3"));
+    cardLinkDesc.appendText(t('settings.other.grabCardLink.desc.part3'));
 
     // New note delay setting - add styled description and slider
     const newNoteDelayDesc = newNoteDelaySetting!.descEl;
-    newNoteDelayDesc.appendText(t("settings.other.newNoteDelay.desc"));
-    newNoteDelayDesc.createEl("br");
+    newNoteDelayDesc.appendText(t('settings.other.newNoteDelay.desc'));
+    newNoteDelayDesc.createEl('br');
     newNoteDelayDesc
-      .createEl("small")
-      .createEl("strong", { text: t("settings.other.newNoteDelay.default") });
+      .createEl('small')
+      .createEl('strong', { text: t('settings.other.newNoteDelay.default') });
 
     const newNoteDelayContainer = newNoteDelaySetting!.controlEl.createDiv({
-      cls: "flit-char-text-input-container",
+      cls: 'flit-char-text-input-container',
     });
 
-    const newNoteDelayRestoreButton = newNoteDelayContainer.createEl("div", {
-      cls: "clickable-icon extra-setting-button",
-      attr: { "aria-label": t("ariaLabels.restoreDefault") },
+    const newNoteDelayRestoreButton = newNoteDelayContainer.createEl('div', {
+      cls: 'clickable-icon extra-setting-button',
+      attr: { 'aria-label': t('ariaLabels.restoreDefault') },
     });
-    setIcon(newNoteDelayRestoreButton, "rotate-ccw");
+    setIcon(newNoteDelayRestoreButton, 'rotate-ccw');
 
     newNoteDelaySliderDiv = newNoteDelayContainer.createDiv();
 
@@ -526,11 +526,11 @@ export class OtherTab extends SettingsTabBase {
         .onChange((value) => {
           void (async () => {
             this.plugin.settings.core.newNoteDelay = value;
-            this.plugin.debugLog("newNoteDelay", value);
+            this.plugin.debugLog('newNoteDelay', value);
             try {
               await this.plugin.saveSettings();
             } catch {
-              new Notice(t("settings.errors.saveFailed"));
+              new Notice(t('settings.errors.saveFailed'));
             }
           })();
         });
@@ -538,26 +538,26 @@ export class OtherTab extends SettingsTabBase {
       newNoteDelaySliderDiv.appendChild(slider.sliderEl);
     });
 
-    newNoteDelayRestoreButton.addEventListener("click", () => {
+    newNoteDelayRestoreButton.addEventListener('click', () => {
       void (async () => {
         this.plugin.settings.core.newNoteDelay =
           DEFAULT_SETTINGS.core.newNoteDelay;
         this.plugin.debugLog(
-          "newNoteDelay",
-          this.plugin.settings.core.newNoteDelay,
+          'newNoteDelay',
+          this.plugin.settings.core.newNoteDelay
         );
         try {
           await this.plugin.saveSettings();
         } catch {
-          new Notice(t("settings.errors.saveFailed"));
+          new Notice(t('settings.errors.saveFailed'));
         }
 
         const sliderInput = newNoteDelaySliderDiv.querySelector(
-          'input[type="range"]',
+          'input[type="range"]'
         ) as HTMLInputElement;
         if (sliderInput) {
           sliderInput.value = String(DEFAULT_SETTINGS.core.newNoteDelay);
-          sliderInput.dispatchEvent(new Event("input", { bubbles: true }));
+          sliderInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
       })();
     });
@@ -565,70 +565,70 @@ export class OtherTab extends SettingsTabBase {
     // Content read method setting - add styled description and dropdown
     const contentReadMethodDesc = contentReadMethodSetting!.descEl;
     contentReadMethodDesc.appendText(
-      t("settings.other.contentReadMethod.desc"),
+      t('settings.other.contentReadMethod.desc')
     );
-    contentReadMethodDesc.createEl("br");
-    contentReadMethodDesc.createEl("small").createEl("strong", {
-      text: t("settings.other.contentReadMethod.default"),
+    contentReadMethodDesc.createEl('br');
+    contentReadMethodDesc.createEl('small').createEl('strong', {
+      text: t('settings.other.contentReadMethod.default'),
     });
 
     const contentReadContainer = contentReadMethodSetting!.controlEl.createDiv({
-      cls: "flit-display-flex flit-gap-10",
+      cls: 'flit-display-flex flit-gap-10',
     });
 
-    const contentReadRestoreButton = contentReadContainer.createEl("div", {
-      attr: { "aria-label": t("ariaLabels.restoreDefaultContentRead") },
-      cls: "clickable-icon extra-setting-button",
+    const contentReadRestoreButton = contentReadContainer.createEl('div', {
+      attr: { 'aria-label': t('ariaLabels.restoreDefaultContentRead') },
+      cls: 'clickable-icon extra-setting-button',
     });
-    setIcon(contentReadRestoreButton, "rotate-ccw");
+    setIcon(contentReadRestoreButton, 'rotate-ccw');
 
-    const dropdown = contentReadContainer.createEl("select", {
-      cls: "dropdown",
+    const dropdown = contentReadContainer.createEl('select', {
+      cls: 'dropdown',
     });
-    dropdown.createEl("option", {
-      value: "Editor",
-      text: t("settings.other.contentReadMethod.editor"),
+    dropdown.createEl('option', {
+      value: 'Editor',
+      text: t('settings.other.contentReadMethod.editor'),
     });
-    dropdown.createEl("option", {
-      value: "Cache",
-      text: t("settings.other.contentReadMethod.cache"),
+    dropdown.createEl('option', {
+      value: 'Cache',
+      text: t('settings.other.contentReadMethod.cache'),
     });
-    dropdown.createEl("option", {
-      value: "File",
-      text: t("settings.other.contentReadMethod.file"),
+    dropdown.createEl('option', {
+      value: 'File',
+      text: t('settings.other.contentReadMethod.file'),
     });
     dropdown.value = this.plugin.settings.core.fileReadMethod;
 
-    contentReadRestoreButton.addEventListener("click", () => {
+    contentReadRestoreButton.addEventListener('click', () => {
       void (async () => {
         dropdown.value = DEFAULT_SETTINGS.core.fileReadMethod;
         this.plugin.settings.core.fileReadMethod =
           DEFAULT_SETTINGS.core.fileReadMethod;
         this.plugin.debugLog(
-          "fileReadMethod",
-          this.plugin.settings.core.fileReadMethod,
+          'fileReadMethod',
+          this.plugin.settings.core.fileReadMethod
         );
         try {
           await this.plugin.saveSettings();
         } catch {
-          new Notice(t("settings.errors.saveFailed"));
+          new Notice(t('settings.errors.saveFailed'));
         }
         this.updateAutomaticRenameVisibility();
       })();
     });
 
-    dropdown.addEventListener("change", (e) => {
+    dropdown.addEventListener('change', (e) => {
       void (async () => {
         const newMode = (e.target as HTMLSelectElement).value as FileReadMethod;
         this.plugin.settings.core.fileReadMethod = newMode;
         this.plugin.debugLog(
-          "fileReadMethod",
-          this.plugin.settings.core.fileReadMethod,
+          'fileReadMethod',
+          this.plugin.settings.core.fileReadMethod
         );
         try {
           await this.plugin.saveSettings();
         } catch {
-          new Notice(t("settings.errors.saveFailed"));
+          new Notice(t('settings.errors.saveFailed'));
         }
         this.updateAutomaticRenameVisibility();
       })();
@@ -636,41 +636,41 @@ export class OtherTab extends SettingsTabBase {
 
     // Get the setting-items container for sub-settings
     const settingItems = this.containerEl.querySelector(
-      ".flit-other-group .setting-items",
+      '.flit-other-group .setting-items'
     );
 
     // Create sub-settings containers and position them after their parent settings
     contentReadSubSettingsContainer = (
       settingItems ?? this.containerEl
-    ).createDiv("flit-sub-settings");
+    ).createDiv('flit-sub-settings');
     contentReadMethodSetting!.settingEl.after(contentReadSubSettingsContainer);
 
     debugSubSettingsContainer = (settingItems ?? this.containerEl).createDiv(
-      "flit-sub-settings",
+      'flit-sub-settings'
     );
     debugSetting!.settingEl.after(debugSubSettingsContainer);
 
     // Sub-setting: Check interval
     const checkIntervalSetting = new Setting(contentReadSubSettingsContainer)
-      .setName(t("settings.other.checkInterval.name"))
-      .setDesc("");
+      .setName(t('settings.other.checkInterval.name'))
+      .setDesc('');
 
     const checkIntervalDesc = checkIntervalSetting.descEl;
-    checkIntervalDesc.appendText(t("settings.other.checkInterval.desc"));
-    checkIntervalDesc.createEl("br");
+    checkIntervalDesc.appendText(t('settings.other.checkInterval.desc'));
+    checkIntervalDesc.createEl('br');
     checkIntervalDesc
-      .createEl("small")
-      .createEl("strong", { text: t("settings.other.checkInterval.default") });
+      .createEl('small')
+      .createEl('strong', { text: t('settings.other.checkInterval.default') });
 
     const checkIntervalContainer = checkIntervalSetting.controlEl.createDiv({
-      cls: "flit-char-text-input-container",
+      cls: 'flit-char-text-input-container',
     });
 
-    const checkIntervalRestoreButton = checkIntervalContainer.createEl("div", {
-      cls: "clickable-icon extra-setting-button",
-      attr: { "aria-label": t("ariaLabels.restoreDefault") },
+    const checkIntervalRestoreButton = checkIntervalContainer.createEl('div', {
+      cls: 'clickable-icon extra-setting-button',
+      attr: { 'aria-label': t('ariaLabels.restoreDefault') },
     });
-    setIcon(checkIntervalRestoreButton, "rotate-ccw");
+    setIcon(checkIntervalRestoreButton, 'rotate-ccw');
 
     checkIntervalSliderDiv = checkIntervalContainer.createDiv();
 
@@ -682,11 +682,11 @@ export class OtherTab extends SettingsTabBase {
         .onChange((value) => {
           void (async () => {
             this.plugin.settings.core.checkInterval = value;
-            this.plugin.debugLog("checkInterval", value);
+            this.plugin.debugLog('checkInterval', value);
             try {
               await this.plugin.saveSettings();
             } catch {
-              new Notice(t("settings.errors.saveFailed"));
+              new Notice(t('settings.errors.saveFailed'));
             }
             this.plugin.editorLifecycle?.initializeCheckingSystem();
           })();
@@ -695,18 +695,18 @@ export class OtherTab extends SettingsTabBase {
       checkIntervalSliderDiv.appendChild(slider.sliderEl);
     });
 
-    checkIntervalRestoreButton.addEventListener("click", () => {
+    checkIntervalRestoreButton.addEventListener('click', () => {
       void (async () => {
         this.plugin.settings.core.checkInterval =
           DEFAULT_SETTINGS.core.checkInterval;
         this.plugin.debugLog(
-          "checkInterval",
-          this.plugin.settings.core.checkInterval,
+          'checkInterval',
+          this.plugin.settings.core.checkInterval
         );
         try {
           await this.plugin.saveSettings();
         } catch {
-          new Notice(t("settings.errors.saveFailed"));
+          new Notice(t('settings.errors.saveFailed'));
         }
 
         (
@@ -716,11 +716,11 @@ export class OtherTab extends SettingsTabBase {
         )?.initializeCheckingSystem?.();
 
         const sliderInput = checkIntervalSliderDiv.querySelector(
-          'input[type="range"]',
+          'input[type="range"]'
         ) as HTMLInputElement;
         if (sliderInput) {
           sliderInput.value = String(DEFAULT_SETTINGS.core.checkInterval);
-          sliderInput.dispatchEvent(new Event("input", { bubbles: true }));
+          sliderInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
       })();
     });
@@ -729,30 +729,30 @@ export class OtherTab extends SettingsTabBase {
 
     // Sub-setting: Debug output content
     new Setting(debugSubSettingsContainer)
-      .setName(t("settings.other.debugOutputContent.name"))
-      .setDesc(t("settings.other.debugOutputContent.desc"))
+      .setName(t('settings.other.debugOutputContent.name'))
+      .setDesc(t('settings.other.debugOutputContent.desc'))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.core.debugOutputFullContent)
           .onChange((value) => {
             void (async () => {
               this.plugin.settings.core.debugOutputFullContent = value;
-              this.plugin.debugLog("debugOutputFullContent", value);
+              this.plugin.debugLog('debugOutputFullContent', value);
               try {
                 await this.plugin.saveSettings();
               } catch {
-                new Notice(t("settings.errors.saveFailed"));
+                new Notice(t('settings.errors.saveFailed'));
               }
             })();
-          }),
+          })
       );
 
     // Visibility update function for debug sub-settings
     const updateDebugSubOptionVisibility = () => {
       if (this.plugin.settings.core.verboseLogging) {
-        debugSubSettingsContainer.removeClass("flit-display-none");
+        debugSubSettingsContainer.removeClass('flit-display-none');
       } else {
-        debugSubSettingsContainer.addClass("flit-display-none");
+        debugSubSettingsContainer.addClass('flit-display-none');
       }
     };
 
@@ -766,14 +766,14 @@ export class OtherTab extends SettingsTabBase {
 
     // Check interval only applies when using Editor content read method
     const shouldShow =
-      this.plugin.settings.core.renameNotes === "automatically" &&
-      this.plugin.settings.core.fileReadMethod === "Editor";
+      this.plugin.settings.core.renameNotes === 'automatically' &&
+      this.plugin.settings.core.fileReadMethod === 'Editor';
 
     this.conditionalSettings.forEach((setting) => {
       if (shouldShow) {
-        setting.settingEl.removeClass("flit-display-none");
+        setting.settingEl.removeClass('flit-display-none');
       } else {
-        setting.settingEl.addClass("flit-display-none");
+        setting.settingEl.addClass('flit-display-none');
       }
     });
   }

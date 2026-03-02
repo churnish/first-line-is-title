@@ -1,35 +1,35 @@
-import { Notice, Plugin, TFile, TFolder } from "obsidian";
-import { around } from "monkey-around";
-import { PluginSettings } from "./src/types";
-import { DEFAULT_SETTINGS } from "./src/constants";
-import { initI18n, t, getCurrentLocale } from "./src/i18n";
+import { Notice, Plugin, TFile, TFolder } from 'obsidian';
+import { around } from 'monkey-around';
+import { PluginSettings } from './src/types';
+import { DEFAULT_SETTINGS } from './src/constants';
+import { initI18n, t, getCurrentLocale } from './src/i18n';
 import {
   verboseLog,
   detectOS,
   hasDisablePropertyInFile,
   deepMerge,
   deduplicateExclusions,
-} from "./src/utils";
-import { FirstLineIsTitleSettings } from "./src/settings/settings-main";
-import { RenameEngine } from "./src/core/rename-engine";
-import { ContextMenuManager } from "./src/ui/context-menus";
-import { FolderOperations } from "./src/operations/folder-operations";
-import { TagOperations } from "./src/operations/tag-operations";
-import { AliasManager } from "./src/core/alias-manager";
-import { FileOperations } from "./src/operations/file-operations";
-import { PropertyVisibility } from "./src/ui/property-visibility";
+} from './src/utils';
+import { FirstLineIsTitleSettings } from './src/settings/settings-main';
+import { RenameEngine } from './src/core/rename-engine';
+import { ContextMenuManager } from './src/ui/context-menus';
+import { FolderOperations } from './src/operations/folder-operations';
+import { TagOperations } from './src/operations/tag-operations';
+import { AliasManager } from './src/core/alias-manager';
+import { FileOperations } from './src/operations/file-operations';
+import { PropertyVisibility } from './src/ui/property-visibility';
 
 // High-performance cache system replaces all global variables
-import { CacheManager } from "./src/core/cache-manager";
-import { EditorLifecycleManager } from "./src/core/editor-lifecycle";
-import { WorkspaceIntegration } from "./src/core/workspace-integration";
-import { PropertyManager } from "./src/core/property-manager";
-import { PluginInitializer } from "./src/core/plugin-initializer";
-import { CommandRegistrar } from "./src/core/command-registrar";
-import { TitleInsertion } from "./src/core/title-insertion";
-import { LinkManager } from "./src/core/link-manager";
-import { EventHandlerManager } from "./src/core/event-handler-manager";
-import { FileStateManager } from "./src/core/file-state-manager";
+import { CacheManager } from './src/core/cache-manager';
+import { EditorLifecycleManager } from './src/core/editor-lifecycle';
+import { WorkspaceIntegration } from './src/core/workspace-integration';
+import { PropertyManager } from './src/core/property-manager';
+import { PluginInitializer } from './src/core/plugin-initializer';
+import { CommandRegistrar } from './src/core/command-registrar';
+import { TitleInsertion } from './src/core/title-insertion';
+import { LinkManager } from './src/core/link-manager';
+import { EventHandlerManager } from './src/core/event-handler-manager';
+import { FileStateManager } from './src/core/file-state-manager';
 
 // Build-time constant injected by esbuild
 declare const BUILD_GIT_HASH: string;
@@ -70,7 +70,7 @@ export default class FirstLineIsTitle extends Plugin {
         this.renameEngine,
         this.saveSettings.bind(this),
         this.debugLog.bind(this),
-        this.processMultipleFiles.bind(this),
+        this.processMultipleFiles.bind(this)
       );
     }
     return this._folderOperations;
@@ -83,7 +83,7 @@ export default class FirstLineIsTitle extends Plugin {
         this.settings,
         this.renameEngine,
         this.saveSettings.bind(this),
-        this.debugLog.bind(this),
+        this.debugLog.bind(this)
       );
     }
     return this._tagOperations;
@@ -107,7 +107,7 @@ export default class FirstLineIsTitle extends Plugin {
   pendingMetadataUpdates: Set<TFile> = new Set();
 
   isTagWranglerEnabled(): boolean {
-    return this.app.plugins.enabledPlugins.has("tag-wrangler");
+    return this.app.plugins.enabledPlugins.has('tag-wrangler');
   }
 
   async putFirstLineInTitleForFolder(folder: TFolder): Promise<void> {
@@ -121,12 +121,12 @@ export default class FirstLineIsTitle extends Plugin {
   async putFirstLineInTitleForTag(
     tagName: string,
     omitBodyTags: boolean = false,
-    omitNestedTags: boolean = false,
+    omitNestedTags: boolean = false
   ): Promise<void> {
     return this.tagOperations.putFirstLineInTitleForTag(
       tagName,
       omitBodyTags,
-      omitNestedTags,
+      omitNestedTags
     );
   }
 
@@ -138,7 +138,7 @@ export default class FirstLineIsTitle extends Plugin {
   debugLog(settingName: string, value: unknown): void {
     if (this.settings.core.verboseLogging) {
       console.debug(
-        `Setting changed: ${settingName} = ${JSON.stringify(value)}`,
+        `Setting changed: ${settingName} = ${JSON.stringify(value)}`
       );
     }
   }
@@ -147,7 +147,7 @@ export default class FirstLineIsTitle extends Plugin {
   outputDebugFileContent(
     file: TFile,
     action: string,
-    editorContent?: string,
+    editorContent?: string
   ): void {
     if (
       !this.settings.core.verboseLogging ||
@@ -157,16 +157,16 @@ export default class FirstLineIsTitle extends Plugin {
     }
 
     try {
-      const content = editorContent ?? "N/A (no editor content available)";
+      const content = editorContent ?? 'N/A (no editor content available)';
 
       console.debug(`CONTENT [${action}] ${file.path}:`);
-      console.debug("--- FILE CONTENT START ---");
+      console.debug('--- FILE CONTENT START ---');
       console.debug(content);
-      console.debug("--- FILE CONTENT END ---");
+      console.debug('--- FILE CONTENT END ---');
     } catch (error) {
       console.debug(
         `CONTENT [${action}] ${file.path}: Failed to read file:`,
-        error,
+        error
       );
     }
   }
@@ -177,7 +177,7 @@ export default class FirstLineIsTitle extends Plugin {
       return;
     }
 
-    console.debug("🔧 Settings (non-default values only):");
+    console.debug('🔧 Settings (non-default values only):');
 
     const nonDefaults: Record<string, unknown> = {};
 
@@ -192,7 +192,7 @@ export default class FirstLineIsTitle extends Plugin {
         return a.every((val, idx) => isEqual(val, b[idx]));
       }
 
-      if (typeof a === "object" && typeof b === "object") {
+      if (typeof a === 'object' && typeof b === 'object') {
         const objA = a as Record<string, unknown>;
         const objB = b as Record<string, unknown>;
         const keysA = Object.keys(objA);
@@ -217,7 +217,7 @@ export default class FirstLineIsTitle extends Plugin {
     }
 
     if (Object.keys(nonDefaults).length === 0) {
-      console.debug("  All settings are at default values");
+      console.debug('  All settings are at default values');
       return;
     }
 
@@ -230,7 +230,7 @@ export default class FirstLineIsTitle extends Plugin {
         if (value.length > 0) {
           console.debug(`  ${key}:`, value);
         }
-      } else if (typeof value === "object" && value !== null) {
+      } else if (typeof value === 'object' && value !== null) {
         console.debug(`  ${key}:`, value);
       } else {
         console.debug(`  ${key}:`, value);
@@ -252,22 +252,22 @@ export default class FirstLineIsTitle extends Plugin {
 
   async processMultipleFolders(
     folders: TFolder[],
-    action: "rename" | "disable" | "enable",
+    action: 'rename' | 'disable' | 'enable'
   ): Promise<void> {
     return this.folderOperations.processMultipleFolders(folders, action);
   }
 
-  async processMultipleFiles(files: TFile[], action: "rename"): Promise<void> {
+  async processMultipleFiles(files: TFile[], action: 'rename'): Promise<void> {
     if (files.length === 0) return;
 
     let processed = 0;
     let errors = 0;
 
     new Notice(
-      t("notifications.renamingNNotes").replace(
-        "{{count}}",
-        String(files.length),
-      ),
+      t('notifications.renamingNNotes').replace(
+        '{{count}}',
+        String(files.length)
+      )
     );
 
     const exclusionOverrides = {
@@ -280,14 +280,14 @@ export default class FirstLineIsTitle extends Plugin {
     // Batch operations bypass global rate limiting to avoid blocking legitimate bulk operations
     for (const file of files) {
       try {
-        if (action === "rename") {
+        if (action === 'rename') {
           const result = await this.renameEngine.processFile(
             file,
             true,
             true,
             undefined,
             false,
-            exclusionOverrides,
+            exclusionOverrides
           );
           if (result.success) {
             processed++;
@@ -301,15 +301,15 @@ export default class FirstLineIsTitle extends Plugin {
 
     // Show completion notice
     if (errors > 0) {
-      const errorMsg = t("notifications.renamedNotesWithErrors")
-        .replace("{{renamed}}", String(processed))
-        .replace("{{total}}", String(files.length))
-        .replace("{{errors}}", String(errors));
+      const errorMsg = t('notifications.renamedNotesWithErrors')
+        .replace('{{renamed}}', String(processed))
+        .replace('{{total}}', String(files.length))
+        .replace('{{errors}}', String(errors));
       new Notice(errorMsg, 0);
     } else {
-      const successMsg = t("notifications.renamedNotes")
-        .replace("{{renamed}}", String(processed))
-        .replace("{{total}}", String(files.length));
+      const successMsg = t('notifications.renamedNotes')
+        .replace('{{renamed}}', String(processed))
+        .replace('{{total}}', String(files.length));
       new Notice(successMsg, 0);
     }
   }
@@ -317,11 +317,11 @@ export default class FirstLineIsTitle extends Plugin {
   public parsePropertyValue(value: string): string | number | boolean {
     // Try to parse as boolean
     const lowerValue = value.toLowerCase().trim();
-    if (lowerValue === "true") return true;
-    if (lowerValue === "false") return false;
+    if (lowerValue === 'true') return true;
+    if (lowerValue === 'false') return false;
 
     // Try to parse as number
-    if (!isNaN(Number(value)) && value.trim() !== "") {
+    if (!isNaN(Number(value)) && value.trim() !== '') {
       return Number(value);
     }
 
@@ -331,8 +331,8 @@ export default class FirstLineIsTitle extends Plugin {
 
   async disableRenamingForNote(): Promise<void> {
     const activeFile = this.app.workspace.getActiveFile();
-    if (!activeFile || activeFile.extension !== "md") {
-      new Notice(t("notifications.errorNoActiveNote"));
+    if (!activeFile || activeFile.extension !== 'md') {
+      new Notice(t('notifications.errorNoActiveNote'));
       return;
     }
 
@@ -344,7 +344,7 @@ export default class FirstLineIsTitle extends Plugin {
       activeFile,
       this.app,
       this.settings.exclusions.disableRenamingKey,
-      this.settings.exclusions.disableRenamingValue,
+      this.settings.exclusions.disableRenamingValue
     );
 
     try {
@@ -357,28 +357,28 @@ export default class FirstLineIsTitle extends Plugin {
           (frontmatter) => {
             frontmatter[this.settings.exclusions.disableRenamingKey] =
               this.parsePropertyValue(
-                this.settings.exclusions.disableRenamingValue,
+                this.settings.exclusions.disableRenamingValue
               );
           },
-          originalMtime !== undefined ? { mtime: originalMtime } : undefined,
+          originalMtime !== undefined ? { mtime: originalMtime } : undefined
         );
       }
 
       new Notice(
-        t("notifications.disabledRenamingFor", {
+        t('notifications.disabledRenamingFor', {
           filename: activeFile.basename,
-        }),
+        })
       );
     } catch (error) {
-      console.error("Failed to disable renaming:", error);
-      new Notice(t("notifications.failedToDisable"));
+      console.error('Failed to disable renaming:', error);
+      new Notice(t('notifications.failedToDisable'));
     }
   }
 
   async enableRenamingForNote(): Promise<void> {
     const activeFile = this.app.workspace.getActiveFile();
-    if (!activeFile || activeFile.extension !== "md") {
-      new Notice(t("notifications.errorNoActiveNote"));
+    if (!activeFile || activeFile.extension !== 'md') {
+      new Notice(t('notifications.errorNoActiveNote'));
       return;
     }
 
@@ -387,7 +387,7 @@ export default class FirstLineIsTitle extends Plugin {
       activeFile,
       this.app,
       this.settings.exclusions.disableRenamingKey,
-      this.settings.exclusions.disableRenamingValue,
+      this.settings.exclusions.disableRenamingValue
     );
 
     try {
@@ -400,18 +400,18 @@ export default class FirstLineIsTitle extends Plugin {
           (frontmatter) => {
             delete frontmatter[this.settings.exclusions.disableRenamingKey];
           },
-          originalMtime !== undefined ? { mtime: originalMtime } : undefined,
+          originalMtime !== undefined ? { mtime: originalMtime } : undefined
         );
       }
 
       new Notice(
-        t("notifications.enabledRenamingFor", {
+        t('notifications.enabledRenamingFor', {
           filename: activeFile.basename,
-        }),
+        })
       );
     } catch (error) {
-      console.error("Failed to enable renaming:", error);
-      new Notice(t("notifications.failedToEnable"));
+      console.error('Failed to enable renaming:', error);
+      new Notice(t('notifications.failedToEnable'));
     }
   }
 
@@ -447,7 +447,7 @@ export default class FirstLineIsTitle extends Plugin {
     if (
       this.settings.core.lastUsageDate &&
       this.isInactive(this.settings.core.lastUsageDate, today) &&
-      this.settings.core.renameNotes === "automatically"
+      this.settings.core.renameNotes === 'automatically'
     ) {
       this.showInactivityNotice();
     }
@@ -455,7 +455,7 @@ export default class FirstLineIsTitle extends Plugin {
 
   getTodayDateString(): string {
     // Returns YYYY-MM-DD format using standard API
-    return new Date().toISOString().split("T")[0];
+    return new Date().toISOString().split('T')[0];
   }
 
   getCurrentTimestamp(): string {
@@ -467,19 +467,19 @@ export default class FirstLineIsTitle extends Plugin {
     const lastDate = new Date(lastUsageDate);
     const today = new Date(todayDate);
     const daysDiff = Math.floor(
-      (today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
+      (today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
     );
     return daysDiff > 30;
   }
 
   private showFirstTimeNotice(): void {
-    new Notice(t("notifications.firstTimeNotice"), 10000);
+    new Notice(t('notifications.firstTimeNotice'), 10000);
     this.settings.core.hasShownFirstTimeNotice = true;
     void this.saveSettings();
   }
 
   private showInactivityNotice(): void {
-    new Notice(t("notifications.inactivityNotice"), 10000);
+    new Notice(t('notifications.inactivityNotice'), 10000);
   }
 
   private updateLastUsageDate(today: string): void {
@@ -509,14 +509,14 @@ export default class FirstLineIsTitle extends Plugin {
       this.settings.core.debugEnabledTimestamp
     ) {
       const enabledTime = new Date(
-        this.settings.core.debugEnabledTimestamp,
+        this.settings.core.debugEnabledTimestamp
       ).getTime();
       const currentTime = new Date().getTime();
       const hoursPassed = (currentTime - enabledTime) / (1000 * 60 * 60);
 
       if (hoursPassed >= 24) {
         this.settings.core.verboseLogging = false;
-        this.settings.core.debugEnabledTimestamp = ""; // Clear stale timestamp
+        this.settings.core.debugEnabledTimestamp = ''; // Clear stale timestamp
         await this.saveSettings();
       }
     }
@@ -533,8 +533,8 @@ export default class FirstLineIsTitle extends Plugin {
         () => {
           this.fileStateManager.runMaintenance();
         },
-        10 * 60 * 1000,
-      ),
+        10 * 60 * 1000
+      )
     );
 
     // Check for first-time setup or long inactivity
@@ -578,7 +578,7 @@ export default class FirstLineIsTitle extends Plugin {
     }
     verboseLog(
       this,
-      `Detected OS: \`${this.settings.replaceCharacters.osPreset}\``,
+      `Detected OS: \`${this.settings.replaceCharacters.osPreset}\``
     );
 
     // Initialize first-enable logic and exclusions setup
@@ -615,7 +615,7 @@ export default class FirstLineIsTitle extends Plugin {
       this.editorLifecycle.initializeCheckingSystem();
       verboseLog(
         this,
-        "Checking system initialized based on checkInterval setting",
+        'Checking system initialized based on checkInterval setting'
       );
     });
 
@@ -628,15 +628,15 @@ export default class FirstLineIsTitle extends Plugin {
       this.settings.core.verboseLogging = true;
       this.settings.core.debugEnabledTimestamp = this.getCurrentTimestamp();
       await this.saveSettings();
-      console.debug("🐛 Debug mode enabled (will auto-disable after 24 hours)");
+      console.debug('🐛 Debug mode enabled (will auto-disable after 24 hours)');
       this.outputAllSettings();
     };
 
     const disableDebug = async () => {
       this.settings.core.verboseLogging = false;
-      this.settings.core.debugEnabledTimestamp = ""; // Clear timestamp
+      this.settings.core.debugEnabledTimestamp = ''; // Clear timestamp
       await this.saveSettings();
-      console.debug("Debug mode disabled");
+      console.debug('Debug mode disabled');
     };
 
     // Setup window.FLIT namespace
@@ -652,12 +652,12 @@ export default class FirstLineIsTitle extends Plugin {
       this._createdDebugNamespace = true;
       window.DEBUG = {
         enable: async (namespace?: string) => {
-          if (namespace === "first-line-is-title" || namespace === "FLIT") {
+          if (namespace === 'first-line-is-title' || namespace === 'FLIT') {
             await enableDebug();
           }
         },
         disable: async (namespace?: string) => {
-          if (namespace === "first-line-is-title" || namespace === "FLIT") {
+          if (namespace === 'first-line-is-title' || namespace === 'FLIT') {
             await disableDebug();
           }
         },
@@ -667,18 +667,18 @@ export default class FirstLineIsTitle extends Plugin {
       this._debugPatchCleanup = around(window.DEBUG, {
         enable(original) {
           return async function (namespace?: string) {
-            if (namespace === "first-line-is-title" || namespace === "FLIT") {
+            if (namespace === 'first-line-is-title' || namespace === 'FLIT') {
               await enableDebug();
-            } else if (typeof original === "function") {
+            } else if (typeof original === 'function') {
               await original.call(this, namespace);
             }
           };
         },
         disable(original) {
           return async function (namespace?: string) {
-            if (namespace === "first-line-is-title" || namespace === "FLIT") {
+            if (namespace === 'first-line-is-title' || namespace === 'FLIT') {
               await disableDebug();
-            } else if (typeof original === "function") {
+            } else if (typeof original === 'function') {
               await original.call(this, namespace);
             }
           };
@@ -723,7 +723,7 @@ export default class FirstLineIsTitle extends Plugin {
       this._debugPatchCleanup();
     }
 
-    verboseLog(this, "Plugin unloaded");
+    verboseLog(this, 'Plugin unloaded');
   }
 
   async loadSettings(): Promise<void> {
@@ -733,10 +733,10 @@ export default class FirstLineIsTitle extends Plugin {
     this.settings = deepMerge(DEFAULT_SETTINGS, loadedData);
 
     if (this.settings.exclusions.excludedFolders.length === 0) {
-      this.settings.exclusions.excludedFolders.push("");
+      this.settings.exclusions.excludedFolders.push('');
     }
     if (this.settings.exclusions.excludedTags.length === 0) {
-      this.settings.exclusions.excludedTags.push("");
+      this.settings.exclusions.excludedTags.push('');
     }
 
     // Localize default safeword example (only if user hasn't enabled safewords yet)
@@ -745,10 +745,10 @@ export default class FirstLineIsTitle extends Plugin {
       this.settings.safewords.safewords.length > 0
     ) {
       const locale = getCurrentLocale();
-      if (locale === "ru") {
-        this.settings.safewords.safewords[0].text = "Задачи";
+      if (locale === 'ru') {
+        this.settings.safewords.safewords[0].text = 'Задачи';
       } else {
-        this.settings.safewords.safewords[0].text = "To do";
+        this.settings.safewords.safewords[0].text = 'To do';
       }
     }
 

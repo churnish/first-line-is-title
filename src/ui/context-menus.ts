@@ -1,11 +1,11 @@
-import { Menu, TFile, TFolder, setIcon } from "obsidian";
-import { verboseLog } from "../utils";
-import { ProcessTagModal, RenameMultipleFoldersModal } from "../modals";
-import FirstLineIsTitlePlugin from "../../main";
-import { t, tp } from "../i18n";
-import { MenuRenderer } from "./menu-config";
-import { MenuDefinitions } from "./menu-definitions";
-import { TIMING } from "../constants/timing";
+import { Menu, TFile, TFolder, setIcon } from 'obsidian';
+import { verboseLog } from '../utils';
+import { ProcessTagModal, RenameMultipleFoldersModal } from '../modals';
+import FirstLineIsTitlePlugin from '../../main';
+import { t, tp } from '../i18n';
+import { MenuRenderer } from './menu-config';
+import { MenuDefinitions } from './menu-definitions';
+import { TIMING } from '../constants/timing';
 
 /**
  * Manages all context menu operations for the First Line is Title plugin.
@@ -33,7 +33,7 @@ export class ContextMenuManager {
       menu = evt.obsidian_contextmenu = new Menu();
       setTimeout(
         () => menu!.showAtPosition({ x: evt.pageX, y: evt.pageY }),
-        TIMING.NEXT_TICK_MS,
+        TIMING.NEXT_TICK_MS
       );
     }
     return menu;
@@ -48,7 +48,7 @@ export class ContextMenuManager {
 
     let result: boolean;
     if (
-      this.plugin.settings.exclusions.folderScopeStrategy === "Only exclude..."
+      this.plugin.settings.exclusions.folderScopeStrategy === 'Only exclude...'
     ) {
       // Only exclude strategy: list contains DISABLED folders
       // folder in list (disabled) → show "enable" → return false
@@ -65,7 +65,7 @@ export class ContextMenuManager {
       folderScopeStrategy: this.plugin.settings.exclusions.folderScopeStrategy,
       isInList,
       result,
-      willShow: result ? "DISABLE menu" : "ENABLE menu",
+      willShow: result ? 'DISABLE menu' : 'ENABLE menu',
     });
 
     return result;
@@ -75,13 +75,13 @@ export class ContextMenuManager {
    * Determines whether to show disable menu option for a tag based on scope strategy.
    */
   shouldShowDisableMenuForTag(tagName: string): boolean {
-    const tagToFind = tagName.startsWith("#") ? tagName : `#${tagName}`;
+    const tagToFind = tagName.startsWith('#') ? tagName : `#${tagName}`;
     const isInList =
       this.plugin.settings.exclusions.excludedTags.includes(tagToFind);
 
     let result: boolean;
     if (
-      this.plugin.settings.exclusions.tagScopeStrategy === "Only exclude..."
+      this.plugin.settings.exclusions.tagScopeStrategy === 'Only exclude...'
     ) {
       // Only exclude strategy: list contains DISABLED tags
       // tag in list (disabled) → show "enable" → return false
@@ -99,7 +99,7 @@ export class ContextMenuManager {
       tagToFind,
       isInList,
       result,
-      willShow: result ? "DISABLE menu" : "ENABLE menu",
+      willShow: result ? 'DISABLE menu' : 'ENABLE menu',
     });
 
     return result;
@@ -110,18 +110,18 @@ export class ContextMenuManager {
    */
   getFolderMenuText(_folderPath: string): { disable: string; enable: string } {
     if (
-      this.plugin.settings.exclusions.folderScopeStrategy === "Only exclude..."
+      this.plugin.settings.exclusions.folderScopeStrategy === 'Only exclude...'
     ) {
       // Only exclude strategy: list contains DISABLED folders
       return {
-        disable: t("commands.disableRenamingInFolder"),
-        enable: t("commands.enableRenamingInFolder"),
+        disable: t('commands.disableRenamingInFolder'),
+        enable: t('commands.enableRenamingInFolder'),
       };
     } else {
       // Exclude all except strategy: list contains ENABLED folders
       return {
-        disable: t("commands.disableRenamingInFolder"),
-        enable: t("commands.enableRenamingInFolder"),
+        disable: t('commands.disableRenamingInFolder'),
+        enable: t('commands.enableRenamingInFolder'),
       };
     }
   }
@@ -131,18 +131,18 @@ export class ContextMenuManager {
    */
   getTagMenuText(_tagName: string): { disable: string; enable: string } {
     if (
-      this.plugin.settings.exclusions.tagScopeStrategy === "Only exclude..."
+      this.plugin.settings.exclusions.tagScopeStrategy === 'Only exclude...'
     ) {
       // Only exclude strategy: list contains DISABLED tags
       return {
-        disable: t("commands.disableRenamingForTag"),
-        enable: t("commands.enableRenamingForTag"),
+        disable: t('commands.disableRenamingForTag'),
+        enable: t('commands.enableRenamingForTag'),
       };
     } else {
       // Exclude all except strategy: list contains ENABLED tags
       return {
-        disable: t("commands.disableRenamingForTag"),
-        enable: t("commands.enableRenamingForTag"),
+        disable: t('commands.disableRenamingForTag'),
+        enable: t('commands.enableRenamingForTag'),
       };
     }
   }
@@ -188,15 +188,15 @@ export class ContextMenuManager {
     const menuText = this.getTagMenuText(tagName);
 
     if (this.plugin.settings.core.commandVisibility.tagPutFirstLineInTitle) {
-      const menuItem = menuEl.createEl("div", { cls: "menu-item" });
-      const iconEl = menuItem.createEl("div", { cls: "menu-item-icon" });
-      setIcon(iconEl, "file-pen");
-      menuItem.createEl("div", {
-        cls: "menu-item-title",
-        text: t("commands.putFirstLineInTitle"),
+      const menuItem = menuEl.createEl('div', { cls: 'menu-item' });
+      const iconEl = menuItem.createEl('div', { cls: 'menu-item-icon' });
+      setIcon(iconEl, 'file-type');
+      menuItem.createEl('div', {
+        cls: 'menu-item-title',
+        text: t('commands.putFirstLineInTitle'),
       });
 
-      menuItem.addEventListener("click", () => {
+      menuItem.addEventListener('click', () => {
         new ProcessTagModal(this.plugin.app, this.plugin, tagName).open();
         menuEl.remove();
       });
@@ -206,15 +206,15 @@ export class ContextMenuManager {
       shouldShowDisable &&
       this.plugin.settings.core.commandVisibility.tagExclude
     ) {
-      const menuItem = menuEl.createEl("div", { cls: "menu-item" });
-      const iconEl = menuItem.createEl("div", { cls: "menu-item-icon" });
-      setIcon(iconEl, "square-x");
-      menuItem.createEl("div", {
-        cls: "menu-item-title",
+      const menuItem = menuEl.createEl('div', { cls: 'menu-item' });
+      const iconEl = menuItem.createEl('div', { cls: 'menu-item-icon' });
+      setIcon(iconEl, 'square-x');
+      menuItem.createEl('div', {
+        cls: 'menu-item-title',
         text: menuText.disable,
       });
 
-      menuItem.addEventListener("click", () => {
+      menuItem.addEventListener('click', () => {
         void this.plugin.toggleTagExclusion(tagName);
         menuEl.remove();
       });
@@ -224,15 +224,15 @@ export class ContextMenuManager {
       !shouldShowDisable &&
       this.plugin.settings.core.commandVisibility.tagStopExcluding
     ) {
-      const menuItem = menuEl.createEl("div", { cls: "menu-item" });
-      const iconEl = menuItem.createEl("div", { cls: "menu-item-icon" });
-      setIcon(iconEl, "square-check");
-      menuItem.createEl("div", {
-        cls: "menu-item-title",
+      const menuItem = menuEl.createEl('div', { cls: 'menu-item' });
+      const iconEl = menuItem.createEl('div', { cls: 'menu-item-icon' });
+      setIcon(iconEl, 'square-check');
+      menuItem.createEl('div', {
+        cls: 'menu-item-title',
         text: menuText.enable,
       });
 
-      menuItem.addEventListener("click", () => {
+      menuItem.addEventListener('click', () => {
         void this.plugin.toggleTagExclusion(tagName);
         menuEl.remove();
       });
@@ -266,13 +266,13 @@ export class ContextMenuManager {
     if (hasRenameCommand) {
       menu.addItem((item) => {
         item
-          .setTitle(tp("commands.putFirstLineInTitleNFolders", folders.length))
-          .setIcon("folder-pen")
+          .setTitle(tp('commands.putFirstLineInTitleNFolders', folders.length))
+          .setIcon('folder-pen')
           .onClick(() => {
             new RenameMultipleFoldersModal(
               this.plugin.app,
               this.plugin,
-              folders,
+              folders
             ).open();
           });
       });
@@ -281,10 +281,10 @@ export class ContextMenuManager {
     if (hasDisableCommand) {
       menu.addItem((item) => {
         item
-          .setTitle(tp("commands.disableRenamingNFolders", folders.length))
-          .setIcon("square-x")
+          .setTitle(tp('commands.disableRenamingNFolders', folders.length))
+          .setIcon('square-x')
           .onClick(async () => {
-            await this.plugin.processMultipleFolders(folders, "disable");
+            await this.plugin.processMultipleFolders(folders, 'disable');
           });
       });
     }
@@ -292,10 +292,10 @@ export class ContextMenuManager {
     if (hasEnableCommand) {
       menu.addItem((item) => {
         item
-          .setTitle(tp("commands.enableRenamingNFolders", folders.length))
-          .setIcon("square-check")
+          .setTitle(tp('commands.enableRenamingNFolders', folders.length))
+          .setIcon('square-check')
           .onClick(async () => {
-            await this.plugin.processMultipleFolders(folders, "enable");
+            await this.plugin.processMultipleFolders(folders, 'enable');
           });
       });
     }

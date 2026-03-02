@@ -1,10 +1,10 @@
-import { Menu, TFile, TFolder, MarkdownView, EventRef } from "obsidian";
-import FirstLineIsTitlePlugin from "../../main";
-import { verboseLog, isOnlyFrontmatterChanged } from "../utils";
-import { tp } from "../i18n";
-import { RenameModal, DisableEnableModal } from "../modals";
-import { around } from "monkey-around";
-import { detectTagFromDOM, detectTagFromEditor } from "../utils/tag-detection";
+import { Menu, TFile, TFolder, MarkdownView, EventRef } from 'obsidian';
+import FirstLineIsTitlePlugin from '../../main';
+import { verboseLog, isOnlyFrontmatterChanged } from '../utils';
+import { tp } from '../i18n';
+import { RenameModal, DisableEnableModal } from '../modals';
+import { around } from 'monkey-around';
+import { detectTagFromDOM, detectTagFromEditor } from '../utils/tag-detection';
 
 /**
 
@@ -13,8 +13,8 @@ import { detectTagFromDOM, detectTagFromEditor } from "../utils/tag-detection";
  */
 interface WorkspaceWithSearchEvents {
   on(
-    name: "search:results-menu",
-    callback: (menu: Menu, leaf: Record<string, unknown>) => void,
+    name: 'search:results-menu',
+    callback: (menu: Menu, leaf: Record<string, unknown>) => void
   ): EventRef;
 }
 
@@ -75,15 +75,15 @@ export class EventHandlerManager {
    */
   private registerFileMenuHandler(): void {
     this.plugin.registerEvent(
-      this.plugin.app.workspace.on("file-menu", (menu, file) => {
+      this.plugin.app.workspace.on('file-menu', (menu, file) => {
         if (!this.plugin.settings.core.enableContextMenus) return;
 
-        if (file instanceof TFile && file.extension === "md") {
+        if (file instanceof TFile && file.extension === 'md') {
           this.plugin.contextMenuManager.addFileMenuItems(menu, file);
         } else if (file instanceof TFolder) {
           this.plugin.contextMenuManager.addFolderMenuItems(menu, file);
         }
-      }),
+      })
     );
   }
 
@@ -92,15 +92,15 @@ export class EventHandlerManager {
    */
   private registerFilesMenuHandler(): void {
     this.plugin.registerEvent(
-      this.plugin.app.workspace.on("files-menu", (menu, files) => {
+      this.plugin.app.workspace.on('files-menu', (menu, files) => {
         if (!this.plugin.settings.core.enableContextMenus) return;
 
         const markdownFiles = files.filter(
           (file): file is TFile =>
-            file instanceof TFile && file.extension === "md",
+            file instanceof TFile && file.extension === 'md'
         );
         const folders = files.filter(
-          (file): file is TFolder => file instanceof TFolder,
+          (file): file is TFolder => file instanceof TFolder
         );
 
         // If both files and folders are selected, don't show any commands
@@ -121,17 +121,14 @@ export class EventHandlerManager {
             menu.addItem((item) => {
               item
                 .setTitle(
-                  tp(
-                    "commands.putFirstLineInTitleNNotes",
-                    markdownFiles.length,
-                  ),
+                  tp('commands.putFirstLineInTitleNNotes', markdownFiles.length)
                 )
-                .setIcon("file-pen")
+                .setIcon('file-type')
                 .onClick(() => {
                   new RenameModal(
                     this.plugin.app,
                     this.plugin,
-                    markdownFiles,
+                    markdownFiles
                   ).open();
                 });
             });
@@ -145,15 +142,15 @@ export class EventHandlerManager {
             menu.addItem((item) => {
               item
                 .setTitle(
-                  tp("commands.disableRenamingNNotes", markdownFiles.length),
+                  tp('commands.disableRenamingNNotes', markdownFiles.length)
                 )
-                .setIcon("square-x")
+                .setIcon('square-x')
                 .onClick(() => {
                   new DisableEnableModal(
                     this.plugin.app,
                     this.plugin,
                     markdownFiles,
-                    "disable",
+                    'disable'
                   ).open();
                 });
             });
@@ -167,15 +164,15 @@ export class EventHandlerManager {
             menu.addItem((item) => {
               item
                 .setTitle(
-                  tp("commands.enableRenamingNNotes", markdownFiles.length),
+                  tp('commands.enableRenamingNNotes', markdownFiles.length)
                 )
-                .setIcon("square-check")
+                .setIcon('square-check')
                 .onClick(() => {
                   new DisableEnableModal(
                     this.plugin.app,
                     this.plugin,
                     markdownFiles,
-                    "enable",
+                    'enable'
                   ).open();
                 });
             });
@@ -186,7 +183,7 @@ export class EventHandlerManager {
         if (folders.length > 1) {
           this.plugin.contextMenuManager.addMultiFolderMenuItems(menu, folders);
         }
-      }),
+      })
     );
   }
 
@@ -196,7 +193,7 @@ export class EventHandlerManager {
    */
   private registerEditorMenuHandler(): void {
     this.plugin.registerEvent(
-      this.plugin.app.workspace.on("editor-menu", (menu, editor, view) => {
+      this.plugin.app.workspace.on('editor-menu', (menu, editor, view) => {
         if (!this.plugin.settings.core.enableContextMenus) return;
         if (!(view instanceof MarkdownView)) return;
 
@@ -207,7 +204,7 @@ export class EventHandlerManager {
         if (tagName) {
           this.plugin.contextMenuManager.addTagMenuItems(menu, tagName);
         }
-      }),
+      })
     );
   }
 
@@ -217,7 +214,7 @@ export class EventHandlerManager {
    */
   private registerTagSearchMenuHandler(): void {
     // Single event-delegated handler for all DOM-based tag contexts
-    this.plugin.registerDomEvent(document, "contextmenu", (evt) => {
+    this.plugin.registerDomEvent(document, 'contextmenu', (evt) => {
       if (!this.plugin.settings.core.enableContextMenus) return;
 
       if (!(evt.target instanceof HTMLElement)) return;
@@ -227,11 +224,11 @@ export class EventHandlerManager {
       if (!tagInfo) return;
 
       // Different handling based on where tag was found
-      if (tagInfo.location === "tag-pane") {
+      if (tagInfo.location === 'tag-pane') {
         // Tag pane: use Tag Wrangler's menuForEvent pattern
         const menu = this.plugin.contextMenuManager.menuForEvent(evt);
         this.plugin.contextMenuManager.addTagMenuItems(menu, tagInfo.tagName);
-      } else if (tagInfo.location === "yaml") {
+      } else if (tagInfo.location === 'yaml') {
         // YAML tags: use monkey-patching to inject into Obsidian's native menu
         const plugin = this.plugin;
         const remove = around(Menu.prototype, {
@@ -253,7 +250,7 @@ export class EventHandlerManager {
   private registerSearchResultsMenuHandler(): void {
     this.plugin.registerEvent(
       (this.plugin.app.workspace as unknown as WorkspaceWithSearchEvents).on(
-        "search:results-menu",
+        'search:results-menu',
         (menu: Menu, leaf: Record<string, unknown>) => {
           if (!this.plugin.settings.core.enableVaultSearchContextMenu) return;
 
@@ -261,11 +258,11 @@ export class EventHandlerManager {
           let files: TFile[] = [];
           if (
             leaf.dom &&
-            typeof leaf.dom === "object" &&
-            "vChildren" in leaf.dom &&
+            typeof leaf.dom === 'object' &&
+            'vChildren' in leaf.dom &&
             leaf.dom.vChildren &&
-            typeof leaf.dom.vChildren === "object" &&
-            "children" in leaf.dom.vChildren &&
+            typeof leaf.dom.vChildren === 'object' &&
+            'children' in leaf.dom.vChildren &&
             Array.isArray(leaf.dom.vChildren.children)
           ) {
             leaf.dom.vChildren.children.forEach(
@@ -273,11 +270,11 @@ export class EventHandlerManager {
                 if (
                   e.file &&
                   e.file instanceof TFile &&
-                  e.file.extension === "md"
+                  e.file.extension === 'md'
                 ) {
                   files.push(e.file);
                 }
-              },
+              }
             );
           }
 
@@ -296,9 +293,9 @@ export class EventHandlerManager {
             menu.addItem((item) => {
               item
                 .setTitle(
-                  tp("commands.putFirstLineInTitleNNotes", files.length),
+                  tp('commands.putFirstLineInTitleNNotes', files.length)
                 )
-                .setIcon("file-pen")
+                .setIcon('file-type')
                 .onClick(() => {
                   new RenameModal(this.plugin.app, this.plugin, files).open();
                 });
@@ -314,14 +311,14 @@ export class EventHandlerManager {
             }
             menu.addItem((item) => {
               item
-                .setTitle(tp("commands.disableRenamingNNotes", files.length))
-                .setIcon("square-x")
+                .setTitle(tp('commands.disableRenamingNNotes', files.length))
+                .setIcon('square-x')
                 .onClick(() => {
                   new DisableEnableModal(
                     this.plugin.app,
                     this.plugin,
                     files,
-                    "disable",
+                    'disable'
                   ).open();
                 });
             });
@@ -336,20 +333,20 @@ export class EventHandlerManager {
             }
             menu.addItem((item) => {
               item
-                .setTitle(tp("commands.enableRenamingNNotes", files.length))
-                .setIcon("square-check")
+                .setTitle(tp('commands.enableRenamingNNotes', files.length))
+                .setIcon('square-check')
                 .onClick(() => {
                   new DisableEnableModal(
                     this.plugin.app,
                     this.plugin,
                     files,
-                    "enable",
+                    'enable'
                   ).open();
                 });
             });
           }
-        },
-      ),
+        }
+      )
     );
   }
 
@@ -358,17 +355,17 @@ export class EventHandlerManager {
    */
   private registerEditorChangeHandler(): void {
     this.plugin.registerEvent(
-      this.plugin.app.workspace.on("editor-change", (editor, info) => {
+      this.plugin.app.workspace.on('editor-change', (editor, info) => {
         if (this.plugin.settings.core.verboseLogging) {
           console.debug(
-            `Editor change detected for file: ${info.file?.path || "unknown"}`,
+            `Editor change detected for file: ${info.file?.path || 'unknown'}`
           );
         }
 
-        if (this.plugin.settings.core.renameNotes !== "automatically") {
+        if (this.plugin.settings.core.renameNotes !== 'automatically') {
           if (this.plugin.settings.core.verboseLogging) {
             console.debug(
-              `Skipping editor-change: renameNotes=${this.plugin.settings.core.renameNotes}`,
+              `Skipping editor-change: renameNotes=${this.plugin.settings.core.renameNotes}`
             );
           }
           return;
@@ -381,10 +378,10 @@ export class EventHandlerManager {
           return;
         }
 
-        if (info.file.extension !== "md") {
+        if (info.file.extension !== 'md') {
           if (this.plugin.settings.core.verboseLogging) {
             console.debug(
-              `Skipping editor-change: not markdown (${info.file.extension})`,
+              `Skipping editor-change: not markdown (${info.file.extension})`
             );
           }
           return;
@@ -397,7 +394,7 @@ export class EventHandlerManager {
           ) {
             if (this.plugin.settings.core.verboseLogging) {
               console.debug(
-                `Skipping editor-change: file in creation delay: ${info.file.path}`,
+                `Skipping editor-change: file in creation delay: ${info.file.path}`
               );
             }
             return;
@@ -414,9 +411,9 @@ export class EventHandlerManager {
         // Use optimal editor change handler
         this.plugin.editorLifecycle.handleEditorChangeWithThrottle(
           editor,
-          info.file,
+          info.file
         );
-      }),
+      })
     );
   }
 
@@ -426,8 +423,8 @@ export class EventHandlerManager {
   private registerFileSystemHandlers(): void {
     // File rename handler
     this.plugin.registerEvent(
-      this.plugin.app.vault.on("rename", (file, oldPath) => {
-        if (file instanceof TFile && file.extension === "md") {
+      this.plugin.app.vault.on('rename', (file, oldPath) => {
+        if (file instanceof TFile && file.extension === 'md') {
           // Update file state
           this.plugin.fileStateManager?.notifyFileRenamed(oldPath, file.path);
 
@@ -441,15 +438,15 @@ export class EventHandlerManager {
 
           verboseLog(
             this.plugin,
-            `File renamed, updated cache: ${oldPath} -> ${file.path}`,
+            `File renamed, updated cache: ${oldPath} -> ${file.path}`
           );
         }
-      }),
+      })
     );
 
     // File delete handler
     this.plugin.registerEvent(
-      this.plugin.app.vault.on("delete", (file) => {
+      this.plugin.app.vault.on('delete', (file) => {
         if (file instanceof TFile) {
           this.plugin.cacheManager?.notifyFileDeleted(file.path);
           this.plugin.editorLifecycle.clearCreationDelayTimer(file.path);
@@ -457,14 +454,14 @@ export class EventHandlerManager {
           // Clean up pendingAliasUpdates to prevent memory leak and blocking
           this.pendingAliasUpdates.delete(file.path);
         }
-      }),
+      })
     );
 
     // File modify handler
     this.plugin.registerEvent(
-      this.plugin.app.vault.on("modify", async (file) => {
+      this.plugin.app.vault.on('modify', async (file) => {
         if (!(file instanceof TFile)) return;
-        if (file.extension !== "md") return;
+        if (file.extension !== 'md') return;
 
         // Skip if file operation in progress (rename, etc.)
         if (this.plugin.cacheManager?.isLocked(file.path)) return;
@@ -473,23 +470,23 @@ export class EventHandlerManager {
         if (this.plugin.editorLifecycle.isFileInCreationDelay(file.path)) {
           verboseLog(
             this.plugin,
-            `Skipping modify: file in creation delay: ${file.path}`,
+            `Skipping modify: file in creation delay: ${file.path}`
           );
           return;
         }
 
         // Process rename for Cache/File modes (catches cache updates after save)
         if (
-          this.plugin.settings.core.fileReadMethod === "Cache" ||
-          this.plugin.settings.core.fileReadMethod === "File"
+          this.plugin.settings.core.fileReadMethod === 'Cache' ||
+          this.plugin.settings.core.fileReadMethod === 'File'
         ) {
           if (
-            this.plugin.settings.core.renameNotes === "automatically" &&
+            this.plugin.settings.core.renameNotes === 'automatically' &&
             this.plugin.isFullyLoaded
           ) {
             verboseLog(
               this.plugin,
-              `Modify event: processing ${file.path} (fileReadMethod: ${this.plugin.settings.core.fileReadMethod})`,
+              `Modify event: processing ${file.path} (fileReadMethod: ${this.plugin.settings.core.fileReadMethod})`
             );
             await this.plugin.renameEngine.processFile(file, true);
           }
@@ -500,13 +497,13 @@ export class EventHandlerManager {
         // "modified externally" notifications from processFrontMatter writes.
         if (
           this.plugin.settings.aliases.enableAliases &&
-          this.plugin.settings.core.renameNotes === "automatically"
+          this.plugin.settings.core.renameNotes === 'automatically'
         ) {
           // Skip if file has pending metadata update from processFrontMatter
           const hasPending = this.plugin.pendingMetadataUpdates.has(file);
           verboseLog(
             this.plugin,
-            `// PENDING_META_CHECK (modify): Checking ${file.path} in pendingMetadataUpdates → ${hasPending}`,
+            `// PENDING_META_CHECK (modify): Checking ${file.path} in pendingMetadataUpdates → ${hasPending}`
           );
           if (hasPending) {
             return;
@@ -541,12 +538,12 @@ export class EventHandlerManager {
             ) {
               verboseLog(
                 this.plugin,
-                `Skipping modify-alias update - only frontmatter edited: ${file.path}`,
+                `Skipping modify-alias update - only frontmatter edited: ${file.path}`
               );
               // Still update lastSavedContent even when skipping
               this.plugin.fileStateManager.setLastSavedContent(
                 file.path,
-                currentContent,
+                currentContent
               );
               return;
             }
@@ -559,11 +556,11 @@ export class EventHandlerManager {
 
             verboseLog(
               this.plugin,
-              `// EDITOR_LOOKUP (modify): activeView=${!!activeView}, activeView.file=${activeView?.file?.path ?? "none"}, target=${file.path}, match=${activeView?.file === file}`,
+              `// EDITOR_LOOKUP (modify): activeView=${!!activeView}, activeView.file=${activeView?.file?.path ?? 'none'}, target=${file.path}, match=${activeView?.file === file}`
             );
             verboseLog(
               this.plugin,
-              `// EDITOR_PASS (modify): Passing editor=${editor ? "defined" : "undefined"} to updateAliasIfNeeded`,
+              `// EDITOR_PASS (modify): Passing editor=${editor ? 'defined' : 'undefined'} to updateAliasIfNeeded`
             );
 
             const aliasUpdateSucceeded =
@@ -571,31 +568,31 @@ export class EventHandlerManager {
                 file,
                 currentContent,
                 undefined,
-                editor,
+                editor
               );
             this.plugin.fileStateManager.setLastAliasUpdateStatus(
               file.path,
-              aliasUpdateSucceeded,
+              aliasUpdateSucceeded
             );
 
             // Update lastSavedContent after processing
             this.plugin.fileStateManager.setLastSavedContent(
               file.path,
-              currentContent,
+              currentContent
             );
           } finally {
             this.pendingAliasUpdates.delete(file.path);
           }
         }
-      }),
+      })
     );
 
     // Metadata change handler
     this.plugin.registerEvent(
-      this.plugin.app.metadataCache.on("changed", async (file) => {
+      this.plugin.app.metadataCache.on('changed', async (file) => {
         if (!this.plugin.settings.aliases.enableAliases) return;
-        if (this.plugin.settings.core.renameNotes !== "automatically") return;
-        if (file.extension !== "md") return;
+        if (this.plugin.settings.core.renameNotes !== 'automatically') return;
+        if (file.extension !== 'md') return;
 
         // Skip if file operation in progress (rename, etc.)
         if (this.plugin.cacheManager?.isLocked(file.path)) return;
@@ -604,7 +601,7 @@ export class EventHandlerManager {
         if (this.plugin.editorLifecycle.isFileInCreationDelay(file.path)) {
           if (this.plugin.settings.core.verboseLogging) {
             console.debug(
-              `Skipping metadata-alias: file in creation delay: ${file.path}`,
+              `Skipping metadata-alias: file in creation delay: ${file.path}`
             );
           }
           return;
@@ -616,7 +613,7 @@ export class EventHandlerManager {
           this.plugin.pendingMetadataUpdates.delete(file);
           verboseLog(
             this.plugin,
-            `// PENDING_META_CLEAR: Clearing ${file.path} from pendingMetadataUpdates (set size: ${this.plugin.pendingMetadataUpdates.size})`,
+            `// PENDING_META_CLEAR: Clearing ${file.path} from pendingMetadataUpdates (set size: ${this.plugin.pendingMetadataUpdates.size})`
           );
           // Don't return - continue to check if alias update is needed
         }
@@ -662,13 +659,13 @@ export class EventHandlerManager {
             ) {
               if (this.plugin.settings.core.verboseLogging) {
                 console.debug(
-                  `Skipping metadata-alias update - only frontmatter edited: ${file.path}`,
+                  `Skipping metadata-alias update - only frontmatter edited: ${file.path}`
                 );
               }
               // Still update lastSavedContent even when skipping
               this.plugin.fileStateManager.setLastSavedContent(
                 file.path,
-                currentContent,
+                currentContent
               );
               return;
             }
@@ -685,11 +682,11 @@ export class EventHandlerManager {
 
           verboseLog(
             this.plugin,
-            `// EDITOR_LOOKUP (metadata): activeView=${!!activeView}, activeView.file=${activeView?.file?.path ?? "none"}, target=${file.path}, match=${activeView?.file === file}`,
+            `// EDITOR_LOOKUP (metadata): activeView=${!!activeView}, activeView.file=${activeView?.file?.path ?? 'none'}, target=${file.path}, match=${activeView?.file === file}`
           );
           verboseLog(
             this.plugin,
-            `// EDITOR_PASS (metadata): Passing editor=${editor ? "defined" : "undefined"} to updateAliasIfNeeded`,
+            `// EDITOR_PASS (metadata): Passing editor=${editor ? 'defined' : 'undefined'} to updateAliasIfNeeded`
           );
 
           const aliasUpdateSucceeded =
@@ -697,22 +694,22 @@ export class EventHandlerManager {
               file,
               currentContent,
               undefined,
-              editor,
+              editor
             );
           this.plugin.fileStateManager.setLastAliasUpdateStatus(
             file.path,
-            aliasUpdateSucceeded,
+            aliasUpdateSucceeded
           );
 
           // Update lastSavedContent after processing
           this.plugin.fileStateManager.setLastSavedContent(
             file.path,
-            currentContent,
+            currentContent
           );
         } finally {
           this.pendingAliasUpdates.delete(file.path);
         }
-      }),
+      })
     );
   }
 }

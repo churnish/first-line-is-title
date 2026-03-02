@@ -1,14 +1,14 @@
-import { TFile, MarkdownView, getFrontMatterInfo, parseYaml } from "obsidian";
-import { PluginSettings } from "../types";
+import { TFile, MarkdownView, getFrontMatterInfo, parseYaml } from 'obsidian';
+import { PluginSettings } from '../types';
 import {
   verboseLog,
   shouldProcessFile,
   hasDisablePropertyInFile,
-} from "../utils";
-import { t } from "../i18n";
-import { readFileContent } from "../utils/content-reader";
-import { TIMING } from "../constants/timing";
-import FirstLineIsTitle from "../../main";
+} from '../utils';
+import { t } from '../i18n';
+import { readFileContent } from '../utils/content-reader';
+import { TIMING } from '../constants/timing';
+import FirstLineIsTitle from '../../main';
 
 export class FileOperations {
   constructor(private plugin: FirstLineIsTitle) {}
@@ -28,15 +28,15 @@ export class FileOperations {
    */
   async insertTitleOnCreation(
     file: TFile,
-    initialContent?: string,
+    initialContent?: string
   ): Promise<boolean> {
     try {
-      const untitledWord = t("untitled").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const untitledWord = t('untitled').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const untitledPattern = new RegExp(`^${untitledWord}(\\s[1-9]\\d*)?$`);
       if (untitledPattern.test(file.basename)) {
         verboseLog(
           this.plugin,
-          `Skipping title insertion for untitled file: ${file.path}`,
+          `Skipping title insertion for untitled file: ${file.path}`
         );
         return false;
       }
@@ -44,24 +44,24 @@ export class FileOperations {
       let cleanTitle = file.basename;
       if (this.settings.core.convertReplacementCharactersInTitle) {
         const charMap: Record<string, string> = {
-          "/": "slash",
-          ":": "colon",
-          "*": "asterisk",
-          "?": "question",
-          "<": "lessThan",
-          ">": "greaterThan",
-          '"': "quote",
-          "|": "pipe",
-          "#": "hash",
-          "[": "leftBracket",
-          "]": "rightBracket",
-          "^": "caret",
-          "\\": "backslash",
-          ".": "dot",
+          '/': 'slash',
+          ':': 'colon',
+          '*': 'asterisk',
+          '?': 'question',
+          '<': 'lessThan',
+          '>': 'greaterThan',
+          '"': 'quote',
+          '|': 'pipe',
+          '#': 'hash',
+          '[': 'leftBracket',
+          ']': 'rightBracket',
+          '^': 'caret',
+          '\\': 'backslash',
+          '.': 'dot',
         };
 
         // Punctuation characters that should not have space added before them
-        const punctuation = ",.?;:!\"'\"\"''»«¡¿‽";
+        const punctuation = ',.?;:!"\'""\'\'»«¡¿‽';
         const replacementCounts = new Map<string, number>();
         const enabledReplacements: string[] = [];
         for (const settingKey of Object.values(charMap)) {
@@ -72,17 +72,17 @@ export class FileOperations {
           if (replacement.enabled && replacement.replacement) {
             replacementCounts.set(
               replacement.replacement,
-              (replacementCounts.get(replacement.replacement) || 0) + 1,
+              (replacementCounts.get(replacement.replacement) || 0) + 1
             );
             enabledReplacements.push(
-              `${settingKey}="${replacement.replacement}"`,
+              `${settingKey}="${replacement.replacement}"`
             );
           }
         }
 
         verboseLog(
           this.plugin,
-          `[TITLE-REVERSAL] "${cleanTitle}" with replacements: [${enabledReplacements.join(", ")}]`,
+          `[TITLE-REVERSAL] "${cleanTitle}" with replacements: [${enabledReplacements.join(', ')}]`
         );
 
         for (const [originalChar, settingKey] of Object.entries(charMap)) {
@@ -103,7 +103,7 @@ export class FileOperations {
           if (count > 1) {
             verboseLog(
               this.plugin,
-              `[TITLE-REVERSAL] Skipping "${replacementChar}" → "${originalChar}" (duplicate, count=${count})`,
+              `[TITLE-REVERSAL] Skipping "${replacementChar}" → "${originalChar}" (duplicate, count=${count})`
             );
             continue;
           }
@@ -111,7 +111,7 @@ export class FileOperations {
           const trimLeft = charConfig.trimLeft;
           const trimRight = charConfig.trimRight;
 
-          let result = "";
+          let result = '';
           let remaining = cleanTitle;
           while (remaining.includes(replacementChar)) {
             const index = remaining.indexOf(replacementChar);
@@ -120,15 +120,15 @@ export class FileOperations {
             let replacement = originalChar;
 
             if (trimLeft) {
-              replacement = " " + replacement;
+              replacement = ' ' + replacement;
             }
 
             // Add right space if trimRight enabled and right char is not punctuation
             if (trimRight) {
               const charToRight =
-                remaining.length > index + 1 ? remaining[index + 1] : "";
+                remaining.length > index + 1 ? remaining[index + 1] : '';
               if (!punctuation.includes(charToRight)) {
-                replacement = replacement + " ";
+                replacement = replacement + ' ';
               }
             }
 
@@ -143,7 +143,7 @@ export class FileOperations {
         if (cleanTitle !== file.basename) {
           verboseLog(
             this.plugin,
-            `[TITLE-REVERSAL] Result: "${file.basename}" → "${cleanTitle}"`,
+            `[TITLE-REVERSAL] Result: "${file.basename}" → "${cleanTitle}"`
           );
         }
       }
@@ -153,7 +153,7 @@ export class FileOperations {
 
       verboseLog(
         this.plugin,
-        `Inserting title "${cleanTitle}" in new file: ${file.path}`,
+        `Inserting title "${cleanTitle}" in new file: ${file.path}`
       );
 
       let currentContent: string;
@@ -162,33 +162,33 @@ export class FileOperations {
         currentContent = initialContent;
         verboseLog(
           this.plugin,
-          `[TITLE-INSERT] Using initial content. Length: ${currentContent.length} chars`,
+          `[TITLE-INSERT] Using initial content. Length: ${currentContent.length} chars`
         );
       } else {
         verboseLog(
           this.plugin,
-          `[TITLE-INSERT] Reading immediately from editor`,
+          `[TITLE-INSERT] Reading immediately from editor`
         );
         try {
           currentContent = await readFileContent(this.plugin, file, {
-            searchWorkspace: this.settings.core.fileReadMethod === "Editor",
+            searchWorkspace: this.settings.core.fileReadMethod === 'Editor',
             preferFresh: true,
           });
         } catch (error) {
           console.error(
             `Failed to read file ${file.path} for title insertion:`,
-            error,
+            error
           );
           return false;
         }
       }
 
-      const lines = currentContent.split("\n");
+      const lines = currentContent.split('\n');
 
       let yamlEndLine = -1;
-      if (lines[0] === "---") {
+      if (lines[0] === '---') {
         for (let i = 1; i < lines.length; i++) {
-          if (lines[i] === "---") {
+          if (lines[i] === '---') {
             yamlEndLine = i;
             break;
           }
@@ -199,11 +199,11 @@ export class FileOperations {
         yamlEndLine !== -1
           ? lines
               .slice(yamlEndLine + 1)
-              .join("\n")
+              .join('\n')
               .trim()
           : currentContent.trim();
 
-      if (contentAfterYaml !== "") {
+      if (contentAfterYaml !== '') {
         verboseLog(this.plugin, `File has content (excluding YAML)`);
         const startLineIndex = yamlEndLine !== -1 ? yamlEndLine + 1 : 0;
         let firstNonEmptyLine: string | null = null;
@@ -211,7 +211,7 @@ export class FileOperations {
 
         for (let i = startLineIndex; i < lines.length; i++) {
           const line = lines[i].trim();
-          if (line !== "") {
+          if (line !== '') {
             firstNonEmptyLine = line;
             firstNonEmptyLineIndex = i;
             break;
@@ -226,10 +226,10 @@ export class FileOperations {
 
           verboseLog(
             this.plugin,
-            `[TITLE-INSERT] Found heading pattern "${firstNonEmptyLine}" at line ${firstNonEmptyLineIndex}, inserting title`,
+            `[TITLE-INSERT] Found heading pattern "${firstNonEmptyLine}" at line ${firstNonEmptyLineIndex}, inserting title`
           );
 
-          const leaves = this.app.workspace.getLeavesOfType("markdown");
+          const leaves = this.app.workspace.getLeavesOfType('markdown');
           let insertedViaEditor = false;
 
           for (const leaf of leaves) {
@@ -238,14 +238,14 @@ export class FileOperations {
               view.editor.setLine(firstNonEmptyLineIndex, titleWithHeading);
               verboseLog(
                 this.plugin,
-                `[TITLE-INSERT] Replaced heading at line ${firstNonEmptyLineIndex} via editor`,
+                `[TITLE-INSERT] Replaced heading at line ${firstNonEmptyLineIndex} via editor`
               );
 
               // Position cursor at end of title if both settings enabled
               this.positionCursorAfterTitleInsertion(
                 view,
                 firstNonEmptyLineIndex,
-                titleWithHeading.length,
+                titleWithHeading.length
               );
 
               insertedViaEditor = true;
@@ -256,24 +256,24 @@ export class FileOperations {
           if (!insertedViaEditor) {
             verboseLog(
               this.plugin,
-              `[TITLE-INSERT] Replacing heading via vault.process`,
+              `[TITLE-INSERT] Replacing heading via vault.process`
             );
             await this.app.vault.process(file, (content) => {
-              const lines = content.split("\n");
+              const lines = content.split('\n');
               lines[firstNonEmptyLineIndex] = titleWithHeading;
-              return lines.join("\n");
+              return lines.join('\n');
             });
           }
 
           verboseLog(
             this.plugin,
-            `Successfully inserted title in heading for ${file.path}`,
+            `Successfully inserted title in heading for ${file.path}`
           );
           return true;
         } else {
           verboseLog(
             this.plugin,
-            `File has content without heading pattern, skipping title insertion for ${file.path}`,
+            `File has content without heading pattern, skipping title insertion for ${file.path}`
           );
 
           // If both settings are ON, position cursor at line end even though we're not inserting
@@ -284,11 +284,11 @@ export class FileOperations {
             // Always check exclusions (cursor never moved in excluded notes)
             const isExcluded = this.isFileExcludedForCursorPositioning(
               file,
-              currentContent,
+              currentContent
             );
 
             if (!isExcluded) {
-              const leaves = this.app.workspace.getLeavesOfType("markdown");
+              const leaves = this.app.workspace.getLeavesOfType('markdown');
               for (const leaf of leaves) {
                 const view = leaf.view as MarkdownView;
                 if (view && view.file?.path === file.path && view.editor) {
@@ -302,7 +302,7 @@ export class FileOperations {
                       view.editor.focus();
                       verboseLog(
                         this.plugin,
-                        `[CURSOR-FLIT] file-operations.ts:245 - BEFORE setCursor() | target: line ${contentLine} ch ${lineLength}`,
+                        `[CURSOR-FLIT] file-operations.ts:245 - BEFORE setCursor() | target: line ${contentLine} ch ${lineLength}`
                       );
                       view.editor.setCursor({
                         line: contentLine,
@@ -310,7 +310,7 @@ export class FileOperations {
                       });
                       verboseLog(
                         this.plugin,
-                        `[TITLE-INSERT] File has content, positioned cursor at end of line ${contentLine} (${lineLength} chars)`,
+                        `[TITLE-INSERT] File has content, positioned cursor at end of line ${contentLine} (${lineLength} chars)`
                       );
                     }
                   }, 0);
@@ -326,18 +326,18 @@ export class FileOperations {
 
       // Apply addHeadingToTitle setting since no heading pattern was found
       const finalTitle = this.settings.markupStripping.addHeadingToTitle
-        ? "# " + cleanTitle
+        ? '# ' + cleanTitle
         : cleanTitle;
 
       // Check if canvas active - canvas files have no editor, use vault.process() immediately
       const canvasIsActive =
         this.app.workspace.getMostRecentLeaf()?.view?.getViewType?.() ===
-        "canvas";
+        'canvas';
       let insertedViaEditor = false;
 
       if (!canvasIsActive) {
         // Use live build's simple loop structure (proven to work)
-        const leaves = this.app.workspace.getLeavesOfType("markdown");
+        const leaves = this.app.workspace.getLeavesOfType('markdown');
 
         for (const leaf of leaves) {
           const view = leaf.view as MarkdownView;
@@ -347,24 +347,24 @@ export class FileOperations {
 
             // Verify insertion with retry (max 10 attempts = 1000ms)
             for (let attempt = 0; attempt < 10; attempt++) {
-              view.editor.replaceRange(finalTitle + "\n", insertPos);
+              view.editor.replaceRange(finalTitle + '\n', insertPos);
 
               // Let editor process the change before verification
               await new Promise((resolve) => setTimeout(resolve, 10));
 
               // Now verify
               const content = view.editor.getValue();
-              const lines = content.split("\n");
+              const lines = content.split('\n');
               if (lines[titleLine]?.trim() === finalTitle.trim()) {
                 // Success - position cursor
                 verboseLog(
                   this.plugin,
-                  `[TITLE-INSERT] Verified insertion at line ${titleLine} (attempt ${attempt + 1})`,
+                  `[TITLE-INSERT] Verified insertion at line ${titleLine} (attempt ${attempt + 1})`
                 );
                 this.positionCursorAfterTitleInsertion(
                   view,
                   titleLine,
-                  finalTitle.length,
+                  finalTitle.length
                 );
                 insertedViaEditor = true;
                 break;
@@ -374,15 +374,15 @@ export class FileOperations {
               if (attempt < 9) {
                 verboseLog(
                   this.plugin,
-                  `[TITLE-INSERT] Verification failed, retry in ${TIMING.VIEW_READINESS_RETRY_DELAY_MS}ms (attempt ${attempt + 1})`,
+                  `[TITLE-INSERT] Verification failed, retry in ${TIMING.VIEW_READINESS_RETRY_DELAY_MS}ms (attempt ${attempt + 1})`
                 );
                 await new Promise((resolve) =>
-                  setTimeout(resolve, TIMING.VIEW_READINESS_RETRY_DELAY_MS),
+                  setTimeout(resolve, TIMING.VIEW_READINESS_RETRY_DELAY_MS)
                 );
               } else {
                 verboseLog(
                   this.plugin,
-                  `[TITLE-INSERT] Verification failed after 10 attempts, fallback to vault.process`,
+                  `[TITLE-INSERT] Verification failed after 10 attempts, fallback to vault.process`
                 );
               }
             }
@@ -394,16 +394,16 @@ export class FileOperations {
       if (!insertedViaEditor) {
         verboseLog(
           this.plugin,
-          `[TITLE-INSERT] Inserting title via vault.process`,
+          `[TITLE-INSERT] Inserting title via vault.process`
         );
         await this.app.vault.process(file, (content) => {
           // Always use fresh content from vault.process callback (not stale initialContent)
           // This handles race conditions where file content changed since initial read
-          const freshLines = content.split("\n");
+          const freshLines = content.split('\n');
           let freshYamlEndLine = -1;
-          if (freshLines[0] === "---") {
+          if (freshLines[0] === '---') {
             for (let i = 1; i < freshLines.length; i++) {
-              if (freshLines[i] === "---") {
+              if (freshLines[i] === '---') {
                 freshYamlEndLine = i;
                 break;
               }
@@ -415,18 +415,18 @@ export class FileOperations {
             freshYamlEndLine !== -1 ? freshYamlEndLine + 1 : 0;
           const contentAfterYaml = freshLines
             .slice(contentStartLine)
-            .join("\n")
+            .join('\n')
             .trim();
-          if (contentAfterYaml !== "") {
+          if (contentAfterYaml !== '') {
             // Content exists - skip insertion to avoid duplicate
             return content;
           }
 
           if (freshYamlEndLine !== -1) {
             freshLines.splice(freshYamlEndLine + 1, 0, finalTitle);
-            return freshLines.join("\n");
+            return freshLines.join('\n');
           } else {
-            return finalTitle + "\n" + content;
+            return finalTitle + '\n' + content;
           }
         });
       }
@@ -436,7 +436,7 @@ export class FileOperations {
     } catch (error) {
       console.error(
         `Error inserting title on creation for ${file.path}:`,
-        error,
+        error
       );
       return false;
     }
@@ -455,16 +455,16 @@ export class FileOperations {
   async handleCursorPositioning(
     file: TFile,
     usePlaceCursorAtLineEndSetting: boolean = true,
-    explicitPlaceCursorAtEnd?: boolean,
+    explicitPlaceCursorAtEnd?: boolean
   ): Promise<void> {
     try {
       verboseLog(
         this.plugin,
-        `handleCursorPositioning called for ${file.path}, usePlaceCursorAtLineEndSetting: ${usePlaceCursorAtLineEndSetting}`,
+        `handleCursorPositioning called for ${file.path}, usePlaceCursorAtLineEndSetting: ${usePlaceCursorAtLineEndSetting}`
       );
 
       let targetView: MarkdownView | null = null;
-      const leaves = this.app.workspace.getLeavesOfType("markdown");
+      const leaves = this.app.workspace.getLeavesOfType('markdown');
       for (const leaf of leaves) {
         const view = leaf.view as MarkdownView;
         if (view && view.file?.path === file.path) {
@@ -475,14 +475,14 @@ export class FileOperations {
 
       verboseLog(
         this.plugin,
-        `Target view found: ${!!targetView}, file matches: ${targetView?.file?.path === file.path}`,
+        `Target view found: ${!!targetView}, file matches: ${targetView?.file?.path === file.path}`
       );
 
       if (targetView && targetView.file?.path === file.path) {
         await targetView.leaf.setViewState({
-          type: "markdown",
+          type: 'markdown',
           state: {
-            mode: "source",
+            mode: 'source',
             source: false,
           },
         });
@@ -491,13 +491,13 @@ export class FileOperations {
 
         let titleLineNumber = 0;
         let titleLineLength = 0;
-        const content = targetView.editor?.getValue() || "";
-        const lines = content.split("\n");
+        const content = targetView.editor?.getValue() || '';
+        const lines = content.split('\n');
 
         let yamlEndLine = -1;
-        if (lines[0] === "---") {
+        if (lines[0] === '---') {
           for (let i = 1; i < lines.length; i++) {
-            if (lines[i] === "---") {
+            if (lines[i] === '---') {
               yamlEndLine = i;
               break;
             }
@@ -508,13 +508,13 @@ export class FileOperations {
           titleLineNumber = yamlEndLine + 1;
           verboseLog(
             this.plugin,
-            `Found frontmatter ending at line ${yamlEndLine}, title on line ${titleLineNumber}`,
+            `Found frontmatter ending at line ${yamlEndLine}, title on line ${titleLineNumber}`
           );
         } else {
           titleLineNumber = 0;
           verboseLog(
             this.plugin,
-            `No frontmatter found, title on line ${titleLineNumber}`,
+            `No frontmatter found, title on line ${titleLineNumber}`
           );
         }
 
@@ -552,17 +552,17 @@ export class FileOperations {
 
         verboseLog(
           this.plugin,
-          `[CURSOR-FLIT] file-operations.ts:500 - BEFORE setCursor() | target: line ${targetPosition.line} ch ${targetPosition.ch}`,
+          `[CURSOR-FLIT] file-operations.ts:500 - BEFORE setCursor() | target: line ${targetPosition.line} ch ${targetPosition.ch}`
         );
         targetView.editor?.setCursor(targetPosition);
         verboseLog(
           this.plugin,
-          `[CURSOR-POS] Set cursor to line ${targetPosition.line}, ch ${targetPosition.ch} for ${file.path}`,
+          `[CURSOR-POS] Set cursor to line ${targetPosition.line}, ch ${targetPosition.ch} for ${file.path}`
         );
       } else {
         verboseLog(
           this.plugin,
-          `Skipping cursor positioning - no matching active view for ${file.path}`,
+          `Skipping cursor positioning - no matching active view for ${file.path}`
         );
       }
     } catch (error) {
@@ -594,7 +594,7 @@ export class FileOperations {
   isFileExcludedForCursorPositioning(
     file: TFile,
     content?: string,
-    skipFolderCheck: boolean = false,
+    skipFolderCheck: boolean = false
   ): boolean {
     const exclusionOverrides = skipFolderCheck
       ? { ignoreFolder: true }
@@ -606,7 +606,7 @@ export class FileOperations {
         this.app,
         content,
         exclusionOverrides,
-        this.plugin,
+        this.plugin
       )
     ) {
       return true;
@@ -623,7 +623,7 @@ export class FileOperations {
           file,
           this.app,
           this.settings.exclusions.disableRenamingKey,
-          this.settings.exclusions.disableRenamingValue,
+          this.settings.exclusions.disableRenamingValue
         )
       ) {
         return true;
@@ -648,7 +648,7 @@ export class FileOperations {
       return false;
     }
 
-    if (!frontmatter || typeof frontmatter !== "object") return false;
+    if (!frontmatter || typeof frontmatter !== 'object') return false;
 
     const disableKey = this.settings.exclusions.disableRenamingKey;
     const disableValue =
@@ -656,12 +656,12 @@ export class FileOperations {
 
     const nonEmptyExcludedProps =
       this.settings.exclusions.excludedProperties.filter(
-        (prop) => prop.key.trim() !== "",
+        (prop) => prop.key.trim() !== ''
       );
 
     // Helper to normalize tag values (remove # prefix)
     const normalizeTag = (val: string): string => {
-      return val.startsWith("#") ? val.substring(1) : val;
+      return val.startsWith('#') ? val.substring(1) : val;
     };
 
     const checkValue = (key: string, value: unknown): boolean => {
@@ -678,22 +678,22 @@ export class FileOperations {
 
         if (key === propKey) {
           // For tags property, normalize both sides (remove #)
-          if (propKey === "tags") {
+          if (propKey === 'tags') {
             const normalizedPropValue = normalizeTag(propValue);
             const normalizedValue = normalizeTag(valueStr);
-            if (propValue === "" || normalizedValue === normalizedPropValue) {
+            if (propValue === '' || normalizedValue === normalizedPropValue) {
               verboseLog(
                 this.plugin,
-                `Found excluded tag: ${propKey}: ${valueStr}`,
+                `Found excluded tag: ${propKey}: ${valueStr}`
               );
               return true;
             }
           } else {
             // For other properties, exact match or empty value (any value)
-            if (propValue === "" || valueStr === propValue) {
+            if (propValue === '' || valueStr === propValue) {
               verboseLog(
                 this.plugin,
-                `Found excluded property: ${propKey}: ${valueStr}`,
+                `Found excluded property: ${propKey}: ${valueStr}`
               );
               return true;
             }
@@ -731,7 +731,7 @@ export class FileOperations {
   private positionCursorAfterTitleInsertion(
     view: MarkdownView,
     titleLine: number,
-    titleLength: number,
+    titleLength: number
   ): void {
     if (
       this.settings.core.moveCursorToFirstLine &&
@@ -742,12 +742,12 @@ export class FileOperations {
           view.editor.focus();
           verboseLog(
             this.plugin,
-            `[CURSOR-FLIT] file-operations.ts:641 - BEFORE setCursor() | target: line ${titleLine} ch ${titleLength}`,
+            `[CURSOR-FLIT] file-operations.ts:641 - BEFORE setCursor() | target: line ${titleLine} ch ${titleLength}`
           );
           view.editor.setCursor({ line: titleLine, ch: titleLength });
           verboseLog(
             this.plugin,
-            `[TITLE-INSERT] Positioned cursor at end of title line ${titleLine} (${titleLength} chars)`,
+            `[TITLE-INSERT] Positioned cursor at end of title line ${titleLine} (${titleLength} chars)`
           );
         }
       }, 0);

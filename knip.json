@@ -2,7 +2,17 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": ["main.ts"],
   "project": ["src/**/*.ts", "tests/**/*.ts"],
-  "ignoreDependencies": ["@typescript-eslint/eslint-plugin"],
-  "ignore": ["src/utils.ts", "src/types.ts"],
+  "ignoreDependencies": [
+    "@eslint/compat",
+    "@eslint/js",
+    "@eslint/json",
+    "@typescript-eslint/eslint-plugin",
+    "obsidian",
+    "prettier",
+    "typescript-eslint"
+  ],
+  "ignoreBinaries": ["eslint", "knip"],
+  "exclude": ["exports"],
+  "ignore": ["src/utils.ts", "src/types.ts", "src/utils/timestamp-rate-limiter.ts"],
   "ignoreExportsUsedInFile": true
 }

@@ -1,4 +1,4 @@
-import type FirstLineIsTitlePlugin from "../../main";
+import type FirstLineIsTitlePlugin from '../../main';
 
 export interface CacheConfig {
   maxContentEntries: number;
@@ -149,7 +149,7 @@ export class CacheManager {
 
   constructor(
     plugin: FirstLineIsTitlePlugin,
-    config: CacheConfig = DEFAULT_CACHE_CONFIG,
+    config: CacheConfig = DEFAULT_CACHE_CONFIG
   ) {
     this.plugin = plugin;
 

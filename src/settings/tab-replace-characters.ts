@@ -4,12 +4,12 @@ import {
   setIcon,
   ToggleComponent,
   Notice,
-} from "obsidian";
-import { SettingsTabBase, FirstLineIsTitlePlugin } from "./settings-base";
-import { detectOS } from "../utils";
-import { DEFAULT_SETTINGS } from "../constants";
-import { t, getCurrentLocale } from "../i18n";
-import { CharReplacements } from "../types/char-replacement";
+} from 'obsidian';
+import { SettingsTabBase, FirstLineIsTitlePlugin } from './settings-base';
+import { detectOS } from '../utils';
+import { DEFAULT_SETTINGS } from '../constants';
+import { t, getCurrentLocale } from '../i18n';
+import { CharReplacements } from '../types/char-replacement';
 
 // Module-level constants for tab index values
 const TAB_INDEX_FOCUSABLE = 0;
@@ -37,19 +37,19 @@ export class ForbiddenCharsTab extends SettingsTabBase {
   private renderCharacterRows(config: CharTableConfig): void {
     config.chars.forEach((setting) => {
       const key = setting.key;
-      const rowEl = config.wrapper.createEl("div", {
-        cls: "flit-char-replacement-setting",
+      const rowEl = config.wrapper.createEl('div', {
+        cls: 'flit-char-replacement-setting',
       });
 
-      const toggleContainer = rowEl.createDiv({ cls: "flit-enable-column" });
-      const toggleSetting = new Setting(document.createElement("div"));
+      const toggleContainer = rowEl.createDiv({ cls: 'flit-enable-column' });
+      const toggleSetting = new Setting(document.createElement('div'));
       toggleSetting.addToggle((toggle) => {
         toggle
           .setValue(
             config.isEnabled()
               ? this.plugin.settings.replaceCharacters.charReplacements[key]
                   .enabled
-              : false,
+              : false
           )
           .onChange(async (value) => {
             this.plugin.settings.replaceCharacters.charReplacements[
@@ -57,16 +57,16 @@ export class ForbiddenCharsTab extends SettingsTabBase {
             ].enabled = value;
             this.plugin.debugLog(
               `charReplacements.${String(key)}.enabled`,
-              value,
+              value
             );
             try {
               await this.plugin.saveSettings();
             } catch {
-              new Notice(t("settings.errors.saveFailed"));
+              new Notice(t('settings.errors.saveFailed'));
             }
             updateRowAppearance();
           });
-        toggle.toggleEl.classList.add("flit-margin-0");
+        toggle.toggleEl.classList.add('flit-margin-0');
         toggleContainer.appendChild(toggle.toggleEl);
       });
 
@@ -74,38 +74,38 @@ export class ForbiddenCharsTab extends SettingsTabBase {
         if (
           this.plugin.settings.replaceCharacters.charReplacements[key].enabled
         ) {
-          rowEl.classList.remove("flit-row-disabled");
+          rowEl.classList.remove('flit-row-disabled');
         } else {
-          rowEl.classList.add("flit-row-disabled");
+          rowEl.classList.add('flit-row-disabled');
         }
       };
 
-      const nameContainer = rowEl.createEl("div", {
-        cls: "flit-char-name-column",
+      const nameContainer = rowEl.createEl('div', {
+        cls: 'flit-char-name-column',
       });
-      nameContainer.createEl("div", {
+      nameContainer.createEl('div', {
         text: setting.name,
-        cls: "setting-item-name",
+        cls: 'setting-item-name',
       });
       if (setting.description) {
-        const descEl = nameContainer.createEl("div", {
-          cls: "setting-item-description",
+        const descEl = nameContainer.createEl('div', {
+          cls: 'setting-item-description',
         });
         descEl.textContent = setting.description;
       }
 
       const inputContainer = rowEl.createDiv({
-        cls: "flit-char-text-input-container",
+        cls: 'flit-char-text-input-container',
       });
 
-      const restoreButton = inputContainer.createEl("div", {
-        cls: "clickable-icon extra-setting-button",
+      const restoreButton = inputContainer.createEl('div', {
+        cls: 'clickable-icon extra-setting-button',
         attr: {
-          "aria-label": t("settings.replaceCharacters.restoreDefault"),
+          'aria-label': t('settings.replaceCharacters.restoreDefault'),
         },
       });
-      setIcon(restoreButton, "rotate-ccw");
-      restoreButton.addEventListener("click", () => {
+      setIcon(restoreButton, 'rotate-ccw');
+      restoreButton.addEventListener('click', () => {
         void (async () => {
           this.plugin.settings.replaceCharacters.charReplacements[
             key
@@ -120,21 +120,21 @@ export class ForbiddenCharsTab extends SettingsTabBase {
           try {
             await this.plugin.saveSettings();
           } catch {
-            new Notice(t("settings.errors.saveFailed"));
+            new Notice(t('settings.errors.saveFailed'));
           }
         })();
       });
 
-      const textInput = inputContainer.createEl("input", {
-        type: "text",
-        cls: "flit-char-text-input flit-width-120",
+      const textInput = inputContainer.createEl('input', {
+        type: 'text',
+        cls: 'flit-char-text-input flit-width-120',
       });
-      textInput.placeholder = t("settings.replaceCharacters.emptyPlaceholder");
+      textInput.placeholder = t('settings.replaceCharacters.emptyPlaceholder');
       textInput.value =
         this.plugin.settings.replaceCharacters.charReplacements[
           key
         ].replacement;
-      textInput.addEventListener("input", (e) => {
+      textInput.addEventListener('input', (e) => {
         void (async () => {
           this.plugin.settings.replaceCharacters.charReplacements[
             key
@@ -142,32 +142,32 @@ export class ForbiddenCharsTab extends SettingsTabBase {
           this.plugin.debugLog(
             `charReplacements.${String(key)}.replacement`,
             this.plugin.settings.replaceCharacters.charReplacements[key]
-              .replacement,
+              .replacement
           );
           try {
             await this.plugin.saveSettings();
           } catch {
-            new Notice(t("settings.errors.saveFailed"));
+            new Notice(t('settings.errors.saveFailed'));
           }
         })();
       });
 
       this.addForbiddenCharProtection(
         textInput,
-        config.isWindowsAndroid ?? false,
+        config.isWindowsAndroid ?? false
       );
 
       const trimLeftContainer = rowEl.createDiv({
-        cls: "flit-toggle-column center",
+        cls: 'flit-toggle-column center',
       });
-      const trimLeftSetting = new Setting(document.createElement("div"));
+      const trimLeftSetting = new Setting(document.createElement('div'));
       trimLeftSetting.addToggle((toggle) => {
         toggle
           .setValue(
             config.isEnabled()
               ? this.plugin.settings.replaceCharacters.charReplacements[key]
                   .trimLeft
-              : false,
+              : false
           )
           .onChange(async (value) => {
             this.plugin.settings.replaceCharacters.charReplacements[
@@ -175,29 +175,29 @@ export class ForbiddenCharsTab extends SettingsTabBase {
             ].trimLeft = value;
             this.plugin.debugLog(
               `charReplacements.${String(key)}.trimLeft`,
-              value,
+              value
             );
             try {
               await this.plugin.saveSettings();
             } catch {
-              new Notice(t("settings.errors.saveFailed"));
+              new Notice(t('settings.errors.saveFailed'));
             }
           });
-        toggle.toggleEl.classList.add("flit-margin-0");
+        toggle.toggleEl.classList.add('flit-margin-0');
         trimLeftContainer.appendChild(toggle.toggleEl);
       });
 
       const trimRightContainer = rowEl.createDiv({
-        cls: "flit-toggle-column center",
+        cls: 'flit-toggle-column center',
       });
-      const trimRightSetting = new Setting(document.createElement("div"));
+      const trimRightSetting = new Setting(document.createElement('div'));
       trimRightSetting.addToggle((toggle) => {
         toggle
           .setValue(
             config.isEnabled()
               ? this.plugin.settings.replaceCharacters.charReplacements[key]
                   .trimRight
-              : false,
+              : false
           )
           .onChange(async (value) => {
             this.plugin.settings.replaceCharacters.charReplacements[
@@ -205,15 +205,15 @@ export class ForbiddenCharsTab extends SettingsTabBase {
             ].trimRight = value;
             this.plugin.debugLog(
               `charReplacements.${String(key)}.trimRight`,
-              value,
+              value
             );
             try {
               await this.plugin.saveSettings();
             } catch {
-              new Notice(t("settings.errors.saveFailed"));
+              new Notice(t('settings.errors.saveFailed'));
             }
           });
-        toggle.toggleEl.classList.add("flit-margin-0");
+        toggle.toggleEl.classList.add('flit-margin-0');
         trimRightContainer.appendChild(toggle.toggleEl);
       });
 
@@ -222,59 +222,59 @@ export class ForbiddenCharsTab extends SettingsTabBase {
   }
 
   private renderTableHeader(wrapper: HTMLElement): void {
-    const headerRow = wrapper.createEl("div", {
-      cls: "flit-char-replacement-header",
+    const headerRow = wrapper.createEl('div', {
+      cls: 'flit-char-replacement-header',
     });
 
-    const enableHeader = headerRow.createDiv({ cls: "flit-enable-column" });
-    enableHeader.textContent = t("settings.replaceCharacters.headers.enable");
+    const enableHeader = headerRow.createDiv({ cls: 'flit-enable-column' });
+    enableHeader.textContent = t('settings.replaceCharacters.headers.enable');
 
     const charNameHeader = headerRow.createDiv({
-      cls: "flit-char-name-column",
+      cls: 'flit-char-name-column',
     });
     charNameHeader.textContent = t(
-      "settings.replaceCharacters.headers.character",
+      'settings.replaceCharacters.headers.character'
     );
 
     const inputHeader = headerRow.createDiv({
-      cls: "flit-char-text-input-container",
+      cls: 'flit-char-text-input-container',
     });
     inputHeader.textContent = t(
-      "settings.replaceCharacters.headers.replaceWith",
+      'settings.replaceCharacters.headers.replaceWith'
     );
 
     const trimLeftHeader = headerRow.createDiv({
-      cls: "flit-toggle-column center",
+      cls: 'flit-toggle-column center',
     });
     const trimLeftLine1 = trimLeftHeader.createDiv();
     trimLeftLine1.textContent = t(
-      "settings.replaceCharacters.headers.trimLeft",
+      'settings.replaceCharacters.headers.trimLeft'
     );
 
     const trimRightHeader = headerRow.createDiv({
-      cls: "flit-toggle-column center",
+      cls: 'flit-toggle-column center',
     });
     const trimRightLine1 = trimRightHeader.createDiv();
     trimRightLine1.textContent = t(
-      "settings.replaceCharacters.headers.trimRight",
+      'settings.replaceCharacters.headers.trimRight'
     );
   }
 
   render(): void {
     new Setting(this.containerEl)
-      .setName(t("settings.replaceCharacters.name"))
-      .setDesc(t("settings.replaceCharacters.desc"))
+      .setName(t('settings.replaceCharacters.name'))
+      .setDesc(t('settings.replaceCharacters.desc'))
       .setHeading()
       .addToggle((toggle) => {
         toggle
           .setValue(
             this.plugin.settings.replaceCharacters
-              .enableForbiddenCharReplacements,
+              .enableForbiddenCharReplacements
           )
           .onChange(async (value) => {
             this.plugin.settings.replaceCharacters.enableForbiddenCharReplacements =
               value;
-            this.plugin.debugLog("enableForbiddenCharReplacements", value);
+            this.plugin.debugLog('enableForbiddenCharReplacements', value);
 
             // Auto-toggle OFF dependent settings when disabling
             if (!value) {
@@ -298,12 +298,12 @@ export class ForbiddenCharsTab extends SettingsTabBase {
               // If OS is Windows, also enable 'Windows/Android' section
               const currentOS = detectOS();
               if (
-                currentOS === "Windows" &&
+                currentOS === 'Windows' &&
                 !this.plugin.settings.core.hasEnabledWindowsAndroid
               ) {
                 this.plugin.settings.replaceCharacters.windowsAndroidEnabled = true;
                 const windowsAndroidKeys = windowsAndroidChars.map(
-                  (s) => s.key,
+                  (s) => s.key
                 );
                 windowsAndroidKeys.forEach((key) => {
                   this.plugin.settings.replaceCharacters.charReplacements[
@@ -317,35 +317,35 @@ export class ForbiddenCharsTab extends SettingsTabBase {
             try {
               await this.plugin.saveSettings();
             } catch {
-              new Notice(t("settings.errors.saveFailed"));
+              new Notice(t('settings.errors.saveFailed'));
             }
             updateCharacterSettings(); // Rebuilds everything including UI state
             if (windowsAndroidToggleComponent !== undefined) {
               windowsAndroidToggleComponent.setDisabled(!value);
               if (value) {
                 windowsAndroidToggleComponent.toggleEl.classList.remove(
-                  "flit-state-disabled",
+                  'flit-state-disabled'
                 );
                 windowsAndroidToggleComponent.toggleEl.classList.add(
-                  "flit-state-enabled",
+                  'flit-state-enabled'
                 );
                 windowsAndroidToggleComponent.toggleEl.tabIndex =
                   TAB_INDEX_FOCUSABLE;
                 windowsAndroidToggleComponent.toggleEl.removeAttribute(
-                  "aria-disabled",
+                  'aria-disabled'
                 );
               } else {
                 windowsAndroidToggleComponent.toggleEl.classList.remove(
-                  "flit-state-enabled",
+                  'flit-state-enabled'
                 );
                 windowsAndroidToggleComponent.toggleEl.classList.add(
-                  "flit-state-disabled",
+                  'flit-state-disabled'
                 );
                 windowsAndroidToggleComponent.toggleEl.tabIndex =
                   TAB_INDEX_NOT_FOCUSABLE;
                 windowsAndroidToggleComponent.toggleEl.setAttribute(
-                  "aria-disabled",
-                  "true",
+                  'aria-disabled',
+                  'true'
                 );
               }
             }
@@ -358,7 +358,7 @@ export class ForbiddenCharsTab extends SettingsTabBase {
       });
 
     const charSettingsContainer = this.containerEl.createDiv({
-      cls: "flit-char-settings-container",
+      cls: 'flit-char-settings-container',
     });
 
     let windowsAndroidToggleComponent: ToggleComponent | undefined;
@@ -366,97 +366,97 @@ export class ForbiddenCharsTab extends SettingsTabBase {
     const updateCharacterReplacementUI = () => {
       this.updateInteractiveState(
         charSettingsContainer,
-        this.plugin.settings.replaceCharacters.enableForbiddenCharReplacements,
+        this.plugin.settings.replaceCharacters.enableForbiddenCharReplacements
       );
       this.updateDisabledRowsAccessibility(charSettingsContainer);
       const allTableContainers = charSettingsContainer.querySelectorAll(
-        ".flit-table-container",
+        '.flit-table-container'
       );
       allTableContainers.forEach((container: HTMLElement) => {
         if (
           this.plugin.settings.replaceCharacters.enableForbiddenCharReplacements
         ) {
-          container.classList.remove("flit-master-disabled");
+          container.classList.remove('flit-master-disabled');
         } else {
-          container.classList.add("flit-master-disabled");
+          container.classList.add('flit-master-disabled');
         }
       });
     };
 
     const primaryCharSettings: CharSettingDef[] = [
       {
-        key: "leftBracket",
-        name: t("settings.replaceCharacters.characters.leftBracket"),
-        char: "[",
+        key: 'leftBracket',
+        name: t('settings.replaceCharacters.characters.leftBracket'),
+        char: '[',
       },
       {
-        key: "rightBracket",
-        name: t("settings.replaceCharacters.characters.rightBracket"),
-        char: "]",
+        key: 'rightBracket',
+        name: t('settings.replaceCharacters.characters.rightBracket'),
+        char: ']',
       },
       {
-        key: "hash",
-        name: t("settings.replaceCharacters.characters.hash"),
-        char: "#",
+        key: 'hash',
+        name: t('settings.replaceCharacters.characters.hash'),
+        char: '#',
       },
       {
-        key: "caret",
-        name: t("settings.replaceCharacters.characters.caret"),
-        char: "^",
+        key: 'caret',
+        name: t('settings.replaceCharacters.characters.caret'),
+        char: '^',
       },
       {
-        key: "pipe",
-        name: t("settings.replaceCharacters.characters.pipe"),
-        char: "|",
+        key: 'pipe',
+        name: t('settings.replaceCharacters.characters.pipe'),
+        char: '|',
       },
       {
-        key: "backslash",
-        name: t("settings.replaceCharacters.characters.backslash"),
+        key: 'backslash',
+        name: t('settings.replaceCharacters.characters.backslash'),
         char: String.fromCharCode(92),
       },
       {
-        key: "slash",
-        name: t("settings.replaceCharacters.characters.forwardSlash"),
-        char: "/",
+        key: 'slash',
+        name: t('settings.replaceCharacters.characters.forwardSlash'),
+        char: '/',
       },
       {
-        key: "colon",
-        name: t("settings.replaceCharacters.characters.colon"),
-        char: ":",
+        key: 'colon',
+        name: t('settings.replaceCharacters.characters.colon'),
+        char: ':',
       },
       {
-        key: "dot",
-        name: t("settings.replaceCharacters.characters.dot"),
-        char: ".",
-        description: t("settings.replaceCharacters.characters.dotNote"),
+        key: 'dot',
+        name: t('settings.replaceCharacters.characters.dot'),
+        char: '.',
+        description: t('settings.replaceCharacters.characters.dotNote'),
       },
     ];
 
     const windowsAndroidChars: CharSettingDef[] = [
       {
-        key: "asterisk",
-        name: t("settings.replaceCharacters.characters.asterisk"),
-        char: "*",
+        key: 'asterisk',
+        name: t('settings.replaceCharacters.characters.asterisk'),
+        char: '*',
       },
       {
-        key: "quote",
-        name: t("settings.replaceCharacters.characters.quote"),
+        key: 'quote',
+        name: t('settings.replaceCharacters.characters.quote'),
         char: '"',
       },
       {
-        key: "lessThan",
-        name: t("settings.replaceCharacters.characters.lessThan"),
-        char: "<",
+        key: 'lessThan',
+        name: t('settings.replaceCharacters.characters.lessThan'),
+        char: '<',
       },
       {
-        key: "greaterThan",
-        name: t("settings.replaceCharacters.characters.greaterThan"),
-        char: ">",
+        key: 'greaterThan',
+        name: t('settings.replaceCharacters.characters.greaterThan'),
+        char: '>',
       },
       {
-        key: "question",
-        name: t("settings.replaceCharacters.characters.questionMark"),
-        char: "?",
+        key: 'question',
+        name: t('settings.replaceCharacters.characters.questionMark'),
+        char: '?',
       },
     ];
 
@@ -464,58 +464,58 @@ export class ForbiddenCharsTab extends SettingsTabBase {
       charSettingsContainer.empty();
 
       const allOSesHeading = new Setting(charSettingsContainer)
-        .setName(t("settings.replaceCharacters.allOSes.title"))
-        .setDesc(t("settings.replaceCharacters.allOSes.desc"))
+        .setName(t('settings.replaceCharacters.allOSes.title'))
+        .setDesc(t('settings.replaceCharacters.allOSes.desc'))
         .setHeading();
-      allOSesHeading.settingEl.addClass("flit-heading-with-desc");
+      allOSesHeading.settingEl.addClass('flit-heading-with-desc');
 
-      const allOSesNoteEl = charSettingsContainer.createEl("div", {
-        cls: "setting-item-description flit-margin-top-15 flit-margin-bottom-15",
+      const allOSesNoteEl = charSettingsContainer.createEl('div', {
+        cls: 'setting-item-description flit-margin-top-15 flit-margin-bottom-15',
       });
       const locale = getCurrentLocale();
       allOSesNoteEl.appendText(
-        t("settings.replaceCharacters.allOSes.note.part1"),
+        t('settings.replaceCharacters.allOSes.note.part1')
       );
-      if (locale === "ru") {
+      if (locale === 'ru') {
         allOSesNoteEl.appendText(
-          "«" + t("settings.replaceCharacters.allOSes.note.trimLeft") + "»",
+          '«' + t('settings.replaceCharacters.allOSes.note.trimLeft') + '»'
         );
       } else {
-        allOSesNoteEl.createEl("em", {
-          text: t("settings.replaceCharacters.allOSes.note.trimLeft"),
+        allOSesNoteEl.createEl('em', {
+          text: t('settings.replaceCharacters.allOSes.note.trimLeft'),
         });
       }
       allOSesNoteEl.appendText(
-        t("settings.replaceCharacters.allOSes.note.part2"),
+        t('settings.replaceCharacters.allOSes.note.part2')
       );
-      if (locale === "ru") {
+      if (locale === 'ru') {
         allOSesNoteEl.appendText(
-          "«" + t("settings.replaceCharacters.allOSes.note.trimRight") + "»",
+          '«' + t('settings.replaceCharacters.allOSes.note.trimRight') + '»'
         );
       } else {
-        allOSesNoteEl.createEl("em", {
-          text: t("settings.replaceCharacters.allOSes.note.trimRight"),
+        allOSesNoteEl.createEl('em', {
+          text: t('settings.replaceCharacters.allOSes.note.trimRight'),
         });
       }
       allOSesNoteEl.appendText(
-        t("settings.replaceCharacters.allOSes.note.part3"),
+        t('settings.replaceCharacters.allOSes.note.part3')
       );
 
-      new SettingGroup(charSettingsContainer).addClass("flit-all-oses-group");
+      new SettingGroup(charSettingsContainer).addClass('flit-all-oses-group');
       const allOSesGroupContainer =
         charSettingsContainer.querySelector<HTMLElement>(
-          ".flit-all-oses-group .setting-items",
+          '.flit-all-oses-group .setting-items'
         );
       if (!allOSesGroupContainer) {
-        console.error("FLIT: Failed to find all-oses-group settings container");
+        console.error('FLIT: Failed to find all-oses-group settings container');
         return;
       }
 
-      const allOSesTableContainer = allOSesGroupContainer.createEl("div", {
-        cls: "flit-table-container",
+      const allOSesTableContainer = allOSesGroupContainer.createEl('div', {
+        cls: 'flit-table-container',
       });
-      const allOSesTableWrapper = allOSesTableContainer.createEl("div", {
-        cls: "flit-table-wrapper",
+      const allOSesTableWrapper = allOSesTableContainer.createEl('div', {
+        cls: 'flit-table-wrapper',
       });
 
       this.renderTableHeader(allOSesTableWrapper);
@@ -527,23 +527,23 @@ export class ForbiddenCharsTab extends SettingsTabBase {
       });
 
       new Setting(charSettingsContainer)
-        .setName(t("settings.replaceCharacters.windowsAndroid.title"))
-        .setDesc(t("settings.replaceCharacters.windowsAndroid.desc"))
+        .setName(t('settings.replaceCharacters.windowsAndroid.title'))
+        .setDesc(t('settings.replaceCharacters.windowsAndroid.desc'))
         .setHeading()
         .addToggle((toggle) => {
           windowsAndroidToggleComponent = toggle;
           toggle
             .setValue(
-              this.plugin.settings.replaceCharacters.windowsAndroidEnabled,
+              this.plugin.settings.replaceCharacters.windowsAndroidEnabled
             )
             .setDisabled(
               !this.plugin.settings.replaceCharacters
-                .enableForbiddenCharReplacements,
+                .enableForbiddenCharReplacements
             )
             .onChange(async (value) => {
               this.plugin.settings.replaceCharacters.windowsAndroidEnabled =
                 value;
-              this.plugin.debugLog("windowsAndroidEnabled", value);
+              this.plugin.debugLog('windowsAndroidEnabled', value);
 
               // On first enable, turn on all 'Windows/Android' options
               if (
@@ -559,7 +559,7 @@ export class ForbiddenCharsTab extends SettingsTabBase {
                 try {
                   await this.plugin.saveSettings();
                 } catch {
-                  new Notice(t("settings.errors.saveFailed"));
+                  new Notice(t('settings.errors.saveFailed'));
                 }
                 updateCharacterSettings();
                 updateWindowsAndroidUI();
@@ -569,7 +569,7 @@ export class ForbiddenCharsTab extends SettingsTabBase {
               try {
                 await this.plugin.saveSettings();
               } catch {
-                new Notice(t("settings.errors.saveFailed"));
+                new Notice(t('settings.errors.saveFailed'));
               }
               updateWindowsAndroidUI();
             });
@@ -579,33 +579,33 @@ export class ForbiddenCharsTab extends SettingsTabBase {
             !this.plugin.settings.replaceCharacters
               .enableForbiddenCharReplacements
           ) {
-            toggle.toggleEl.classList.add("flit-state-disabled");
+            toggle.toggleEl.classList.add('flit-state-disabled');
             toggle.toggleEl.tabIndex = TAB_INDEX_NOT_FOCUSABLE;
-            toggle.toggleEl.setAttribute("aria-disabled", "true");
+            toggle.toggleEl.setAttribute('aria-disabled', 'true');
           }
         });
 
       new SettingGroup(charSettingsContainer).addClass(
-        "flit-windows-android-group",
+        'flit-windows-android-group'
       );
       const windowsAndroidGroupContainer =
         charSettingsContainer.querySelector<HTMLElement>(
-          ".flit-windows-android-group .setting-items",
+          '.flit-windows-android-group .setting-items'
         );
       if (!windowsAndroidGroupContainer) {
         console.error(
-          "FLIT: Failed to find windows-android-group settings container",
+          'FLIT: Failed to find windows-android-group settings container'
         );
         return;
       }
 
       const windowsAndroidTableContainer =
-        windowsAndroidGroupContainer.createEl("div", {
-          cls: "flit-table-container flit-windows-android-table",
+        windowsAndroidGroupContainer.createEl('div', {
+          cls: 'flit-table-container flit-windows-android-table',
         });
       const windowsAndroidTableWrapper = windowsAndroidTableContainer.createEl(
-        "div",
-        { cls: "flit-table-wrapper" },
+        'div',
+        { cls: 'flit-table-wrapper' }
       );
 
       this.renderTableHeader(windowsAndroidTableWrapper);
@@ -622,13 +622,13 @@ export class ForbiddenCharsTab extends SettingsTabBase {
     const updateWindowsAndroidUI = () => {
       const windowsAndroidGroup =
         charSettingsContainer.querySelector<HTMLElement>(
-          ".flit-windows-android-group",
+          '.flit-windows-android-group'
         );
       if (windowsAndroidGroup) {
         if (this.plugin.settings.replaceCharacters.windowsAndroidEnabled) {
-          windowsAndroidGroup.classList.remove("flit-hidden");
+          windowsAndroidGroup.classList.remove('flit-hidden');
         } else {
-          windowsAndroidGroup.classList.add("flit-hidden");
+          windowsAndroidGroup.classList.add('flit-hidden');
         }
       }
     };

@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { EventHandlerManager } from "../../src/core/event-handler-manager";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { EventHandlerManager } from '../../src/core/event-handler-manager';
 
 // Minimal mock plugin for EventHandlerManager
 // Only includes what's needed for testing the pendingAliasUpdates coordination
@@ -25,7 +25,7 @@ function createMockPlugin() {
   } as any;
 }
 
-describe("EventHandlerManager", () => {
+describe('EventHandlerManager', () => {
   let plugin: any;
   let manager: EventHandlerManager;
 
@@ -34,64 +34,64 @@ describe("EventHandlerManager", () => {
     manager = new EventHandlerManager(plugin);
   });
 
-  describe("pendingAliasUpdates coordination", () => {
-    it("should initially have no pending updates", () => {
-      expect(manager.isAliasUpdatePending("test.md")).toBe(false);
+  describe('pendingAliasUpdates coordination', () => {
+    it('should initially have no pending updates', () => {
+      expect(manager.isAliasUpdatePending('test.md')).toBe(false);
     });
 
-    it("should mark alias update as pending", () => {
-      manager.markAliasUpdatePending("test.md");
-      expect(manager.isAliasUpdatePending("test.md")).toBe(true);
+    it('should mark alias update as pending', () => {
+      manager.markAliasUpdatePending('test.md');
+      expect(manager.isAliasUpdatePending('test.md')).toBe(true);
     });
 
-    it("should clear pending alias update", () => {
-      manager.markAliasUpdatePending("test.md");
-      manager.clearAliasUpdatePending("test.md");
-      expect(manager.isAliasUpdatePending("test.md")).toBe(false);
+    it('should clear pending alias update', () => {
+      manager.markAliasUpdatePending('test.md');
+      manager.clearAliasUpdatePending('test.md');
+      expect(manager.isAliasUpdatePending('test.md')).toBe(false);
     });
 
-    it("should handle multiple files independently", () => {
-      manager.markAliasUpdatePending("file1.md");
-      manager.markAliasUpdatePending("file2.md");
+    it('should handle multiple files independently', () => {
+      manager.markAliasUpdatePending('file1.md');
+      manager.markAliasUpdatePending('file2.md');
 
-      expect(manager.isAliasUpdatePending("file1.md")).toBe(true);
-      expect(manager.isAliasUpdatePending("file2.md")).toBe(true);
-      expect(manager.isAliasUpdatePending("file3.md")).toBe(false);
+      expect(manager.isAliasUpdatePending('file1.md')).toBe(true);
+      expect(manager.isAliasUpdatePending('file2.md')).toBe(true);
+      expect(manager.isAliasUpdatePending('file3.md')).toBe(false);
 
-      manager.clearAliasUpdatePending("file1.md");
-      expect(manager.isAliasUpdatePending("file1.md")).toBe(false);
-      expect(manager.isAliasUpdatePending("file2.md")).toBe(true);
+      manager.clearAliasUpdatePending('file1.md');
+      expect(manager.isAliasUpdatePending('file1.md')).toBe(false);
+      expect(manager.isAliasUpdatePending('file2.md')).toBe(true);
     });
 
-    it("should handle clear on non-existent path", () => {
+    it('should handle clear on non-existent path', () => {
       expect(() =>
-        manager.clearAliasUpdatePending("nonexistent.md"),
+        manager.clearAliasUpdatePending('nonexistent.md')
       ).not.toThrow();
     });
 
-    it("should handle double mark", () => {
-      manager.markAliasUpdatePending("test.md");
-      manager.markAliasUpdatePending("test.md");
-      expect(manager.isAliasUpdatePending("test.md")).toBe(true);
+    it('should handle double mark', () => {
+      manager.markAliasUpdatePending('test.md');
+      manager.markAliasUpdatePending('test.md');
+      expect(manager.isAliasUpdatePending('test.md')).toBe(true);
     });
 
-    it("should handle double clear", () => {
-      manager.markAliasUpdatePending("test.md");
-      manager.clearAliasUpdatePending("test.md");
-      manager.clearAliasUpdatePending("test.md");
-      expect(manager.isAliasUpdatePending("test.md")).toBe(false);
+    it('should handle double clear', () => {
+      manager.markAliasUpdatePending('test.md');
+      manager.clearAliasUpdatePending('test.md');
+      manager.clearAliasUpdatePending('test.md');
+      expect(manager.isAliasUpdatePending('test.md')).toBe(false);
     });
   });
 
-  describe("constructor", () => {
-    it("should initialize with plugin reference", () => {
+  describe('constructor', () => {
+    it('should initialize with plugin reference', () => {
       const manager = new EventHandlerManager(plugin);
       expect(manager).toBeDefined();
     });
   });
 
-  describe("registerAllHandlers", () => {
-    it("should call plugin.registerEvent for each handler type", () => {
+  describe('registerAllHandlers', () => {
+    it('should call plugin.registerEvent for each handler type', () => {
       // Mock the workspace and vault event registrations
       plugin.app.workspace.on = vi.fn().mockReturnValue({});
       plugin.app.vault.on = vi.fn().mockReturnValue({});
@@ -101,7 +101,7 @@ describe("EventHandlerManager", () => {
       plugin.settings = {
         core: {
           enableContextMenus: true,
-          renameNotes: "always",
+          renameNotes: 'always',
         },
         aliases: {
           enableAliases: true,

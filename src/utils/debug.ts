@@ -1,6 +1,6 @@
-import { TFile } from "obsidian";
-import { PluginSettings } from "../types";
-import FirstLineIsTitle from "../../main";
+import { TFile } from 'obsidian';
+import { PluginSettings } from '../types';
+import FirstLineIsTitle from '../../main';
 
 export class DebugUtils {
   constructor(private plugin: FirstLineIsTitle) {}
@@ -21,7 +21,7 @@ export class DebugUtils {
   debugLog(settingName: string, value: unknown): void {
     if (this.settings.core.verboseLogging) {
       console.debug(
-        `Setting changed: ${settingName} = ${JSON.stringify(value)}`,
+        `Setting changed: ${settingName} = ${JSON.stringify(value)}`
       );
     }
   }
@@ -35,7 +35,7 @@ export class DebugUtils {
   outputDebugFileContent(
     file: TFile,
     action: string,
-    editorContent?: string,
+    editorContent?: string
   ): void {
     if (
       !this.settings.core.verboseLogging ||
@@ -45,16 +45,16 @@ export class DebugUtils {
     }
 
     try {
-      const content = editorContent ?? "N/A (no editor content available)";
+      const content = editorContent ?? 'N/A (no editor content available)';
 
       console.debug(`CONTENT [${action}] ${file.path}:`);
-      console.debug("--- FILE CONTENT START ---");
+      console.debug('--- FILE CONTENT START ---');
       console.debug(content);
-      console.debug("--- FILE CONTENT END ---");
+      console.debug('--- FILE CONTENT END ---');
     } catch (error) {
       console.debug(
         `CONTENT [${action}] ${file.path}: Failed to read file:`,
-        error,
+        error
       );
     }
   }
@@ -67,9 +67,9 @@ export class DebugUtils {
       return;
     }
 
-    console.debug("SETTINGS: Complete configuration dump:");
-    console.debug("--- SETTINGS START ---");
+    console.debug('SETTINGS: Complete configuration dump:');
+    console.debug('--- SETTINGS START ---');
     console.debug(JSON.stringify(this.settings, null, 2));
-    console.debug("--- SETTINGS END ---");
+    console.debug('--- SETTINGS END ---');
   }
 }

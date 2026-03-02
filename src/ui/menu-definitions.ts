@@ -1,8 +1,8 @@
-import { Notice, TFile, TFolder } from "obsidian";
-import { MenuConfig } from "./menu-config";
-import FirstLineIsTitlePlugin from "../../main";
-import { ProcessTagModal, RenameFolderModal } from "../modals";
-import { t } from "../i18n";
+import { Notice, TFile, TFolder } from 'obsidian';
+import { MenuConfig } from './menu-config';
+import FirstLineIsTitlePlugin from '../../main';
+import { ProcessTagModal, RenameFolderModal } from '../modals';
+import { t } from '../i18n';
 
 /**
  * Declarative Menu Definitions
@@ -35,9 +35,9 @@ export class MenuDefinitions {
       addSeparator: true,
       items: [
         {
-          id: "tag-put-first-line-in-title",
-          title: t("commands.putFirstLineInTitle"),
-          icon: "file-pen",
+          id: 'tag-put-first-line-in-title',
+          title: t('commands.putFirstLineInTitle'),
+          icon: 'file-type',
           visible: (_context) => {
             return (
               this.plugin.settings.core.enableTagCommands &&
@@ -49,26 +49,26 @@ export class MenuDefinitions {
             new ProcessTagModal(
               this.plugin.app,
               this.plugin,
-              tagContext.tagName,
+              tagContext.tagName
             ).open();
           },
         },
         {
-          id: "tag-disable-renaming",
+          id: 'tag-disable-renaming',
           title: (context) => {
             const tagContext = context as TagContext;
             const menuText = this.plugin.contextMenuManager.getTagMenuText(
-              tagContext.tagName,
+              tagContext.tagName
             );
             return menuText.disable;
           },
-          icon: "square-x",
+          icon: 'square-x',
           visible: (context) => {
             if (!this.plugin.settings.core.enableTagCommands) return false;
             const tagContext = context as TagContext;
             const shouldShowDisable =
               this.plugin.contextMenuManager.shouldShowDisableMenuForTag(
-                tagContext.tagName,
+                tagContext.tagName
               );
             return (
               shouldShowDisable &&
@@ -81,21 +81,21 @@ export class MenuDefinitions {
           },
         },
         {
-          id: "tag-enable-renaming",
+          id: 'tag-enable-renaming',
           title: (context) => {
             const tagContext = context as TagContext;
             const menuText = this.plugin.contextMenuManager.getTagMenuText(
-              tagContext.tagName,
+              tagContext.tagName
             );
             return menuText.enable;
           },
-          icon: "square-check",
+          icon: 'square-check',
           visible: (context) => {
             if (!this.plugin.settings.core.enableTagCommands) return false;
             const tagContext = context as TagContext;
             const shouldShowDisable =
               this.plugin.contextMenuManager.shouldShowDisableMenuForTag(
-                tagContext.tagName,
+                tagContext.tagName
               );
             return (
               !shouldShowDisable &&
@@ -119,9 +119,9 @@ export class MenuDefinitions {
       addSeparator: true,
       items: [
         {
-          id: "folder-put-first-line-in-title",
-          title: t("commands.putFirstLineInTitle"),
-          icon: "folder-pen",
+          id: 'folder-put-first-line-in-title',
+          title: t('commands.putFirstLineInTitle'),
+          icon: 'folder-pen',
           visible: (_context) => {
             return (
               this.plugin.settings.core.enableFolderCommands &&
@@ -134,26 +134,26 @@ export class MenuDefinitions {
             new RenameFolderModal(
               this.plugin.app,
               this.plugin,
-              folderContext.folder,
+              folderContext.folder
             ).open();
           },
         },
         {
-          id: "folder-disable-renaming",
+          id: 'folder-disable-renaming',
           title: (context) => {
             const folderContext = context as FolderContext;
             const menuText = this.plugin.contextMenuManager.getFolderMenuText(
-              folderContext.folder.path,
+              folderContext.folder.path
             );
             return menuText.disable;
           },
-          icon: "square-x",
+          icon: 'square-x',
           visible: (context) => {
             if (!this.plugin.settings.core.enableFolderCommands) return false;
             const folderContext = context as FolderContext;
             const shouldShowDisable =
               this.plugin.contextMenuManager.shouldShowDisableMenuForFolder(
-                folderContext.folder.path,
+                folderContext.folder.path
               );
             return (
               shouldShowDisable &&
@@ -166,21 +166,21 @@ export class MenuDefinitions {
           },
         },
         {
-          id: "folder-enable-renaming",
+          id: 'folder-enable-renaming',
           title: (context) => {
             const folderContext = context as FolderContext;
             const menuText = this.plugin.contextMenuManager.getFolderMenuText(
-              folderContext.folder.path,
+              folderContext.folder.path
             );
             return menuText.enable;
           },
-          icon: "square-check",
+          icon: 'square-check',
           visible: (context) => {
             if (!this.plugin.settings.core.enableFolderCommands) return false;
             const folderContext = context as FolderContext;
             const shouldShowDisable =
               this.plugin.contextMenuManager.shouldShowDisableMenuForFolder(
-                folderContext.folder.path,
+                folderContext.folder.path
               );
             return (
               !shouldShowDisable &&
@@ -204,9 +204,9 @@ export class MenuDefinitions {
       addSeparator: true,
       items: [
         {
-          id: "file-put-first-line-in-title",
-          title: t("commands.putFirstLineInTitle"),
-          icon: "file-pen",
+          id: 'file-put-first-line-in-title',
+          title: t('commands.putFirstLineInTitle'),
+          icon: 'file-type',
           visible: (_context) => {
             return (
               this.plugin.settings.core.enableFileCommands &&
@@ -227,14 +227,14 @@ export class MenuDefinitions {
               true,
               undefined,
               false,
-              exclusionOverrides,
+              exclusionOverrides
             );
           },
         },
         {
-          id: "file-disable-renaming",
-          title: t("commands.disableRenamingForNote"),
-          icon: "square-x",
+          id: 'file-disable-renaming',
+          title: t('commands.disableRenamingForNote'),
+          icon: 'square-x',
           visible: (context) => {
             if (!this.plugin.settings.core.enableFileCommands) return false;
             if (!this.plugin.settings.core.commandVisibility.fileExclude)
@@ -242,7 +242,7 @@ export class MenuDefinitions {
 
             const fileContext = context as FileContext;
             const fileCache = this.plugin.app.metadataCache.getFileCache(
-              fileContext.file,
+              fileContext.file
             );
             if (!fileCache || !fileCache.frontmatter) return true;
 
@@ -254,7 +254,7 @@ export class MenuDefinitions {
 
             const valueStr = String(value).toLowerCase();
             const expectedValue = String(
-              this.plugin.settings.exclusions.disableRenamingValue,
+              this.plugin.settings.exclusions.disableRenamingValue
             ).toLowerCase();
             return valueStr !== expectedValue; // Show disable if property doesn't match
           },
@@ -268,25 +268,25 @@ export class MenuDefinitions {
                   frontmatter[
                     this.plugin.settings.exclusions.disableRenamingKey
                   ] = this.plugin.parsePropertyValue(
-                    this.plugin.settings.exclusions.disableRenamingValue,
+                    this.plugin.settings.exclusions.disableRenamingValue
                   );
-                },
+                }
               );
               new Notice(
-                t("notifications.disabledRenamingFor", {
+                t('notifications.disabledRenamingFor', {
                   filename: fileContext.file.basename,
-                }),
+                })
               );
             } catch (error) {
-              console.error("Failed to disable renaming:", error);
-              new Notice(t("notifications.failedToDisable"));
+              console.error('Failed to disable renaming:', error);
+              new Notice(t('notifications.failedToDisable'));
             }
           },
         },
         {
-          id: "file-enable-renaming",
-          title: t("commands.enableRenamingForNote"),
-          icon: "square-check",
+          id: 'file-enable-renaming',
+          title: t('commands.enableRenamingForNote'),
+          icon: 'square-check',
           visible: (context) => {
             if (!this.plugin.settings.core.enableFileCommands) return false;
             if (!this.plugin.settings.core.commandVisibility.fileStopExcluding)
@@ -294,7 +294,7 @@ export class MenuDefinitions {
 
             const fileContext = context as FileContext;
             const fileCache = this.plugin.app.metadataCache.getFileCache(
-              fileContext.file,
+              fileContext.file
             );
             if (!fileCache || !fileCache.frontmatter) return false;
 
@@ -306,7 +306,7 @@ export class MenuDefinitions {
 
             const valueStr = String(value).toLowerCase();
             const expectedValue = String(
-              this.plugin.settings.exclusions.disableRenamingValue,
+              this.plugin.settings.exclusions.disableRenamingValue
             ).toLowerCase();
             return valueStr === expectedValue; // Show enable if property matches
           },
@@ -319,16 +319,16 @@ export class MenuDefinitions {
                   delete frontmatter[
                     this.plugin.settings.exclusions.disableRenamingKey
                   ];
-                },
+                }
               );
               new Notice(
-                t("notifications.enabledRenamingFor", {
+                t('notifications.enabledRenamingFor', {
                   filename: fileContext.file.basename,
-                }),
+                })
               );
             } catch (error) {
-              console.error("Failed to enable renaming:", error);
-              new Notice(t("notifications.failedToEnable"));
+              console.error('Failed to enable renaming:', error);
+              new Notice(t('notifications.failedToEnable'));
             }
           },
         },

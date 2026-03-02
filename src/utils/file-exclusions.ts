@@ -1,7 +1,7 @@
-import { TFile, App, normalizePath } from "obsidian";
-import { PluginSettings } from "../types";
-import { filterNonEmpty } from "./string-processing";
-import { fileHasTargetTags, normalizeTag } from "./tag-utils";
+import { TFile, App, normalizePath } from 'obsidian';
+import { PluginSettings } from '../types';
+import { filterNonEmpty } from './string-processing';
+import { fileHasTargetTags, normalizeTag } from './tag-utils';
 
 /**
  * Normalize folder path, preserving root folder "/"
@@ -10,8 +10,8 @@ import { fileHasTargetTags, normalizeTag } from "./tag-utils";
  */
 function normalizeFolderPath(folder: string): string {
   // Preserve root folder
-  if (folder === "/") {
-    return "/";
+  if (folder === '/') {
+    return '/';
   }
   return normalizePath(folder);
 }
@@ -22,17 +22,17 @@ function normalizeFolderPath(folder: string): string {
  */
 export function isFileInConfiguredFolders(
   file: TFile,
-  settings: PluginSettings,
+  settings: PluginSettings
 ): boolean {
   // Filter out empty strings and normalize paths
   const nonEmptyFolders = filterNonEmpty(
-    settings.exclusions.excludedFolders,
+    settings.exclusions.excludedFolders
   ).map((folder) => normalizeFolderPath(folder));
   if (nonEmptyFolders.length === 0) return false;
 
   // Obsidian uses "" for root folder, but FLIT stores it as "/"
   const filePath =
-    file.parent?.path === "" ? "/" : (file.parent?.path as string);
+    file.parent?.path === '' ? '/' : (file.parent?.path as string);
   if (nonEmptyFolders.includes(filePath)) {
     return true;
   }
@@ -41,9 +41,9 @@ export function isFileInConfiguredFolders(
   if (settings.exclusions.excludeSubfolders) {
     for (const folder of nonEmptyFolders) {
       // Root folder "/" has no subfolders to check
-      if (folder === "/") continue;
+      if (folder === '/') continue;
 
-      if (filePath && filePath.startsWith(folder + "/")) {
+      if (filePath && filePath.startsWith(folder + '/')) {
         return true;
       }
     }
@@ -58,10 +58,10 @@ export function isFileInConfiguredFolders(
 export function fileHasExcludedProperties(
   file: TFile,
   settings: PluginSettings,
-  app: App,
+  app: App
 ): boolean {
   const nonEmptyProperties = settings.exclusions.excludedProperties.filter(
-    (prop) => prop.key.trim() !== "",
+    (prop) => prop.key.trim() !== ''
   );
   if (nonEmptyProperties.length === 0) return false;
 
@@ -75,13 +75,13 @@ export function fileHasExcludedProperties(
     const propValue = excludedProp.value.trim();
 
     if (propKey in frontmatter) {
-      if (propValue === "") {
+      if (propValue === '') {
         return true;
       }
 
       const frontmatterValue = frontmatter[propKey];
 
-      if (typeof frontmatterValue === "string") {
+      if (typeof frontmatterValue === 'string') {
         if (frontmatterValue === propValue) {
           return true;
         }
@@ -129,7 +129,7 @@ export function shouldProcessFile(
     ignoreTag?: boolean;
     ignoreProperty?: boolean;
   },
-  plugin?: { settings: PluginSettings },
+  plugin?: { settings: PluginSettings }
 ): boolean {
   const isInTargetFolders = isFileInConfiguredFolders(file, settings);
   const hasTargetTags = fileHasTargetTags(file, settings, app, content);
@@ -140,9 +140,9 @@ export function shouldProcessFile(
   const applyStrategy = (
     isTargeted: boolean,
     hasTargets: boolean,
-    strategy: string,
+    strategy: string
   ): boolean => {
-    if (strategy === "Only exclude...") {
+    if (strategy === 'Only exclude...') {
       // Only exclude: exclude files matching the targets
       // If no targets specified, don't exclude anything (process all)
       return hasTargets ? isTargeted : false;
@@ -160,17 +160,17 @@ export function shouldProcessFile(
     : applyStrategy(
         isInTargetFolders,
         settings.exclusions.excludedFolders.some(
-          (folder) => folder.trim() !== "",
+          (folder) => folder.trim() !== ''
         ),
-        settings.exclusions.folderScopeStrategy,
+        settings.exclusions.folderScopeStrategy
       );
 
   const shouldExcludeFromTags = exclusionOverrides?.ignoreTag
     ? false
     : applyStrategy(
         hasTargetTags,
-        settings.exclusions.excludedTags.some((tag) => tag.trim() !== ""),
-        settings.exclusions.tagScopeStrategy,
+        settings.exclusions.excludedTags.some((tag) => tag.trim() !== ''),
+        settings.exclusions.tagScopeStrategy
       );
 
   const shouldExcludeFromProperties = exclusionOverrides?.ignoreProperty
@@ -178,9 +178,9 @@ export function shouldProcessFile(
     : applyStrategy(
         hasTargetProperties,
         settings.exclusions.excludedProperties.some(
-          (prop) => prop.key.trim() !== "",
+          (prop) => prop.key.trim() !== ''
         ),
-        settings.exclusions.propertyScopeStrategy,
+        settings.exclusions.propertyScopeStrategy
       );
 
   // Log exclusion reasons if verbose logging enabled
@@ -194,7 +194,7 @@ export function shouldProcessFile(
       reasons.push(`properties (${settings.exclusions.propertyScopeStrategy})`);
 
     if (reasons.length > 0) {
-      console.debug(`File excluded by ${reasons.join(", ")}: ${file.path}`);
+      console.debug(`File excluded by ${reasons.join(', ')}: ${file.path}`);
     }
   }
 
@@ -211,7 +211,7 @@ export function isFileExcluded(
   file: TFile,
   settings: PluginSettings,
   app: App,
-  _content?: string,
+  _content?: string
 ): boolean {
   // Check property exclusions
   if (fileHasExcludedProperties(file, settings, app)) {
@@ -230,7 +230,7 @@ export function isFileExcluded(
 
     // Check YAML frontmatter tags (unless mode is 'In note body only')
     if (
-      settings.exclusions.tagMatchingMode !== "In note body only" &&
+      settings.exclusions.tagMatchingMode !== 'In note body only' &&
       fileCache &&
       fileCache.frontmatter &&
       fileCache.frontmatter.tags
@@ -255,7 +255,7 @@ export function isFileExcluded(
           // Check child tags if enabled (default true)
           if (settings.exclusions.excludeChildTags) {
             // If file has child tag and excluded tag is parent
-            if (normalizedFileTag.startsWith(normalizedExcludedTag + "/")) {
+            if (normalizedFileTag.startsWith(normalizedExcludedTag + '/')) {
               return true;
             }
           }
@@ -264,14 +264,14 @@ export function isFileExcluded(
     }
 
     // Check inline tags based on matching mode (using metadata cache to avoid false positives)
-    if (settings.exclusions.tagMatchingMode !== "In Properties only") {
+    if (settings.exclusions.tagMatchingMode !== 'In Properties only') {
       let inlineTagsInContent: string[] = [];
 
       // Use metadata cache for accurate tag detection (avoids false positives from code blocks, YAML comments, etc.)
       // Note: fileCache.tags only contains inline tags from markdown body, never from frontmatter
       if (fileCache && fileCache.tags) {
         inlineTagsInContent = fileCache.tags.map((tagCache) =>
-          normalizeTag(tagCache.tag),
+          normalizeTag(tagCache.tag)
         );
       }
 
@@ -288,7 +288,7 @@ export function isFileExcluded(
           // Check child tags if enabled (default true)
           if (settings.exclusions.excludeChildTags) {
             // If file has child tag and excluded tag is parent
-            if (inlineTag.startsWith(normalizedExcludedTag + "/")) {
+            if (inlineTag.startsWith(normalizedExcludedTag + '/')) {
               return true;
             }
           }

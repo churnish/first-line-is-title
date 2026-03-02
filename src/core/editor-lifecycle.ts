@@ -1,6 +1,6 @@
-import { TFile, MarkdownView, ViewWithFileEditor, Editor } from "obsidian";
-import { verboseLog, findTitleSourceLine } from "../utils";
-import FirstLineIsTitle from "../../main";
+import { TFile, MarkdownView, ViewWithFileEditor, Editor } from 'obsidian';
+import { verboseLog, findTitleSourceLine } from '../utils';
+import FirstLineIsTitle from '../../main';
 
 /**
  * EditorLifecycleManager
@@ -105,7 +105,7 @@ export class EditorLifecycleManager {
       clearTimeout(timer);
     }
     this.creationDelayTimers.clear();
-    verboseLog(this.plugin, "Cleared all creation delay timers");
+    verboseLog(this.plugin, 'Cleared all creation delay timers');
   }
 
   /**
@@ -131,7 +131,7 @@ export class EditorLifecycleManager {
    * Setup event-based checking (immediate processing)
    */
   private setupEventBasedChecking(): void {
-    verboseLog(this.plugin, "Setting up event-based checking (immediate)");
+    verboseLog(this.plugin, 'Setting up event-based checking (immediate)');
     // This will be set up in the main event registration
   }
 
@@ -141,7 +141,7 @@ export class EditorLifecycleManager {
   private setupThrottleBasedChecking(): void {
     verboseLog(
       this.plugin,
-      `Setting up throttle-based checking (${this.settings.core.checkInterval}ms delay)`,
+      `Setting up throttle-based checking (${this.settings.core.checkInterval}ms delay)`
     );
   }
 
@@ -151,15 +151,15 @@ export class EditorLifecycleManager {
   private trackActiveEditors(): void {
     // Register workspace events to track open editors
     this.plugin.registerEvent(
-      this.app.workspace.on("active-leaf-change", () => {
+      this.app.workspace.on('active-leaf-change', () => {
         void this.updateActiveEditorTracking();
-      }),
+      })
     );
 
     this.plugin.registerEvent(
-      this.app.workspace.on("layout-change", () => {
+      this.app.workspace.on('layout-change', () => {
         void this.updateActiveEditorTracking();
-      }),
+      })
     );
 
     // Initial tracking
@@ -170,7 +170,7 @@ export class EditorLifecycleManager {
    * Update tracking of active editors
    */
   async updateActiveEditorTracking(): Promise<void> {
-    const markdownViews = this.app.workspace.getLeavesOfType("markdown");
+    const markdownViews = this.app.workspace.getLeavesOfType('markdown');
     const newActiveFiles = new Map<
       string,
       {
@@ -212,7 +212,7 @@ export class EditorLifecycleManager {
     // Process files that were closed (in old map but not in new map)
     if (
       this.isFullyLoaded &&
-      this.settings.core.renameNotes === "automatically"
+      this.settings.core.renameNotes === 'automatically'
     ) {
       for (const [filePath, oldData] of this.activeEditorFiles) {
         if (!newActiveFiles.has(filePath)) {
@@ -223,7 +223,7 @@ export class EditorLifecycleManager {
               stillOpen = true;
               verboseLog(
                 this.plugin,
-                `File ${filePath} was renamed, not closed - skipping tab close processing`,
+                `File ${filePath} was renamed, not closed - skipping tab close processing`
               );
               break;
             }
@@ -237,7 +237,7 @@ export class EditorLifecycleManager {
           if (activeLeafIds.has(oldData.leafId)) {
             verboseLog(
               this.plugin,
-              `File ${filePath} switched in same tab (leaf ${oldData.leafId} still active) - skipping tab close processing`,
+              `File ${filePath} switched in same tab (leaf ${oldData.leafId} still active) - skipping tab close processing`
             );
             continue; // Tab still exists, just switched files
           }
@@ -246,7 +246,7 @@ export class EditorLifecycleManager {
           if (this.recentlyProcessedCloses.has(filePath)) {
             verboseLog(
               this.plugin,
-              `File ${filePath} already processed on tab close - skipping duplicate`,
+              `File ${filePath} already processed on tab close - skipping duplicate`
             );
             continue;
           }
@@ -268,13 +268,13 @@ export class EditorLifecycleManager {
             // Tab close overrides throttle delay - process immediately
             verboseLog(
               this.plugin,
-              `Tab close overriding throttle timer for: ${filePath}`,
+              `Tab close overriding throttle timer for: ${filePath}`
             );
             this.plugin.fileStateManager.clearThrottleTimer(filePath);
 
             verboseLog(
               this.plugin,
-              `Processing immediately due to pending throttle: ${filePath}`,
+              `Processing immediately due to pending throttle: ${filePath}`
             );
             try {
               // hasActiveEditor=true because throttle was created when editor was active
@@ -285,7 +285,7 @@ export class EditorLifecycleManager {
                 undefined,
                 false,
                 undefined,
-                true,
+                true
               );
             } catch (error) {
               console.error(`Error processing closed file ${filePath}:`, error);
@@ -295,7 +295,7 @@ export class EditorLifecycleManager {
             // Tab close with unsaved changes triggers immediate save → modify event
             verboseLog(
               this.plugin,
-              `Tab closed with no pending throttle: ${filePath} - no action needed`,
+              `Tab closed with no pending throttle: ${filePath} - no action needed`
             );
           }
         }
@@ -308,7 +308,7 @@ export class EditorLifecycleManager {
     if (this.activeEditorFiles.size !== this.previousActiveFileCount) {
       verboseLog(
         this.plugin,
-        `Tracking ${this.activeEditorFiles.size} active editor files for tab close detection`,
+        `Tracking ${this.activeEditorFiles.size} active editor files for tab close detection`
       );
       this.previousActiveFileCount = this.activeEditorFiles.size;
     }
@@ -316,7 +316,7 @@ export class EditorLifecycleManager {
     // Handle rename-on-focus: detect when active file changes
     if (this.settings.core.renameOnFocus && this.isFullyLoaded) {
       const currentActiveFile = this.app.workspace.getActiveFile();
-      if (currentActiveFile && currentActiveFile.extension === "md") {
+      if (currentActiveFile && currentActiveFile.extension === 'md') {
         const currentPath = currentActiveFile.path;
 
         // Only process if the focused file actually changed
@@ -326,7 +326,7 @@ export class EditorLifecycleManager {
           if (this.isFileInCreationDelay(currentPath)) {
             verboseLog(
               this.plugin,
-              `Skipping focus rename: file in creation delay: ${currentPath}`,
+              `Skipping focus rename: file in creation delay: ${currentPath}`
             );
             // Don't update lastFocusedFile - allows re-trigger when delay expires
             return;
@@ -346,12 +346,12 @@ export class EditorLifecycleManager {
               undefined,
               false,
               undefined,
-              true,
+              true
             )
             .catch((error) => {
               console.error(
                 `Error processing rename-on-focus for ${currentPath}:`,
-                error,
+                error
               );
             });
         }
@@ -370,7 +370,7 @@ export class EditorLifecycleManager {
     if (this.isFileInCreationDelay(filePath)) {
       verboseLog(
         this.plugin,
-        `File in creation delay, skipping throttle: ${filePath}`,
+        `File in creation delay, skipping throttle: ${filePath}`
       );
       return;
     }
@@ -387,12 +387,12 @@ export class EditorLifecycleManager {
         file: file,
         editor: editor,
         lastFirstLine: undefined, // Initialize as undefined so first change is processed
-        leafId: "", // Will be set properly by updateActiveEditorTracking
+        leafId: '', // Will be set properly by updateActiveEditorTracking
       };
       this.activeEditorFiles.set(filePath, tracked);
       verboseLog(
         this.plugin,
-        `Initialized tracking on first editor change for ${filePath}: "${currentFirstLine}"`,
+        `Initialized tracking on first editor change for ${filePath}: "${currentFirstLine}"`
       );
     }
 
@@ -404,7 +404,7 @@ export class EditorLifecycleManager {
     if (lastFirstLine !== undefined && currentFirstLine === lastFirstLine) {
       verboseLog(
         this.plugin,
-        `First line unchanged for ${filePath}, skipping throttle`,
+        `First line unchanged for ${filePath}, skipping throttle`
       );
 
       // Update lastEditorContent to ensure metadata-change handler has current content
@@ -413,7 +413,7 @@ export class EditorLifecycleManager {
       const currentContent = editor.getValue();
       this.plugin.fileStateManager.setLastEditorContent(
         filePath,
-        currentContent,
+        currentContent
       );
 
       return;
@@ -426,7 +426,7 @@ export class EditorLifecycleManager {
     if (this.plugin.fileStateManager.hasThrottleTimer(filePath)) {
       verboseLog(
         this.plugin,
-        `Throttle timer already running for: ${filePath}, not starting new one`,
+        `Throttle timer already running for: ${filePath}, not starting new one`
       );
       return;
     }
@@ -434,12 +434,12 @@ export class EditorLifecycleManager {
     // Start new throttle timer
     verboseLog(
       this.plugin,
-      `Starting throttle timer (${this.settings.core.checkInterval}ms) for: ${filePath}`,
+      `Starting throttle timer (${this.settings.core.checkInterval}ms) for: ${filePath}`
     );
     const timer = setTimeout(() => {
       verboseLog(
         this.plugin,
-        `Throttle timer expired, processing: ${file.path}`,
+        `Throttle timer expired, processing: ${file.path}`
       );
 
       // Remove timer from tracking (use file.path for current location after potential renames)
@@ -451,7 +451,7 @@ export class EditorLifecycleManager {
         .catch((error) => {
           console.error(
             `Error processing throttled change for ${filePath}:`,
-            error,
+            error
           );
         });
     }, this.settings.core.checkInterval);
@@ -469,7 +469,7 @@ export class EditorLifecycleManager {
       tracked.lastFirstLine = firstLine;
       verboseLog(
         this.plugin,
-        `Updated lastFirstLine for ${filePath}: "${firstLine}"`,
+        `Updated lastFirstLine for ${filePath}: "${firstLine}"`
       );
     }
   }
@@ -485,7 +485,7 @@ export class EditorLifecycleManager {
       this.activeEditorFiles.set(newPath, tracked);
       verboseLog(
         this.plugin,
-        `Updated editor tracking key: ${oldPath} → ${newPath}`,
+        `Updated editor tracking key: ${oldPath} → ${newPath}`
       );
     }
   }
@@ -512,7 +512,7 @@ export class EditorLifecycleManager {
   public extractFirstLineFromEditor(editor: Editor, file: TFile): string {
     try {
       const content = editor.getValue();
-      const lines = content.split("\n");
+      const lines = content.split('\n');
 
       // Skip frontmatter to get actual first line
       const metadata = this.app.metadataCache.getFileCache(file);
@@ -525,16 +525,16 @@ export class EditorLifecycleManager {
       const contentLines = lines.slice(firstLineIndex);
 
       // Find first non-empty line after frontmatter
-      let firstNonEmptyLine = "";
+      let firstNonEmptyLine = '';
       for (const line of contentLines) {
-        if (line.trim() !== "") {
+        if (line.trim() !== '') {
           firstNonEmptyLine = line;
           break;
         }
       }
 
-      if (firstNonEmptyLine === "") {
-        return ""; // No non-empty line found
+      if (firstNonEmptyLine === '') {
+        return ''; // No non-empty line found
       }
 
       // Use findTitleSourceLine to get effective title line
@@ -542,11 +542,11 @@ export class EditorLifecycleManager {
       return findTitleSourceLine(
         contentLines,
         this.plugin.settings,
-        this.plugin,
+        this.plugin
       );
     } catch (error) {
       console.error(`Error extracting first line from ${file.path}:`, error);
-      return "";
+      return '';
     }
   }
 

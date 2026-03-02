@@ -406,9 +406,9 @@ br + .flit-table-container {
    ========================================================================== */
 
 /* Add margin to input elements in tables to prevent outline clipping */
-.flit-settings-page .flit-custom-replacement-setting input[type="text"],
-.flit-settings-page .flit-safeword-setting input[type="text"],
-.flit-settings-page .flit-text-column input[type="text"] {
+.flit-settings-page .flit-custom-replacement-setting input[type='text'],
+.flit-settings-page .flit-safeword-setting input[type='text'],
+.flit-settings-page .flit-text-column input[type='text'] {
   margin: 2px;
   width: calc(100% - 4px);
   max-width: calc(100% - 4px);
@@ -962,7 +962,7 @@ hr.flit-divider {
 }
 
 .flit-sub-settings::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   top: 0;

@@ -1,13 +1,13 @@
-import { TFile, App, getFrontMatterInfo, parseYaml } from "obsidian";
-import { PluginSettings } from "../types";
-import { filterNonEmpty } from "./string-processing";
+import { TFile, App, getFrontMatterInfo, parseYaml } from 'obsidian';
+import { PluginSettings } from '../types';
+import { filterNonEmpty } from './string-processing';
 
 /**
  * Normalize tag by removing leading # if present
  * Ensures consistent tag comparison throughout the codebase
  */
 export function normalizeTag(tag: string): string {
-  return tag.startsWith("#") ? tag.slice(1) : tag;
+  return tag.startsWith('#') ? tag.slice(1) : tag;
 }
 
 /**
@@ -31,7 +31,7 @@ export function parseTagsFromYAML(content: string): string[] {
     return tags;
   }
 
-  if (!frontmatter || typeof frontmatter !== "object") {
+  if (!frontmatter || typeof frontmatter !== 'object') {
     return tags;
   }
 
@@ -46,7 +46,7 @@ export function parseTagsFromYAML(content: string): string[] {
     for (const tag of tagsValue) {
       tags.push(String(tag));
     }
-  } else if (typeof tagsValue === "string" || typeof tagsValue === "number") {
+  } else if (typeof tagsValue === 'string' || typeof tagsValue === 'number') {
     // Handle single tag value (string or number)
     tags.push(String(tagsValue));
   }
@@ -84,7 +84,7 @@ export function fileHasTargetTags(
   file: TFile,
   settings: PluginSettings,
   app: App,
-  content?: string,
+  content?: string
 ): boolean {
   const nonEmptyTags = filterNonEmpty(settings.exclusions.excludedTags);
   if (nonEmptyTags.length === 0) return false;
@@ -92,7 +92,7 @@ export function fileHasTargetTags(
   const fileCache = app.metadataCache.getFileCache(file);
 
   // Check YAML frontmatter tags (unless mode is 'In note body only')
-  if (settings.exclusions.tagMatchingMode !== "In note body only") {
+  if (settings.exclusions.tagMatchingMode !== 'In note body only') {
     let fileTags: string[] = [];
 
     // Parse tags from content if provided, otherwise use cache
@@ -124,7 +124,7 @@ export function fileHasTargetTags(
         // Check child tags if enabled (default true)
         if (settings.exclusions.excludeChildTags) {
           // If file has child tag and target tag is parent
-          if (normalizedFileTag.startsWith(normalizedTargetTag + "/")) {
+          if (normalizedFileTag.startsWith(normalizedTargetTag + '/')) {
             return true;
           }
         }
@@ -133,14 +133,14 @@ export function fileHasTargetTags(
   }
 
   // Check inline tags based on matching mode (using metadata cache to avoid false positives)
-  if (settings.exclusions.tagMatchingMode !== "In Properties only") {
+  if (settings.exclusions.tagMatchingMode !== 'In Properties only') {
     let inlineTagsInContent: string[] = [];
 
     // Use metadata cache for accurate tag detection (avoids false positives from code blocks, YAML comments, etc.)
     // Note: fileCache.tags only contains inline tags from markdown body, never from frontmatter
     if (fileCache && fileCache.tags) {
       inlineTagsInContent = fileCache.tags.map((tagCache) =>
-        normalizeTag(tagCache.tag),
+        normalizeTag(tagCache.tag)
       );
     }
 
@@ -157,7 +157,7 @@ export function fileHasTargetTags(
         // Check child tags if enabled (default true)
         if (settings.exclusions.excludeChildTags) {
           // If file has child tag and target tag is parent
-          if (inlineTag.startsWith(normalizedTargetTag + "/")) {
+          if (inlineTag.startsWith(normalizedTargetTag + '/')) {
             return true;
           }
         }

@@ -1,8 +1,8 @@
-import { App, Notice, TFile, TFolder, normalizePath } from "obsidian";
-import { verboseLog } from "../utils";
-import { PluginSettings } from "../types";
-import { RenameEngine } from "../core/rename-engine";
-import { t } from "../i18n";
+import { App, Notice, TFile, TFolder, normalizePath } from 'obsidian';
+import { verboseLog } from '../utils';
+import { PluginSettings } from '../types';
+import { RenameEngine } from '../core/rename-engine';
+import { t } from '../i18n';
 
 export class FolderOperations {
   constructor(
@@ -13,8 +13,8 @@ export class FolderOperations {
     private debugLog: (settingName: string, value: unknown) => void,
     private processMultipleFiles: (
       files: TFile[],
-      action: "rename",
-    ) => Promise<void>,
+      action: 'rename'
+    ) => Promise<void>
   ) {}
 
   async putFirstLineInTitleForFolder(folder: TFolder): Promise<void> {
@@ -22,11 +22,11 @@ export class FolderOperations {
       .getAllLoadedFiles()
       .filter(
         (file: unknown): file is TFile =>
-          file instanceof TFile && file.extension === "md",
+          file instanceof TFile && file.extension === 'md'
       )
       .filter((file: TFile) => {
         return (
-          file.path.startsWith(folder.path + "/") ||
+          file.path.startsWith(folder.path + '/') ||
           file.parent?.path === folder.path
         );
       });
@@ -34,26 +34,26 @@ export class FolderOperations {
     if (files.length === 0) {
       verboseLog(
         this,
-        `Showing notice: No markdown files found in this folder.`,
+        `Showing notice: No markdown files found in this folder.`
       );
       new Notice(
-        t("notifications.noNotesFoundInFolder").replace(
-          "{{folder}}",
-          folder.name,
-        ),
+        t('notifications.noNotesFoundInFolder').replace(
+          '{{folder}}',
+          folder.name
+        )
       );
       return;
     }
 
     verboseLog(
       this,
-      `Showing notice: Renaming ${files.length} files in "${folder.path}"...`,
+      `Showing notice: Renaming ${files.length} files in "${folder.path}"...`
     );
     new Notice(
-      t("notifications.renamingNNotes").replace(
-        "{{count}}",
-        String(files.length),
-      ),
+      t('notifications.renamingNNotes').replace(
+        '{{count}}',
+        String(files.length)
+      )
     );
 
     let processedCount = 0;
@@ -73,7 +73,7 @@ export class FolderOperations {
           false,
           undefined,
           true,
-          exclusionOverrides,
+          exclusionOverrides
         );
         processedCount++;
       } catch (error) {
@@ -85,32 +85,32 @@ export class FolderOperations {
     if (errorCount > 0) {
       verboseLog(
         this,
-        `Showing notice: Renamed ${processedCount}/${files.length} notes with ${errorCount} errors. Check console for details.`,
+        `Showing notice: Renamed ${processedCount}/${files.length} notes with ${errorCount} errors. Check console for details.`
       );
       new Notice(
-        t("notifications.renamedNotesWithErrors")
-          .replace("{{renamed}}", String(processedCount))
-          .replace("{{total}}", String(files.length))
-          .replace("{{errors}}", String(errorCount)),
-        0,
+        t('notifications.renamedNotesWithErrors')
+          .replace('{{renamed}}', String(processedCount))
+          .replace('{{total}}', String(files.length))
+          .replace('{{errors}}', String(errorCount)),
+        0
       );
     } else {
       verboseLog(
         this,
-        `Showing notice: Successfully processed ${processedCount} files.`,
+        `Showing notice: Successfully processed ${processedCount} files.`
       );
       new Notice(
-        t("notifications.renamedNotes")
-          .replace("{{renamed}}", String(processedCount))
-          .replace("{{total}}", String(files.length)),
-        0,
+        t('notifications.renamedNotes')
+          .replace('{{renamed}}', String(processedCount))
+          .replace('{{total}}', String(files.length)),
+        0
       );
     }
   }
 
   async toggleFolderExclusion(
     folderPath: string,
-    suppressNotice: boolean = false,
+    suppressNotice: boolean = false
   ): Promise<void> {
     // Normalize folder path to handle cross-platform differences and user typos
     folderPath = normalizePath(folderPath);
@@ -118,16 +118,16 @@ export class FolderOperations {
     const isInList =
       this.settings.exclusions.excludedFolders.includes(folderPath);
     const isInverted =
-      this.settings.exclusions.folderScopeStrategy === "Exclude all except...";
+      this.settings.exclusions.folderScopeStrategy === 'Exclude all except...';
 
     if (isInList) {
       this.settings.exclusions.excludedFolders =
         this.settings.exclusions.excludedFolders.filter(
-          (path) => path !== folderPath,
+          (path) => path !== folderPath
         );
       // Ensure there's always at least one entry (even if empty)
       if (this.settings.exclusions.excludedFolders.length === 0) {
-        this.settings.exclusions.excludedFolders.push("");
+        this.settings.exclusions.excludedFolders.push('');
       }
 
       if (!suppressNotice) {
@@ -135,32 +135,32 @@ export class FolderOperations {
           // In inverted mode, removing from list = disabling renaming
           verboseLog(
             this,
-            `Showing notice: Renaming disabled for folder: ${folderPath}`,
+            `Showing notice: Renaming disabled for folder: ${folderPath}`
           );
           new Notice(
-            t("notifications.disabledRenamingInFolder").replace(
-              "{{folder}}",
-              folderPath,
-            ),
+            t('notifications.disabledRenamingInFolder').replace(
+              '{{folder}}',
+              folderPath
+            )
           );
         } else {
           // In normal mode, removing from list = enabling renaming
           verboseLog(
             this,
-            `Showing notice: Renaming enabled for folder: ${folderPath}`,
+            `Showing notice: Renaming enabled for folder: ${folderPath}`
           );
           new Notice(
-            t("notifications.enabledRenamingInFolder").replace(
-              "{{folder}}",
-              folderPath,
-            ),
+            t('notifications.enabledRenamingInFolder').replace(
+              '{{folder}}',
+              folderPath
+            )
           );
         }
       }
     } else {
       if (
         this.settings.exclusions.excludedFolders.length === 1 &&
-        this.settings.exclusions.excludedFolders[0] === ""
+        this.settings.exclusions.excludedFolders[0] === ''
       ) {
         this.settings.exclusions.excludedFolders[0] = folderPath;
       } else {
@@ -172,31 +172,31 @@ export class FolderOperations {
           // In inverted mode, adding to list = enabling renaming
           verboseLog(
             this,
-            `Showing notice: Renaming enabled for folder: ${folderPath}`,
+            `Showing notice: Renaming enabled for folder: ${folderPath}`
           );
           new Notice(
-            t("notifications.enabledRenamingInFolder").replace(
-              "{{folder}}",
-              folderPath,
-            ),
+            t('notifications.enabledRenamingInFolder').replace(
+              '{{folder}}',
+              folderPath
+            )
           );
         } else {
           // In normal mode, adding to list = disabling renaming
           verboseLog(
             this,
-            `Showing notice: Renaming disabled for folder: ${folderPath}`,
+            `Showing notice: Renaming disabled for folder: ${folderPath}`
           );
           new Notice(
-            t("notifications.disabledRenamingInFolder").replace(
-              "{{folder}}",
-              folderPath,
-            ),
+            t('notifications.disabledRenamingInFolder').replace(
+              '{{folder}}',
+              folderPath
+            )
           );
         }
       }
     }
 
-    this.debugLog("excludedFolders", this.settings.exclusions.excludedFolders);
+    this.debugLog('excludedFolders', this.settings.exclusions.excludedFolders);
     await this.saveSettings();
     verboseLog(this, `Folder exclusion toggled for: ${folderPath}`, {
       isNowInList: !isInList,
@@ -208,23 +208,23 @@ export class FolderOperations {
 
     // Try multiple selection patterns that Obsidian might use
     const selectors = [
-      ".nav-folder.is-selected",
-      ".nav-folder.is-active",
-      ".nav-folder-title.is-selected",
-      ".nav-folder-title.is-active",
-      ".tree-item.is-selected .nav-folder-title",
-      ".tree-item.is-active .nav-folder-title",
+      '.nav-folder.is-selected',
+      '.nav-folder.is-active',
+      '.nav-folder-title.is-selected',
+      '.nav-folder-title.is-active',
+      '.tree-item.is-selected .nav-folder-title',
+      '.tree-item.is-active .nav-folder-title',
     ];
 
     selectors.forEach((selector) => {
       const elements = document.querySelectorAll(selector);
       elements.forEach((element) => {
-        let folderPath = element.getAttribute("data-path");
+        let folderPath = element.getAttribute('data-path');
 
         if (!folderPath) {
-          const parent = element.closest(".nav-folder, .tree-item");
+          const parent = element.closest('.nav-folder, .tree-item');
           if (parent) {
-            folderPath = parent.getAttribute("data-path");
+            folderPath = parent.getAttribute('data-path');
           }
         }
 
@@ -244,23 +244,23 @@ export class FolderOperations {
     const selectedFiles: TFile[] = [];
 
     const selectors = [
-      ".nav-file.is-selected",
-      ".nav-file.is-active",
-      ".nav-file-title.is-selected",
-      ".nav-file-title.is-active",
-      ".tree-item.is-selected .nav-file-title",
-      ".tree-item.is-active .nav-file-title",
+      '.nav-file.is-selected',
+      '.nav-file.is-active',
+      '.nav-file-title.is-selected',
+      '.nav-file-title.is-active',
+      '.tree-item.is-selected .nav-file-title',
+      '.tree-item.is-active .nav-file-title',
     ];
 
     selectors.forEach((selector) => {
       const elements = document.querySelectorAll(selector);
       elements.forEach((element) => {
-        let filePath = element.getAttribute("data-path");
+        let filePath = element.getAttribute('data-path');
 
         if (!filePath) {
-          const parent = element.closest(".nav-file, .tree-item");
+          const parent = element.closest('.nav-file, .tree-item');
           if (parent) {
-            filePath = parent.getAttribute("data-path");
+            filePath = parent.getAttribute('data-path');
           }
         }
 
@@ -268,7 +268,7 @@ export class FolderOperations {
           const file = this.app.vault.getAbstractFileByPath(filePath);
           if (
             file instanceof TFile &&
-            file.extension === "md" &&
+            file.extension === 'md' &&
             !selectedFiles.includes(file)
           ) {
             selectedFiles.push(file);
@@ -285,7 +285,7 @@ export class FolderOperations {
 
     const processFolder = (currentFolder: TFolder) => {
       currentFolder.children.forEach((child) => {
-        if (child instanceof TFile && child.extension === "md") {
+        if (child instanceof TFile && child.extension === 'md') {
           files.push(child);
         } else if (
           child instanceof TFolder &&
@@ -302,11 +302,11 @@ export class FolderOperations {
 
   async processMultipleFolders(
     folders: TFolder[],
-    action: "rename" | "disable" | "enable",
+    action: 'rename' | 'disable' | 'enable'
   ): Promise<void> {
     if (folders.length === 0) return;
 
-    if (action === "rename") {
+    if (action === 'rename') {
       const allFiles: TFile[] = [];
       folders.forEach((folder) => {
         const folderFiles = this.getAllMarkdownFilesInFolder(folder);
@@ -316,36 +316,36 @@ export class FolderOperations {
       if (allFiles.length === 0) {
         verboseLog(
           this,
-          `Showing notice: No markdown files found in selected folders.`,
+          `Showing notice: No markdown files found in selected folders.`
         );
-        new Notice(t("notifications.noNotesFoundInFolders"));
+        new Notice(t('notifications.noNotesFoundInFolders'));
         return;
       }
 
       verboseLog(
         this,
-        `Showing notice: Renaming ${allFiles.length} files from ${folders.length} folders...`,
+        `Showing notice: Renaming ${allFiles.length} files from ${folders.length} folders...`
       );
       new Notice(
-        t("notifications.renamingNNotes").replace(
-          "{{count}}",
-          String(allFiles.length),
-        ),
+        t('notifications.renamingNNotes').replace(
+          '{{count}}',
+          String(allFiles.length)
+        )
       );
 
-      await this.processMultipleFiles(allFiles, "rename");
+      await this.processMultipleFiles(allFiles, 'rename');
     } else {
       for (const folder of folders) {
         try {
           const normalizedFolderPath = normalizePath(folder.path);
           const isCurrentlyExcluded =
             this.settings.exclusions.excludedFolders.includes(
-              normalizedFolderPath,
+              normalizedFolderPath
             );
 
-          if (action === "disable" && !isCurrentlyExcluded) {
+          if (action === 'disable' && !isCurrentlyExcluded) {
             await this.toggleFolderExclusion(folder.path, true);
-          } else if (action === "enable" && isCurrentlyExcluded) {
+          } else if (action === 'enable' && isCurrentlyExcluded) {
             await this.toggleFolderExclusion(folder.path, true);
           }
         } catch (error) {
@@ -355,13 +355,13 @@ export class FolderOperations {
 
       verboseLog(
         this,
-        `${action === "disable" ? "Disabled" : "Enabled"} renaming for ${folders.length} folders.`,
+        `${action === 'disable' ? 'Disabled' : 'Enabled'} renaming for ${folders.length} folders.`
       );
       new Notice(
-        (action === "enable"
-          ? t("notifications.enabledRenamingInNFolders")
-          : t("notifications.disabledRenamingInNFolders")
-        ).replace("{{count}}", String(folders.length)),
+        (action === 'enable'
+          ? t('notifications.enabledRenamingInNFolders')
+          : t('notifications.disabledRenamingInNFolders')
+        ).replace('{{count}}', String(folders.length))
       );
     }
   }

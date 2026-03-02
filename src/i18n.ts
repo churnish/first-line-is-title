@@ -1,6 +1,6 @@
-import { getLanguage } from "obsidian";
-import enTranslations from "../locale/en.json";
-import ruTranslations from "../locale/ru.json";
+import { getLanguage } from 'obsidian';
+import enTranslations from '../locale/en.json';
+import ruTranslations from '../locale/ru.json';
 
 // Module state - initialized immediately to prevent tree-shaking
 const state = (() => {
@@ -10,7 +10,7 @@ const state = (() => {
       ru: ruTranslations,
     } as Record<string, Record<string, unknown>>,
     translations: enTranslations,
-    currentLocale: "en",
+    currentLocale: 'en',
   };
 })();
 
@@ -22,7 +22,7 @@ export function initI18n(): void {
   state.currentLocale = getLanguage();
 
   // Normalize locale (e.g., 'ru-RU' -> 'ru', 'en-US' -> 'en')
-  state.currentLocale = state.currentLocale.split("-")[0].toLowerCase();
+  state.currentLocale = state.currentLocale.split('-')[0].toLowerCase();
 
   // Load translations
   if (state.availableTranslations[state.currentLocale]) {
@@ -31,9 +31,9 @@ export function initI18n(): void {
     ] as typeof enTranslations;
   } else {
     // Fallback to English if locale not available
-    state.currentLocale = "en";
+    state.currentLocale = 'en';
     state.translations = state.availableTranslations[
-      "en"
+      'en'
     ] as typeof enTranslations;
   }
 }
@@ -48,13 +48,13 @@ export function initI18n(): void {
 export function t(
   keyPath: string,
   variables?: Record<string, string | number> | string,
-  fallback?: string,
+  fallback?: string
 ): string {
   // Handle overloaded signature (variables can be fallback string)
   let vars: Record<string, string | number> | undefined;
   let fb: string | undefined;
 
-  if (typeof variables === "string") {
+  if (typeof variables === 'string') {
     fb = variables;
     vars = undefined;
   } else {
@@ -62,11 +62,11 @@ export function t(
     fb = fallback;
   }
 
-  const keys = keyPath.split(".");
+  const keys = keyPath.split('.');
   let value: unknown = state.translations;
 
   for (const key of keys) {
-    if (value && typeof value === "object" && key in value && value !== null) {
+    if (value && typeof value === 'object' && key in value && value !== null) {
       value = (value as Record<string, unknown>)[key];
     } else {
       // Key not found, use fallback
@@ -76,8 +76,8 @@ export function t(
       if (vars) {
         for (const [varKey, varVal] of Object.entries(vars)) {
           result = result.replace(
-            new RegExp(`\\{\\{${varKey}\\}\\}`, "g"),
-            String(varVal),
+            new RegExp(`\\{\\{${varKey}\\}\\}`, 'g'),
+            String(varVal)
           );
         }
       }
@@ -86,14 +86,14 @@ export function t(
     }
   }
 
-  let result = typeof value === "string" ? value : fb || keyPath;
+  let result = typeof value === 'string' ? value : fb || keyPath;
 
   // Replace variables if provided
   if (vars) {
     for (const [key, val] of Object.entries(vars)) {
       result = result.replace(
-        new RegExp(`\\{\\{${key}\\}\\}`, "g"),
-        String(val),
+        new RegExp(`\\{\\{${key}\\}\\}`, 'g'),
+        String(val)
       );
     }
   }
@@ -120,9 +120,9 @@ export function getPluralForm(
   count: number,
   one: string,
   few: string,
-  many: string,
+  many: string
 ): string {
-  if (state.currentLocale !== "ru") {
+  if (state.currentLocale !== 'ru') {
     return count === 1 ? one : many;
   }
 
@@ -146,52 +146,52 @@ export function getPluralForm(
  * @returns Translated plural string with {{count}} replaced
  */
 export function tp(keyPath: string, count: number, fallback?: string): string {
-  const keys = keyPath.split(".");
+  const keys = keyPath.split('.');
   let value: unknown = state.translations;
 
   for (const key of keys) {
-    if (value && typeof value === "object" && key in value && value !== null) {
+    if (value && typeof value === 'object' && key in value && value !== null) {
       value = (value as Record<string, unknown>)[key];
     } else {
-      return (fallback || keyPath).replace("{{count}}", String(count));
+      return (fallback || keyPath).replace('{{count}}', String(count));
     }
   }
 
   // If not an object with plural forms, return as-is
-  if (typeof value === "string") {
-    return value.replace("{{count}}", String(count));
+  if (typeof value === 'string') {
+    return value.replace('{{count}}', String(count));
   }
 
   // Get the appropriate plural form
   let pluralKey: string;
-  if (state.currentLocale !== "ru") {
-    pluralKey = count === 1 ? "one" : "many";
+  if (state.currentLocale !== 'ru') {
+    pluralKey = count === 1 ? 'one' : 'many';
   } else {
     const mod10 = count % 10;
     const mod100 = count % 100;
 
     if (mod10 === 1 && mod100 !== 11) {
-      pluralKey = "one";
+      pluralKey = 'one';
     } else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
-      pluralKey = "few";
+      pluralKey = 'few';
     } else {
-      pluralKey = "many";
+      pluralKey = 'many';
     }
   }
 
   const valueRecord = value as Record<string, unknown>;
   const message =
-    valueRecord[pluralKey] || valueRecord["many"] || fallback || keyPath;
-  if (typeof message === "string") {
-    return message.replace("{{count}}", String(count));
+    valueRecord[pluralKey] || valueRecord['many'] || fallback || keyPath;
+  if (typeof message === 'string') {
+    return message.replace('{{count}}', String(count));
   }
   // Fallback for non-string message (shouldn't happen with valid translations)
   const messageStr =
-    typeof message === "object"
+    typeof message === 'object'
       ? JSON.stringify(message)
       : // eslint-disable-next-line @typescript-eslint/no-base-to-string -- fallback for unexpected types
         String(message);
-  return messageStr.replace("{{count}}", String(count));
+  return messageStr.replace('{{count}}', String(count));
 }
 
 /**
@@ -202,52 +202,52 @@ export function tp(keyPath: string, count: number, fallback?: string): string {
  */
 export function tpSplit(
   keyPath: string,
-  count: number,
+  count: number
 ): { before: string; noun: string; after: string } {
-  const keys = keyPath.split(".");
+  const keys = keyPath.split('.');
   let value: unknown = state.translations;
 
   for (const key of keys) {
-    if (value && typeof value === "object" && key in value && value !== null) {
+    if (value && typeof value === 'object' && key in value && value !== null) {
       value = (value as Record<string, unknown>)[key];
     } else {
-      return { before: keyPath, noun: "", after: "" };
+      return { before: keyPath, noun: '', after: '' };
     }
   }
 
   // Get the appropriate plural form
   let pluralKey: string;
-  if (state.currentLocale !== "ru") {
-    pluralKey = count === 1 ? "one" : "many";
+  if (state.currentLocale !== 'ru') {
+    pluralKey = count === 1 ? 'one' : 'many';
   } else {
     const mod10 = count % 10;
     const mod100 = count % 100;
 
     if (mod10 === 1 && mod100 !== 11) {
-      pluralKey = "one";
+      pluralKey = 'one';
     } else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
-      pluralKey = "few";
+      pluralKey = 'few';
     } else {
-      pluralKey = "many";
+      pluralKey = 'many';
     }
   }
 
   const valueRecord = value as Record<string, unknown>;
-  const pluralForm = valueRecord[pluralKey] || valueRecord["many"];
+  const pluralForm = valueRecord[pluralKey] || valueRecord['many'];
 
-  if (pluralForm && typeof pluralForm === "object") {
+  if (pluralForm && typeof pluralForm === 'object') {
     const pf = pluralForm as Record<string, string>;
     return {
-      before: pf.before || "",
-      noun: pf.noun || "",
-      after: pf.after || "",
+      before: pf.before || '',
+      noun: pf.noun || '',
+      after: pf.after || '',
     };
   }
 
   // Fallback for simple string format
   return {
-    before: typeof pluralForm === "string" ? pluralForm : keyPath,
-    noun: "",
-    after: "",
+    before: typeof pluralForm === 'string' ? pluralForm : keyPath,
+    noun: '',
+    after: '',
   };
 }

@@ -1,4 +1,4 @@
-import { AbstractInputSuggest, TFolder, App } from "obsidian";
+import { AbstractInputSuggest, TFolder, App } from 'obsidian';
 
 export class FolderSuggest extends AbstractInputSuggest<TFolder> {
   private inputEl: HTMLInputElement;
@@ -9,15 +9,13 @@ export class FolderSuggest extends AbstractInputSuggest<TFolder> {
     app: App,
     inputEl: HTMLInputElement,
     onSelectCallback: (value: string) => void,
-    currentExclusions: string[] = [],
+    currentExclusions: string[] = []
   ) {
     super(app, inputEl);
     this.inputEl = inputEl;
     this.onSelectCallback = onSelectCallback;
     this.excludedPaths = new Set(
-      currentExclusions
-        .map((path) => path.trim())
-        .filter((path) => path !== ""),
+      currentExclusions.map((path) => path.trim()).filter((path) => path !== '')
     );
   }
 
@@ -49,7 +47,7 @@ export class FolderSuggest extends AbstractInputSuggest<TFolder> {
     this.inputEl.value = folder.path;
 
     // Use jQuery-style trigger which Obsidian expects
-    this.inputEl.trigger("input");
+    this.inputEl.trigger('input');
 
     // Close the suggestion popup
     this.close();
@@ -65,20 +63,20 @@ export class TagSuggest extends AbstractInputSuggest<string> {
     app: App,
     inputEl: HTMLInputElement,
     onSelectCallback: (value: string) => void,
-    currentExclusions: string[] = [],
+    currentExclusions: string[] = []
   ) {
     super(app, inputEl);
     this.inputEl = inputEl;
     this.onSelectCallback = onSelectCallback;
     this.excludedTags = new Set(
-      currentExclusions.map((tag) => tag.trim()).filter((tag) => tag !== ""),
+      currentExclusions.map((tag) => tag.trim()).filter((tag) => tag !== '')
     );
   }
 
   getSuggestions(query: string): string[] {
     // Get all tags from the vault
     const allTags = Object.keys(this.app.metadataCache.getTags()).filter(
-      (tag) => !this.excludedTags.has(tag),
+      (tag) => !this.excludedTags.has(tag)
     );
 
     if (!query) {
@@ -103,7 +101,7 @@ export class TagSuggest extends AbstractInputSuggest<string> {
     this.inputEl.value = tag;
 
     // Use jQuery-style trigger which Obsidian expects
-    this.inputEl.trigger("input");
+    this.inputEl.trigger('input');
 
     // Close the suggestion popup
     this.close();

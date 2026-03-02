@@ -1,5 +1,5 @@
-import { Menu } from "obsidian";
-import FirstLineIsTitlePlugin from "../../main";
+import { Menu } from 'obsidian';
+import FirstLineIsTitlePlugin from '../../main';
 
 /**
  * Declarative Menu Configuration System
@@ -47,7 +47,7 @@ export class MenuRenderer {
     for (const itemConfig of visibleItems) {
       menu.addItem((item) => {
         const title =
-          typeof itemConfig.title === "function"
+          typeof itemConfig.title === 'function'
             ? itemConfig.title(context)
             : itemConfig.title;
 

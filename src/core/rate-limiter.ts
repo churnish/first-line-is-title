@@ -47,7 +47,7 @@ export class RateLimiter {
     if (data.count >= this.maxOperations) {
       if (label) {
         console.debug(
-          `Rate limit hit for ${label} - ${data.count} operations in ${now - data.timestamp}ms`,
+          `Rate limit hit for ${label} - ${data.count} operations in ${now - data.timestamp}ms`
         );
       }
       return false;
@@ -75,7 +75,7 @@ export class RateLimiter {
     if (this.globalTracker.count >= this.maxOperations) {
       if (label) {
         console.debug(
-          `Global rate limit hit - ${this.globalTracker.count} operations in ${now - this.globalTracker.timestamp}ms`,
+          `Global rate limit hit - ${this.globalTracker.count} operations in ${now - this.globalTracker.timestamp}ms`
         );
       }
       return false;

@@ -1,5 +1,5 @@
-import { App, TFile, Editor, MarkdownView, ViewWithFileEditor } from "obsidian";
-import FirstLineIsTitlePlugin from "../../main";
+import { App, TFile, Editor, MarkdownView, ViewWithFileEditor } from 'obsidian';
+import FirstLineIsTitlePlugin from '../../main';
 
 /**
  * Options for reading file content
@@ -28,7 +28,7 @@ export interface ContentReaderOptions {
 export async function readFileContent(
   plugin: FirstLineIsTitlePlugin,
   file: TFile,
-  options: ContentReaderOptions = {},
+  options: ContentReaderOptions = {}
 ): Promise<string> {
   const {
     providedContent,
@@ -48,7 +48,7 @@ export async function readFileContent(
       content = providedContent;
       if (settings.core.verboseLogging) {
         console.debug(
-          `Using provided content for ${file.path} (${content.length} chars)`,
+          `Using provided content for ${file.path} (${content.length} chars)`
         );
       }
       return content;
@@ -59,7 +59,7 @@ export async function readFileContent(
       content = providedEditor.getValue();
       if (settings.core.verboseLogging) {
         console.debug(
-          `Using provided editor content for ${file.path} (${content.length} chars)`,
+          `Using provided editor content for ${file.path} (${content.length} chars)`
         );
       }
       return content;
@@ -71,7 +71,7 @@ export async function readFileContent(
       if (editorContent !== null) {
         if (settings.core.verboseLogging) {
           console.debug(
-            `Found editor in workspace for ${file.path} (${editorContent.length} chars)`,
+            `Found editor in workspace for ${file.path} (${editorContent.length} chars)`
           );
         }
         return editorContent;
@@ -79,7 +79,7 @@ export async function readFileContent(
     }
 
     // Strategy 4: Use fileReadMethod setting
-    if (settings.core.fileReadMethod === "Editor") {
+    if (settings.core.fileReadMethod === 'Editor') {
       // Editor method with no editor available - fallback based on preferFresh or file state
       const needsFresh =
         preferFresh || plugin.fileStateManager?.needsFreshRead(file.path);
@@ -89,29 +89,29 @@ export async function readFileContent(
         plugin.fileStateManager?.clearNeedsFreshRead(file.path);
         if (settings.core.verboseLogging) {
           console.debug(
-            `Editor method using fresh read for ${file.path} (${content.length} chars)`,
+            `Editor method using fresh read for ${file.path} (${content.length} chars)`
           );
         }
       } else {
         content = await app.vault.cachedRead(file);
         if (settings.core.verboseLogging) {
           console.debug(
-            `Editor method fallback to cached read for ${file.path} (${content.length} chars)`,
+            `Editor method fallback to cached read for ${file.path} (${content.length} chars)`
           );
         }
       }
-    } else if (settings.core.fileReadMethod === "Cache") {
+    } else if (settings.core.fileReadMethod === 'Cache') {
       content = await app.vault.cachedRead(file);
       if (settings.core.verboseLogging) {
         console.debug(
-          `Cached read content from ${file.path} (${content.length} chars)`,
+          `Cached read content from ${file.path} (${content.length} chars)`
         );
       }
-    } else if (settings.core.fileReadMethod === "File") {
+    } else if (settings.core.fileReadMethod === 'File') {
       content = await app.vault.read(file);
       if (settings.core.verboseLogging) {
         console.debug(
-          `Direct read content from ${file.path} (${content.length} chars)`,
+          `Direct read content from ${file.path} (${content.length} chars)`
         );
       }
     } else {
@@ -120,14 +120,14 @@ export async function readFileContent(
         content = await app.vault.read(file);
         if (settings.core.verboseLogging) {
           console.debug(
-            `Unknown method, using fresh read for ${file.path} (${content.length} chars)`,
+            `Unknown method, using fresh read for ${file.path} (${content.length} chars)`
           );
         }
       } else {
         content = await app.vault.cachedRead(file);
         if (settings.core.verboseLogging) {
           console.debug(
-            `Unknown method, fallback to cached read for ${file.path} (${content.length} chars)`,
+            `Unknown method, fallback to cached read for ${file.path} (${content.length} chars)`
           );
         }
       }
@@ -148,7 +148,7 @@ export async function readFileContent(
  * @returns Editor content if found, null otherwise
  */
 function findEditorContent(app: App, file: TFile): string | null {
-  const leaves = app.workspace.getLeavesOfType("markdown");
+  const leaves = app.workspace.getLeavesOfType('markdown');
 
   // Track popover editors for single-popover fallback logic
   let singlePopoverContent: string | null = null;
@@ -219,7 +219,7 @@ function findEditorContent(app: App, file: TFile): string | null {
  * @returns Editor instance if found, null otherwise
  */
 export function findEditor(app: App, file: TFile): Editor | null {
-  const leaves = app.workspace.getLeavesOfType("markdown");
+  const leaves = app.workspace.getLeavesOfType('markdown');
   for (const leaf of leaves) {
     const view = leaf.view as MarkdownView;
     if (view && view.file?.path === file.path && view.editor) {

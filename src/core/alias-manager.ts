@@ -4,25 +4,25 @@ import {
   getFrontMatterInfo,
   parseYaml,
   Editor,
-} from "obsidian";
-import { PluginSettings } from "../types";
+} from 'obsidian';
+import { PluginSettings } from '../types';
 import {
   verboseLog,
   shouldProcessFile,
   extractTitle,
   hasDisablePropertyInFile,
   findTitleSourceLine,
-} from "../utils";
-import { t } from "../i18n";
-import { readFileContent } from "../utils/content-reader";
-import FirstLineIsTitle from "../../main";
+} from '../utils';
+import { t } from '../i18n';
+import { readFileContent } from '../utils/content-reader';
+import FirstLineIsTitle from '../../main';
 
-const ZWSP = "\u200B";
+const ZWSP = '\u200B';
 
 /** Check if alias is plugin-managed (exactly wrapped by ZWSP markers) */
 function isPluginAlias(alias: unknown): boolean {
   return (
-    typeof alias === "string" && alias.startsWith(ZWSP) && alias.endsWith(ZWSP)
+    typeof alias === 'string' && alias.startsWith(ZWSP) && alias.endsWith(ZWSP)
   );
 }
 
@@ -45,9 +45,9 @@ export class AliasManager {
    */
   private getAliasPropertyKeys(): string[] {
     const aliasPropertyKey =
-      this.settings.aliases.aliasPropertyKey || "aliases";
+      this.settings.aliases.aliasPropertyKey || 'aliases';
     return aliasPropertyKey
-      .split(",")
+      .split(',')
       .map((key) => key.trim())
       .filter((key) => key.length > 0);
   }
@@ -57,7 +57,7 @@ export class AliasManager {
     providedContent?: string,
     targetTitle?: string,
     editor?: Editor,
-    isBatchOperation = false,
+    isBatchOperation = false
   ): Promise<boolean> {
     // Track plugin usage
     this.plugin.trackUsage();
@@ -67,7 +67,7 @@ export class AliasManager {
       if (!currentFile || !(currentFile instanceof TFile)) {
         verboseLog(
           this.plugin,
-          `Skipping alias update - file no longer exists: ${file.path}`,
+          `Skipping alias update - file no longer exists: ${file.path}`
         );
         return false;
       }
@@ -83,12 +83,12 @@ export class AliasManager {
           file,
           this.app,
           this.settings.exclusions.disableRenamingKey,
-          this.settings.exclusions.disableRenamingValue,
+          this.settings.exclusions.disableRenamingValue
         )
       ) {
         verboseLog(
           this.plugin,
-          `Skipping alias update - file has disable property: ${file.path}`,
+          `Skipping alias update - file has disable property: ${file.path}`
         );
         return false;
       }
@@ -100,7 +100,7 @@ export class AliasManager {
           this.app,
           undefined,
           undefined,
-          this.plugin,
+          this.plugin
         )
       ) {
         return false;
@@ -112,12 +112,12 @@ export class AliasManager {
       // Check canvas first - works without editor parameter
       const mostRecentLeaf = this.app.workspace.getMostRecentLeaf();
       const viewType = mostRecentLeaf?.view?.getViewType?.();
-      const isCanvas = viewType === "canvas";
+      const isCanvas = viewType === 'canvas';
 
       if (isCanvas) {
         verboseLog(
           this.plugin,
-          `Skipping alias update in canvas: ${file.path}`,
+          `Skipping alias update in canvas: ${file.path}`
         );
         return false;
       }
@@ -126,7 +126,7 @@ export class AliasManager {
       if (editor && this.isEditorInPopoverOrCanvas(editor, file)) {
         verboseLog(
           this.plugin,
-          `Skipping alias update in popover: ${file.path}`,
+          `Skipping alias update in popover: ${file.path}`
         );
         return false;
       }
@@ -136,24 +136,24 @@ export class AliasManager {
         providedEditor: editor,
       });
 
-      if (!content || content.trim() === "") {
+      if (!content || content.trim() === '') {
         return false;
       }
 
       const contentWithoutFrontmatter =
         this.plugin.renameEngine.stripFrontmatterFromContent(content, file);
-      const lines = contentWithoutFrontmatter.split("\n");
+      const lines = contentWithoutFrontmatter.split('\n');
 
       // Find first non-empty line (consistent with rename-engine.ts)
-      let firstNonEmptyLine = "";
+      let firstNonEmptyLine = '';
       for (const line of lines) {
-        if (line.trim() !== "") {
+        if (line.trim() !== '') {
           firstNonEmptyLine = line;
           break;
         }
       }
 
-      if (!firstNonEmptyLine || firstNonEmptyLine.trim() === "") {
+      if (!firstNonEmptyLine || firstNonEmptyLine.trim() === '') {
         if (this.settings.aliases.enableAliases) {
           await this.removePluginAliasesFromFile(file);
         }
@@ -165,7 +165,7 @@ export class AliasManager {
       const titleSourceLine = findTitleSourceLine(
         lines,
         this.settings,
-        this.plugin,
+        this.plugin
       );
 
       if (!this.settings.aliases.enableAliases) {
@@ -183,7 +183,7 @@ export class AliasManager {
           // YAML is malformed (e.g., user is mid-typing) - skip alias update until valid
           verboseLog(
             this.plugin,
-            `Skipping alias update - malformed YAML in ${file.path}`,
+            `Skipping alias update - malformed YAML in ${file.path}`
           );
           return false;
         }
@@ -202,16 +202,24 @@ export class AliasManager {
       if (!shouldHaveAlias) {
         verboseLog(
           this.plugin,
-          `Removing plugin aliases - first line matches filename: "${processedTitleSource}" = "${titleToCompare}"`,
+          `Removing plugin aliases - first line matches filename: "${processedTitleSource}" = "${titleToCompare}"`
         );
         await this.removePluginAliasesFromFile(file);
         return false;
       }
 
       const aliasPropertyKeys = this.getAliasPropertyKeys();
-      const expectedAlias = this.settings.markupStripping.stripMarkupInAlias
+      let expectedAlias = this.settings.markupStripping.stripMarkupInAlias
         ? extractTitle(titleSourceLine, this.settings)
         : titleSourceLine;
+      // Apply truncation if enabled (must match what addAliasToFile will produce)
+      if (this.settings.aliases.truncateAlias) {
+        if (expectedAlias.length > this.settings.core.charCount - 1) {
+          expectedAlias =
+            expectedAlias.slice(0, this.settings.core.charCount - 1).trimEnd() +
+            '…';
+        }
+      }
       const expectedAliasWithMarker = ZWSP + expectedAlias + ZWSP;
 
       let allPropertiesHaveCorrectAlias = true;
@@ -228,7 +236,7 @@ export class AliasManager {
 
         const hasCorrectAlias = existingAliases.some(
           (alias) =>
-            alias === expectedAliasWithMarker || alias === expectedAlias,
+            alias === expectedAliasWithMarker || alias === expectedAlias
         );
 
         if (!hasCorrectAlias) {
@@ -252,7 +260,7 @@ export class AliasManager {
       if (allPropertiesHaveCorrectAlias && !aliasNeedsRepositioning) {
         verboseLog(
           this.plugin,
-          `File ${file.path} already has correct alias in all properties`,
+          `File ${file.path} already has correct alias in all properties`
         );
         return true;
       }
@@ -263,7 +271,7 @@ export class AliasManager {
       try {
         verboseLog(
           this.plugin,
-          `Adding alias to ${file.path} - no correct alias found`,
+          `Adding alias to ${file.path} - no correct alias found`
         );
         await this.addAliasToFile(
           file,
@@ -271,15 +279,15 @@ export class AliasManager {
           titleToCompare,
           content,
           editor,
-          isBatchOperation,
+          isBatchOperation
         );
         return true;
       } catch (error) {
-        console.error("Error updating alias:", error);
+        console.error('Error updating alias:', error);
         return false;
       }
     } catch (error) {
-      console.error("Error updating alias:", error);
+      console.error('Error updating alias:', error);
       return false;
     }
   }
@@ -290,7 +298,7 @@ export class AliasManager {
     newTitle: string,
     content: string,
     editor?: Editor,
-    isBatchOperation = false,
+    isBatchOperation = false
   ): Promise<void> {
     try {
       // Validate file exists and get fresh reference from vault.
@@ -300,7 +308,7 @@ export class AliasManager {
       if (!currentFile || !(currentFile instanceof TFile)) {
         verboseLog(
           this.plugin,
-          `Skipping alias addition - file no longer exists: ${file.path}`,
+          `Skipping alias addition - file no longer exists: ${file.path}`
         );
         return;
       }
@@ -316,7 +324,7 @@ export class AliasManager {
       ) {
         for (const replacement of this.settings.customRules
           .customReplacements) {
-          if (replacement.searchText === "" || !replacement.enabled) continue;
+          if (replacement.searchText === '' || !replacement.enabled) continue;
 
           let tempLine = aliasProcessedLine;
           if (replacement.onlyWholeLine) {
@@ -332,7 +340,7 @@ export class AliasManager {
           } else {
             tempLine = tempLine.replaceAll(
               replacement.searchText,
-              replacement.replaceText,
+              replacement.replaceText
             );
           }
           aliasProcessedLine = tempLine;
@@ -371,7 +379,7 @@ export class AliasManager {
       if (!shouldAddAlias) {
         verboseLog(
           this.plugin,
-          `Removing plugin aliases and skipping add - alias matches filename: \`${aliasToAdd}\` = \`${targetTitle}\``,
+          `Removing plugin aliases and skipping add - alias matches filename: \`${aliasToAdd}\` = \`${targetTitle}\``
         );
         await this.removePluginAliasesFromFile(file);
         return;
@@ -382,7 +390,7 @@ export class AliasManager {
         if (aliasToAdd.length > this.settings.core.charCount - 1) {
           aliasToAdd =
             aliasToAdd.slice(0, this.settings.core.charCount - 1).trimEnd() +
-            "…";
+            '…';
         }
       }
 
@@ -390,12 +398,12 @@ export class AliasManager {
       // remove the plugin alias instead - these provide no meaningful value.
       if (
         !aliasToAdd ||
-        aliasToAdd.trim() === "" ||
-        aliasToAdd.trim() === "…"
+        aliasToAdd.trim() === '' ||
+        aliasToAdd.trim() === '…'
       ) {
         verboseLog(
           this.plugin,
-          `Removing plugin alias - no meaningful content found`,
+          `Removing plugin alias - no meaningful content found`
         );
         await this.removePluginAliasesFromFile(file);
         return;
@@ -405,7 +413,7 @@ export class AliasManager {
       // Pattern matches: "Untitled", "Untitled 2", "Untitled 10", etc.
       // Pattern excludes: "Untitled 0", "Untitled 01" (via [1-9]) to match Obsidian's
       // auto-numbering which starts at 2 for duplicates.
-      const untitledWord = t("untitled").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const untitledWord = t('untitled').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const untitledPattern = new RegExp(`^${untitledWord}(\\s+[1-9]\\d*)?$`);
       if (untitledPattern.test(aliasToAdd.trim())) {
         // Check if original first non-empty line (before processing) was literally "Untitled" or "Untitled n"
@@ -420,7 +428,7 @@ export class AliasManager {
           // Remove any stale plugin aliases since there's no valid content
           verboseLog(
             this.plugin,
-            `Removing stale aliases - extracted title is "Untitled" from markup: ${originalFirstLineTrimmed}`,
+            `Removing stale aliases - extracted title is "Untitled" from markup: ${originalFirstLineTrimmed}`
           );
           await this.removePluginAliasesFromFile(file);
           return;
@@ -435,13 +443,13 @@ export class AliasManager {
       }
 
       // Parse content directly to avoid race conditions with metadata cache
-      const lines = content.split("\n");
-      const hasFrontmatter = lines.length > 0 && lines[0].trim() === "---";
+      const lines = content.split('\n');
+      const hasFrontmatter = lines.length > 0 && lines[0].trim() === '---';
 
       if (!hasFrontmatter) {
         // Re-validate: file could be renamed/deleted during save() above
         const currentFileForFrontmatter = this.app.vault.getAbstractFileByPath(
-          file.path,
+          file.path
         );
         if (
           !currentFileForFrontmatter ||
@@ -449,7 +457,7 @@ export class AliasManager {
         ) {
           verboseLog(
             this.plugin,
-            `Skipping frontmatter creation - file no longer exists: ${file.path}`,
+            `Skipping frontmatter creation - file no longer exists: ${file.path}`
           );
           return;
         }
@@ -462,37 +470,37 @@ export class AliasManager {
             // Insert alias into all specified properties
             for (const aliasPropertyKey of aliasPropertyKeys) {
               // Use array format for 'aliases' property, inline format for custom properties
-              if (aliasPropertyKey === "aliases") {
+              if (aliasPropertyKey === 'aliases') {
                 frontmatter[aliasPropertyKey] = [markedAlias];
               } else {
                 frontmatter[aliasPropertyKey] = markedAlias;
               }
             }
-          },
+          }
         );
 
         // Mark file as having pending metadata cache update
         this.plugin.pendingMetadataUpdates.add(currentFileForFrontmatter);
         verboseLog(
           this.plugin,
-          `Created frontmatter and added alias \`${aliasToAdd}\` to ${currentFileForFrontmatter.path}`,
+          `Created frontmatter and added alias \`${aliasToAdd}\` to ${currentFileForFrontmatter.path}`
         );
         return;
       }
 
       // Re-validate: file could be renamed/deleted during save() above
       const currentFileForUpdate = this.app.vault.getAbstractFileByPath(
-        file.path,
+        file.path
       );
       if (!currentFileForUpdate || !(currentFileForUpdate instanceof TFile)) {
         verboseLog(
           this.plugin,
-          `Skipping frontmatter update - file no longer exists: ${file.path}`,
+          `Skipping frontmatter update - file no longer exists: ${file.path}`
         );
         return;
       }
 
-      // Try editor-based update first (avoids disk write and "modified externally" notification)
+      // Try editor-based update first (avoids "modified externally" notification)
       // Skip for batch operations - most files won't have editor open
       // Skip when placeAliasLast is ON - need processFrontMatter to reorder
       if (
@@ -501,19 +509,27 @@ export class AliasManager {
         (await this.tryEditorBasedAliasUpdate(
           currentFileForUpdate,
           aliasToAdd,
-          editor,
+          editor
         ))
       ) {
+        // Save to flush editor changes to disk and update metadata cache
+        // Without this, reading/live preview mode won't reflect the change
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView && activeView.file === currentFileForUpdate) {
+          // Mark as pending to prevent duplicate processing from metadata-changed event
+          this.plugin.pendingMetadataUpdates.add(currentFileForUpdate);
+          await activeView.save();
+        }
         verboseLog(
           this.plugin,
-          `TRY_EDITOR_UPDATE: used editor path for ${currentFileForUpdate.path}`,
+          `TRY_EDITOR_UPDATE: used editor path for ${currentFileForUpdate.path}`
         );
         return;
       }
       if (!isBatchOperation) {
         verboseLog(
           this.plugin,
-          `TRY_EDITOR_UPDATE: falling back to processFrontMatter for ${currentFileForUpdate.path}`,
+          `TRY_EDITOR_UPDATE: falling back to processFrontMatter for ${currentFileForUpdate.path}`
         );
       }
 
@@ -525,7 +541,7 @@ export class AliasManager {
           // Insert alias into all specified properties
           for (const aliasPropertyKey of aliasPropertyKeys) {
             // Check if property is 'aliases' - if yes, use current behavior
-            if (aliasPropertyKey === "aliases") {
+            if (aliasPropertyKey === 'aliases') {
               let existingAliases: string[] = [];
               if (frontmatter[aliasPropertyKey]) {
                 if (Array.isArray(frontmatter[aliasPropertyKey])) {
@@ -537,12 +553,12 @@ export class AliasManager {
 
               // Find existing plugin alias index (ZWSP-wrapped)
               const existingPluginIndex = existingAliases.findIndex((alias) =>
-                isPluginAlias(alias),
+                isPluginAlias(alias)
               );
 
               // Remove plugin aliases and empty strings
               const userAliases = existingAliases.filter(
-                (alias) => !isPluginAlias(alias) && alias !== "",
+                (alias) => !isPluginAlias(alias) && alias !== ''
               );
 
               // Check if this exact alias already exists (unmarked)
@@ -574,14 +590,14 @@ export class AliasManager {
               // New behavior for non-aliases properties
               const propertyExists = Object.prototype.hasOwnProperty.call(
                 frontmatter,
-                aliasPropertyKey,
+                aliasPropertyKey
               );
 
               if (
                 !propertyExists ||
                 frontmatter[aliasPropertyKey] === null ||
                 frontmatter[aliasPropertyKey] === undefined ||
-                frontmatter[aliasPropertyKey] === ""
+                frontmatter[aliasPropertyKey] === ''
               ) {
                 // Property doesn't exist or has no value - insert inline
                 frontmatter[aliasPropertyKey] = markedAlias;
@@ -596,12 +612,12 @@ export class AliasManager {
 
                 // Find existing plugin value index (ZWSP-wrapped)
                 const existingPluginIndex = existingValues.findIndex((value) =>
-                  isPluginAlias(value),
+                  isPluginAlias(value)
                 );
 
                 // Remove plugin values and empty strings
                 const userValues = existingValues.filter(
-                  (value) => !isPluginAlias(value) && value !== "",
+                  (value) => !isPluginAlias(value) && value !== ''
                 );
 
                 // Check if this exact value already exists (unmarked)
@@ -640,28 +656,28 @@ export class AliasManager {
               }
             }
           }
-        },
+        }
       );
 
       // Mark file as having pending metadata cache update
       this.plugin.pendingMetadataUpdates.add(currentFileForUpdate);
       verboseLog(
         this.plugin,
-        `Updated alias \`${aliasToAdd}\` in ${currentFileForUpdate.path}`,
+        `Updated alias \`${aliasToAdd}\` in ${currentFileForUpdate.path}`
       );
     } catch (error) {
       // Check if this is an ENOENT error (file was renamed during async operation)
       const errWithCode = error as NodeJS.ErrnoException;
       if (
         errWithCode &&
-        typeof errWithCode === "object" &&
-        "code" in errWithCode &&
-        errWithCode.code === "ENOENT"
+        typeof errWithCode === 'object' &&
+        'code' in errWithCode &&
+        errWithCode.code === 'ENOENT'
       ) {
         // File was renamed during operation - this is expected race condition, log as info
         verboseLog(
           this.plugin,
-          `Skipping alias addition - file was renamed during operation: ${file.path}`,
+          `Skipping alias addition - file was renamed during operation: ${file.path}`
         );
       } else {
         // Unexpected error, log it
@@ -680,7 +696,7 @@ export class AliasManager {
       if (!currentFile || !(currentFile instanceof TFile)) {
         verboseLog(
           this.plugin,
-          `Skipping alias removal - file no longer exists: ${file.path}`,
+          `Skipping alias removal - file no longer exists: ${file.path}`
         );
         return;
       }
@@ -694,12 +710,12 @@ export class AliasManager {
 
       // Re-validate: file could be renamed/deleted during save() above
       const currentFileForRemoval = this.app.vault.getAbstractFileByPath(
-        file.path,
+        file.path
       );
       if (!currentFileForRemoval || !(currentFileForRemoval instanceof TFile)) {
         verboseLog(
           this.plugin,
-          `Skipping alias removal - file no longer exists: ${file.path}`,
+          `Skipping alias removal - file no longer exists: ${file.path}`
         );
         return;
       }
@@ -711,70 +727,91 @@ export class AliasManager {
 
           // Remove plugin aliases from all specified properties
           for (const aliasPropertyKey of aliasPropertyKeys) {
-            if (frontmatter[aliasPropertyKey]) {
-              let existingValues: string[] = [];
+            const propertyExists = Object.prototype.hasOwnProperty.call(
+              frontmatter,
+              aliasPropertyKey
+            );
 
-              // Normalize to array
-              if (Array.isArray(frontmatter[aliasPropertyKey])) {
-                existingValues = [...frontmatter[aliasPropertyKey]];
-              } else {
-                existingValues = [frontmatter[aliasPropertyKey]];
+            if (!propertyExists) {
+              continue;
+            }
+
+            const propValue = frontmatter[aliasPropertyKey];
+
+            // Handle null/empty property
+            if (
+              propValue === null ||
+              propValue === undefined ||
+              propValue === ''
+            ) {
+              if (!this.settings.aliases.keepEmptyAliasProperty) {
+                delete frontmatter[aliasPropertyKey];
               }
+              continue;
+            }
 
-              // Filter out plugin values (marked with ZWSP) and empty strings
-              const filteredValues = existingValues.filter(
-                (value) => !isPluginAlias(value) && value !== "",
-              );
+            let existingValues: string[] = [];
 
-              // Update or remove the property based on remaining values
-              if (filteredValues.length === 0) {
-                if (!this.settings.aliases.keepEmptyAliasProperty) {
-                  // Delete empty property completely
-                  delete frontmatter[aliasPropertyKey];
-                } else {
-                  // Keep empty property as null
-                  frontmatter[aliasPropertyKey] = null;
-                }
-              } else if (
-                filteredValues.length === 1 &&
-                aliasPropertyKey !== "aliases"
-              ) {
-                // For non-aliases properties, convert back to single value if only one remains
-                frontmatter[aliasPropertyKey] = filteredValues[0];
+            // Normalize to array
+            if (Array.isArray(propValue)) {
+              existingValues = [...propValue];
+            } else {
+              existingValues = [propValue as string];
+            }
+
+            // Filter out plugin values (marked with ZWSP) and empty strings
+            const filteredValues = existingValues.filter(
+              (value) => !isPluginAlias(value) && value !== ''
+            );
+
+            // Update or remove the property based on remaining values
+            if (filteredValues.length === 0) {
+              if (!this.settings.aliases.keepEmptyAliasProperty) {
+                // Delete empty property completely
+                delete frontmatter[aliasPropertyKey];
               } else {
-                // Keep as array for aliases or multiple values
-                frontmatter[aliasPropertyKey] = filteredValues;
+                // Keep empty property as null
+                frontmatter[aliasPropertyKey] = null;
               }
+            } else if (
+              filteredValues.length === 1 &&
+              aliasPropertyKey !== 'aliases'
+            ) {
+              // For non-aliases properties, convert back to single value if only one remains
+              frontmatter[aliasPropertyKey] = filteredValues[0];
+            } else {
+              // Keep as array for aliases or multiple values
+              frontmatter[aliasPropertyKey] = filteredValues;
             }
           }
-        },
+        }
       );
 
       // Mark file as having pending metadata cache update
       this.plugin.pendingMetadataUpdates.add(currentFileForRemoval);
       verboseLog(
         this.plugin,
-        `Removed plugin aliases from ${currentFileForRemoval.path}`,
+        `Removed plugin aliases from ${currentFileForRemoval.path}`
       );
     } catch (error) {
       // Check if this is an ENOENT error (file was renamed during async operation)
       const errWithCode = error as NodeJS.ErrnoException;
       if (
         errWithCode &&
-        typeof errWithCode === "object" &&
-        "code" in errWithCode &&
-        errWithCode.code === "ENOENT"
+        typeof errWithCode === 'object' &&
+        'code' in errWithCode &&
+        errWithCode.code === 'ENOENT'
       ) {
         // File was renamed during operation - this is expected race condition, log as info
         verboseLog(
           this.plugin,
-          `Skipping alias removal - file was renamed during operation: ${file.path}`,
+          `Skipping alias removal - file was renamed during operation: ${file.path}`
         );
       } else {
         // Unexpected error, log it
         console.error(
           `Failed to remove plugin aliases from ${file.path}:`,
-          error,
+          error
         );
       }
     }
@@ -811,7 +848,7 @@ export class AliasManager {
 
             // Remove the specified alias and any empty strings
             const filteredAliases = existingAliases.filter(
-              (alias) => alias !== trimmedAlias && alias !== "",
+              (alias) => alias !== trimmedAlias && alias !== ''
             );
 
             // Update or remove the property
@@ -832,7 +869,7 @@ export class AliasManager {
 
       verboseLog(
         this.plugin,
-        `Removed alias "${trimmedAlias}" from ${file.path}`,
+        `Removed alias "${trimmedAlias}" from ${file.path}`
       );
     } catch (error) {
       console.error(`Failed to remove alias from ${file.path}:`, error);
@@ -882,27 +919,27 @@ export class AliasManager {
   private async tryEditorBasedAliasUpdate(
     file: TFile,
     newAlias: string,
-    editor?: Editor,
+    editor?: Editor
   ): Promise<boolean> {
     // Step 1: Get editor
     const activeEditor = editor ?? this.getActiveEditorForFile(file);
     if (!activeEditor) {
       verboseLog(
         this.plugin,
-        `TRY_EDITOR_UPDATE [1]: FAIL - no editor available for ${file.path}`,
+        `TRY_EDITOR_UPDATE [1]: FAIL - no editor available for ${file.path}`
       );
       return false;
     }
     verboseLog(
       this.plugin,
-      `TRY_EDITOR_UPDATE [1]: file=${file.path}, editor=defined`,
+      `TRY_EDITOR_UPDATE [1]: file=${file.path}, editor=defined`
     );
 
     // Step 2: Get editor content
     const content = activeEditor.getValue();
     verboseLog(
       this.plugin,
-      `TRY_EDITOR_UPDATE [2]: content length=${content.length}`,
+      `TRY_EDITOR_UPDATE [2]: content length=${content.length}`
     );
 
     // Step 3: Check frontmatter exists
@@ -913,21 +950,21 @@ export class AliasManager {
     }
     verboseLog(
       this.plugin,
-      `TRY_EDITOR_UPDATE [3]: frontmatter exists, contentStart=${fmInfo.contentStart}`,
+      `TRY_EDITOR_UPDATE [3]: frontmatter exists, contentStart=${fmInfo.contentStart}`
     );
 
     // Step 4: Extract frontmatter section
     const frontmatterText = content.substring(0, fmInfo.contentStart);
     verboseLog(
       this.plugin,
-      `TRY_EDITOR_UPDATE [4]: frontmatter length=${frontmatterText.length}`,
+      `TRY_EDITOR_UPDATE [4]: frontmatter length=${frontmatterText.length}`
     );
 
     // Step 5: Get alias property keys
     const aliasKeys = this.getAliasPropertyKeys();
     verboseLog(
       this.plugin,
-      `TRY_EDITOR_UPDATE [5]: alias keys=${aliasKeys.join(",")}`,
+      `TRY_EDITOR_UPDATE [5]: alias keys=${aliasKeys.join(',')}`
     );
 
     // Step 6: For each property, find ZWSP value by parsing frontmatter directly
@@ -938,7 +975,7 @@ export class AliasManager {
     } catch {
       verboseLog(
         this.plugin,
-        `TRY_EDITOR_UPDATE [6]: FAIL - could not parse frontmatter YAML`,
+        `TRY_EDITOR_UPDATE [6]: FAIL - could not parse frontmatter YAML`
       );
       return false;
     }
@@ -954,7 +991,7 @@ export class AliasManager {
       const propValue = frontmatter?.[key];
       verboseLog(
         this.plugin,
-        `TRY_EDITOR_UPDATE [6]: checking key=${key}, type=${typeof propValue}`,
+        `TRY_EDITOR_UPDATE [6]: checking key=${key}, type=${typeof propValue}`
       );
 
       if (propValue === undefined) {
@@ -971,7 +1008,7 @@ export class AliasManager {
           if (isPluginAlias(val)) {
             verboseLog(
               this.plugin,
-              `TRY_EDITOR_UPDATE [6]: key=${key} FOUND at index=${i}`,
+              `TRY_EDITOR_UPDATE [6]: key=${key} FOUND at index=${i}`
             );
             positions.push({ key, oldValue: val, arrayIndex: i });
             found = true;
@@ -981,21 +1018,21 @@ export class AliasManager {
         if (!found) {
           verboseLog(
             this.plugin,
-            `TRY_EDITOR_UPDATE [6]: key=${key} array has no ZWSP value`,
+            `TRY_EDITOR_UPDATE [6]: key=${key} array has no ZWSP value`
           );
           anyMissing = true;
         }
-      } else if (typeof propValue === "string") {
+      } else if (typeof propValue === 'string') {
         if (isPluginAlias(propValue)) {
           verboseLog(
             this.plugin,
-            `TRY_EDITOR_UPDATE [6]: key=${key} FOUND string value`,
+            `TRY_EDITOR_UPDATE [6]: key=${key} FOUND string value`
           );
           positions.push({ key, oldValue: propValue });
         } else {
           verboseLog(
             this.plugin,
-            `TRY_EDITOR_UPDATE [6]: key=${key} string not ZWSP-wrapped`,
+            `TRY_EDITOR_UPDATE [6]: key=${key} string not ZWSP-wrapped`
           );
           anyMissing = true;
         }
@@ -1003,7 +1040,7 @@ export class AliasManager {
         // null or other non-array, non-string value
         verboseLog(
           this.plugin,
-          `TRY_EDITOR_UPDATE [6]: key=${key} has null/invalid value`,
+          `TRY_EDITOR_UPDATE [6]: key=${key} has null/invalid value`
         );
         anyMissing = true;
       }
@@ -1013,19 +1050,19 @@ export class AliasManager {
     if (anyMissing) {
       verboseLog(
         this.plugin,
-        `TRY_EDITOR_UPDATE [7]: FAIL - some properties missing ZWSP value`,
+        `TRY_EDITOR_UPDATE [7]: FAIL - some properties missing ZWSP value`
       );
       return false;
     }
     verboseLog(
       this.plugin,
-      `TRY_EDITOR_UPDATE [7]: all ${positions.length} properties have ZWSP values`,
+      `TRY_EDITOR_UPDATE [7]: all ${positions.length} properties have ZWSP values`
     );
 
     // Step 8: Replace ZWSP values line-by-line
     const newMarkedAlias = `${ZWSP}${newAlias}${ZWSP}`;
     const oldValue = positions[0].oldValue; // All positions have same ZWSP-wrapped value
-    const fmLines = frontmatterText.split("\n");
+    const fmLines = frontmatterText.split('\n');
     let replacedCount = 0;
 
     for (let lineNum = 0; lineNum < fmLines.length; lineNum++) {
@@ -1034,12 +1071,12 @@ export class AliasManager {
       if (ch !== -1) {
         verboseLog(
           this.plugin,
-          `TRY_EDITOR_UPDATE [8]: replacing at line=${lineNum} ch=${ch}`,
+          `TRY_EDITOR_UPDATE [8]: replacing at line=${lineNum} ch=${ch}`
         );
         activeEditor.replaceRange(
           newMarkedAlias,
           { line: lineNum, ch },
-          { line: lineNum, ch: ch + oldValue.length },
+          { line: lineNum, ch: ch + oldValue.length }
         );
         replacedCount++;
       }
@@ -1048,7 +1085,7 @@ export class AliasManager {
     if (replacedCount !== positions.length) {
       verboseLog(
         this.plugin,
-        `TRY_EDITOR_UPDATE [8]: FAIL - expected ${positions.length} replacements, got ${replacedCount}`,
+        `TRY_EDITOR_UPDATE [8]: FAIL - expected ${positions.length} replacements, got ${replacedCount}`
       );
       return false;
     }
@@ -1057,7 +1094,7 @@ export class AliasManager {
     if (!activeEditor.getValue().includes(newMarkedAlias)) {
       verboseLog(
         this.plugin,
-        `TRY_EDITOR_UPDATE [9]: FAIL - change not persisted`,
+        `TRY_EDITOR_UPDATE [9]: FAIL - change not persisted`
       );
       return false;
     }
