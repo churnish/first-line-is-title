@@ -18,7 +18,7 @@
     "postversion": "git push origin main --follow-tags --force-with-lease"
   },
   "keywords": [],
-  "author": "",
+  "author": "churnish",
   "license": "MIT",
   "devDependencies": {
     "@eslint/compat": "^2.0.0",
