@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - '*'
-      - '!v*'
 
 permissions:
   contents: write
@@ -15,6 +14,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v3
@@ -35,21 +36,62 @@ jobs:
           git diff --staged --quiet || git commit -m "build: Update repository for ${GITHUB_REF_NAME}"
           git push origin HEAD:main
 
+      - name: Generate release notes
+        id: notes
+        run: |
+          PREV_TAG=$(git tag --sort=-v:refname | grep -E '^[0-9]' | sed -n '2p')
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found, skipping release notes."
+            echo "BODY=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          SINCE=$(git log -1 --format=%aI "$PREV_TAG" | cut -dT -f1)
+
+          PRS=$(gh pr list --state merged --search "merged:>=${SINCE}" --limit 200 \
+            --json number,title,author \
+            --jq '.[] | "- \(.title) #\(.number) by @\(.author.login)"')
+
+          ISSUES=$(gh issue list --state closed --limit 200 \
+            --json number,title,closedAt,stateReason \
+            --jq "[.[] | select(.stateReason == \"COMPLETED\" and .closedAt >= \"${SINCE}\")] | .[] | \"- \(.title) #\(.number)\"")
+
+          BODY=""
+          if [ -n "$PRS" ]; then
+            printf -v BODY '### Merged PRs\n\n%s' "$PRS"
+          fi
+          if [ -n "$ISSUES" ]; then
+            if [ -n "$BODY" ]; then
+              printf -v BODY '%s\n\n### Closed issues\n\n%s' "$BODY" "$ISSUES"
+            else
+              printf -v BODY '### Closed issues\n\n%s' "$ISSUES"
+            fi
+          fi
+
+          {
+            echo 'BODY<<EOF'
+            echo "$BODY"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create release bundle
         run: |
-          mkdir release
-          cp main.js manifest.json styles.css release/
-          cd release
-          zip ../first-line-is-title.zip main.js manifest.json styles.css
+          REPO=${GITHUB_REPOSITORY##*/}
+          FILES="main.js manifest.json"
+          [ -f styles.css ] && FILES="$FILES styles.css"
+          zip "$REPO.zip" $FILES
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          body: ${{ steps.notes.outputs.BODY }}
           files: |
             main.js
             manifest.json
             styles.css
-            first-line-is-title.zip
+            ${{ github.event.repository.name }}.zip
+          fail_on_unmatched_files: false
           draft: false
           prerelease: false
         env:
