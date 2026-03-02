@@ -29,9 +29,9 @@ Automatically set the first line as note title, just like in Apple Notes! Forget
 - By default, note modification time is preserved on rename.
 - Multiple safeguards are in place to prevent unintended changes but **regular [backups](https://help.obsidian.md/backup) remain your ultimate safety net**.
 
-## Install
+## Installation
 
-Until _First Line is Title_ is [made available](https://github.com/obsidianmd/obsidian-releases/pull/7429) in the plugin directory, follow the steps below to install it:
+Until _First Line is Title_ is [made available](https://github.com/obsidianmd/obsidian-releases/pull/10689) in the plugin directory, follow the steps below to install it:
 
 1. Download and enable the community plugin [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
 2. Run _Add a beta plugin for testing_ in Command palette.
