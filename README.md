@@ -1,4 +1,4 @@
-English • [Русский](https://github.com/greetclammy/first-line-is-title/blob/main/README_RU.md)
+English • [Русский](https://github.com/churnish/first-line-is-title/blob/main/README_RU.md)
 
 # First Line is Title
 

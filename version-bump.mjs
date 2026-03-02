@@ -49,8 +49,8 @@ try {
 }
 
 if (!targetVersion) {
-	console.error('npm_package_version is not set. Run via npm version.');
-	process.exit(1);
+  console.error('npm_package_version is not set. Run via npm version.');
+  process.exit(1);
 }
 
 // ── Side effects ──

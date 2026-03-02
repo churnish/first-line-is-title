@@ -1,92 +1,91 @@
-[English](https://github.com/greetclammy/first-line-is-title?tab=readme-ov-file#readme) • Русский
+[English](https://github.com/churnish/first-line-is-title?tab=readme-ov-file#readme) • Русский
 
 # First Line is Title
 
-Автоматически используйте первую строку заметки в качестве ее названия, прямо как в Заметках от Apple! Забудьте о ручном вводе имени файла или невнятных временных метках.
+Automatically set the first line as note title, just like in Apple Notes! Forget about manual file name entry or nondescript timestamps.
 
 ![](https://github.com/user-attachments/assets/eed638e0-f695-4fdd-a0a6-2ace66585d58)
 
 > [!TIP]
-> Плагин лучше использовать со строкой заголовка и/или встроенным заголовком — включаются в настройках Obsidian > Оформление > Интерфейс.
+> The plugin is best used with the tab title bar and/or inline title enabled in Obsidian settings > Appearance > Interface.
 
 Полностью доступно на русском языке.
 
-## Функции
+## Key features
 
-- Переименование заметок автоматически или вручную.
-- Перемещение курсора на первую строку при создании заметки.
-- Переименование всех заметок или только с заголовком в первой строке.
-- Замена символов, запрещенных в именах файлов, на допустимые альтернативы, или их удаление.
-- Удаление Markdown-разметки в именах файлов.
-- Настройка пользовательских правил замены.
-- Автоматическое создание свойства с копией первой строки — делает запрещенные символы доступными для поиска в быстром переключателе, [Quick Switcher++](https://obsidian.md/plugins?id=darlal-switcher-plus) и [Omnisearch](https://obsidian.md/plugins?id=omnisearch), а также позволяет использовать в качестве имени файла в таких плагинах как [Notebook Navigator](https://obsidian.md/plugins?id=notebook-navigator) и [Front Matter Title](https://obsidian.md/plugins?id=obsidian-front-matter-title-plugin).
-- Команды для массового переименования всех заметок в папке, всех заметок с тегом, результатов поиска или всего хранилища.
-- Автоматическая вставка имени файла в первую строку при создании заметки.
-- Исключение отдельных заметок, папок, тегов, свойств или имен файлов из переименования, или включение переименования только для некоторых из них.
-- Команда для преобразования выделенного текста с запрещенными символами в корректную внутреннюю ссылку, с сохранением исходного текста в названии ссылки.
+- Rename notes automatically or manually.
+- Move cursor to first line on note creation.
+- Put any first line content in title or headings only.
+- Replace characters forbidden in file names with safe alternatives, or omit them entirely.
+- Strip Markdown syntax from file names.
+- Add custom replacement rules.
+- Automatically populate first line alias property — make forbidden characters searchable in Quick switcher and link suggester, or set as note title in plugins like [Quick Switcher++](https://obsidian.md/plugins?id=darlal-switcher-plus), [Omnisearch](https://obsidian.md/plugins?id=omnisearch), [Notebook Navigator](https://obsidian.md/plugins?id=notebook-navigator) and [Front Matter Title](https://obsidian.md/plugins?id=obsidian-front-matter-title-plugin).
+- Commands to batch rename all notes in folder, all notes with tag, all search results, or entire vault.
+- Automatically insert file name in first line on note creation.
+- Exclude select notes, folders, tags, properties or file names from renaming, or only enable renaming in some.
+- Command to convert selection containing forbidden characters into valid internal link, with original text preserved in link caption.
 
-## Целостность файлов
+## File integrity
 
-- Обрабатываются только заметки, открытые в редакторе, а также заметки, которые явно выбраны для массовых операций (например, переименование всех заметок в папке).
-- По умолчанию, время последнего изменения заметки остается неизменной при переименовании.
-- Несколько механизмов защиты предотвращают нежелательные изменения, но **регулярное [резервное копирование](https://help.obsidian.md/backup) остается вашей главной гарантией безопасности**.
+- Only notes that are currently open in the editor are processed, along with any notes you explicitly select for batch operations (like renaming all notes in a folder).
+- By default, note modification time is preserved on rename.
+- Multiple safeguards are in place to prevent unintended changes but **regular [backups](https://help.obsidian.md/backup) remain your ultimate safety net**.
 
-## Установка
+## Commands
 
-Пока _First Line is Title_ не [появился](https://github.com/obsidianmd/obsidian-releases/pull/8400) в каталоге плагинов, для установки следуйте инструкциям ниже:
+### Ribbon
 
-1. Скачайте и включите сторонний плагин [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
-2. Выберите _Добавить бета-плагин для тестирования_ в палитре команд.
-3. Вставьте https://github.com/greetclammy/first-line-is-title в текстовое поле.
-4. Выберите _Latest version_.
-5. Отметьте _Enable after installing the plugin_.
-6. Нажмите _Add Plugin_.
+| Command                                                                                                                                                                                                                          | Description                                                                              |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| <a href="#ribbon"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-type-dark.svg"><img src=".github/icons/file-type.svg" width="15" height="15"></picture></a>&nbsp;Put first line in title      | Rename active note, even if in excluded folder or with excluded tag or property.         |
+| <a href="#ribbon"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/files-dark.svg"><img src=".github/icons/files.svg" width="15" height="15"></picture></a>&nbsp;Put first line in title in all notes | Rename all notes in vault except if in excluded folder or with excluded tag or property. |
+| <a href="#ribbon"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-cog-dark.svg"><img src=".github/icons/file-cog.svg" width="15" height="15"></picture></a>&nbsp;Toggle automatic renaming      | Toggle the _Rename notes_ setting between _Automatically_ and _Manually_.                |
 
-<details><summary>Установка вручную</summary>
+### Command palette
 
-Примечание: для получения обновлений _First Line is Title_ вам придется проверять их наличие и устанавливать вручную.
+| Command                                                                                                                                                                                                                                                    | Description                                                                                                                                         |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <a href="#command-palette"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-type-dark.svg"><img src=".github/icons/file-type.svg" width="15" height="15"></picture></a>&nbsp;Put first line in title                       | Rename active note, even if in excluded folder or with excluded tag or property.                                                                    |
+| <a href="#command-palette"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-type-dark.svg"><img src=".github/icons/file-type.svg" width="15" height="15"></picture></a>&nbsp;Put first line in title (unless excluded)     | Rename active note except if in excluded folder or with excluded tag or property.                                                                   |
+| <a href="#command-palette"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-stack-dark.svg"><img src=".github/icons/file-stack.svg" width="15" height="15"></picture></a>&nbsp;Put first line in title in all notes        | Rename all notes in vault except if in excluded folder or with excluded tag or property.                                                            |
+| <a href="#command-palette"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-cog-dark.svg"><img src=".github/icons/file-cog.svg" width="15" height="15"></picture></a>&nbsp;Toggle automatic renaming                       | Toggle the _Rename notes_ setting between _Automatically_ and _Manually_.                                                                           |
+| <a href="#command-palette"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/square-x-dark.svg"><img src=".github/icons/square-x.svg" width="15" height="15"></picture></a>&nbsp;Disable renaming for note                       | Exclude active note from renaming.                                                                                                                  |
+| <a href="#command-palette"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/square-check-dark.svg"><img src=".github/icons/square-check.svg" width="15" height="15"></picture></a>&nbsp;Enable renaming for note                | Stop excluding active note from renaming.                                                                                                           |
+| <a href="#command-palette"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/link-dark.svg"><img src=".github/icons/link.svg" width="15" height="15"></picture></a>&nbsp;Add safe internal link                                  | Create internal link with forbidden characters handled as set in _Replace characters_.                                                              |
+| <a href="#command-palette"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/link-dark.svg"><img src=".github/icons/link.svg" width="15" height="15"></picture></a>&nbsp;Add safe internal link with caption                     | Create internal link with forbidden characters handled as set in _Replace characters_, and with original text in caption.                           |
+| <a href="#command-palette"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/link-dark.svg"><img src=".github/icons/link.svg" width="15" height="15"></picture></a>&nbsp;Add internal link with caption and custom target        | Create internal link with selected text in caption. Set link path manually.                                                                         |
+| <a href="#command-palette"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/clipboard-type-dark.svg"><img src=".github/icons/clipboard-type.svg" width="15" height="15"></picture></a>&nbsp;Insert file name at cursor position | Insert current file name at cursor position. Convert forbidden character replacements back to their original forms, as set in _Replace characters_. |
 
-1. Скачайте `first-line-is-title.zip` из раздела `Assets` [последнего релиза](https://github.com/greetclammy/first-line-is-title/releases).
-2. Распакуйте папку и поместите ее в папку `.obsidian/plugins` (скрыта в большинстве ОС) в корне вашего хранилища.
-3. Перезагрузите плагины или приложение.
-4. Включите _First Line is Title_ в Настройках Obsidian > Плагины сообщества > Установленные плагины.
+### File, folder, tag and vault search context menu
+
+| Command                                                                                                                                                                                                                                                            | Description                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| <a href="#file-folder-tag-and-vault-search-context-menu"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-type-dark.svg"><img src=".github/icons/file-type.svg" width="15" height="15"></picture></a>&nbsp;Put first line in title | Rename selected note(s).                                         |
+| <a href="#file-folder-tag-and-vault-search-context-menu"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/square-x-dark.svg"><img src=".github/icons/square-x.svg" width="15" height="15"></picture></a>&nbsp;Disable renaming          | Exclude selected note(s), folder(s) or tag from renaming.        |
+| <a href="#file-folder-tag-and-vault-search-context-menu"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/square-check-dark.svg"><img src=".github/icons/square-check.svg" width="15" height="15"></picture></a>&nbsp;Enable renaming   | Stop excluding selected note(s), folder(s) or tag from renaming. |
+
+## Installation
+
+Until _First Line is Title_ is [made available](https://github.com/obsidianmd/obsidian-releases/pull/10689) in the plugin directory, follow the steps below to install it:
+
+1. Download and enable the [BRAT](https://obsidian.md/plugins?id=obsidian42-brat) plugin.
+2. Run _Add a beta plugin for testing_ in the Command palette.
+3. Paste https://github.com/churnish/first-line-is-title in the text field.
+4. Select _Latest version_.
+5. Check _Enable after installing the plugin_.
+6. Press _Add Plugin_.
+
+<details><summary>Install manually</summary>
+
+1. Download `first-line-is-title.zip` in the `Assets` of the [latest release](https://github.com/churnish/first-line-is-title/releases).
+2. Open the vault folder in the system file manager.
+3. Open your Obsidian configuration folder (`.obsidian` by default, hidden on most OSes).
+4. Unzip `first-line-is-title.zip` and place it in the `plugins` folder.
+5. Reload plugins or app.
+6. Enable _First Line is Title_ in Obsidian settings > Community plugins > Installed plugins.
 
 </details>
 
-## Команды
+## Support
 
-### Лента
-
-| Команда                                                                                                                                                                                                                                        | Описание                                                                                                                      |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| <a href="#лента"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-type-dark.svg"><img src=".github/icons/file-type.svg" width="15" height="15"></picture></a>&nbsp;Поместить первую строку в название          | Переименовать активную заметку, даже если она в исключенной папке или с исключенным тегом или свойством.                      |
-| <a href="#лента"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/files-dark.svg"><img src=".github/icons/files.svg" width="15" height="15"></picture></a>&nbsp;Поместить первую строку в название во всех заметках | Переименовать все заметки в хранилище, кроме находящихся в исключенных папках или с исключенными тегами или свойствами.       |
-| <a href="#лента"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-cog-dark.svg"><img src=".github/icons/file-cog.svg" width="15" height="15"></picture></a>&nbsp;Переключить автоматическое переименование     | Переключить настройку _Переименовывать заметки_ между _Автоматически, если открыты и изменены_ и _Только при помощи команды_. |
-
-### Палитра команд
-
-| Команда                                                                                                                                                                                                                                                                    | Описание                                                                                                                                                      |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <a href="#палитра-команд"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-type-dark.svg"><img src=".github/icons/file-type.svg" width="15" height="15"></picture></a>&nbsp;Поместить первую строку в название                             | Переименовать активную заметку, даже если она в исключенной папке или с исключенным тегом или свойством.                                                      |
-| <a href="#палитра-команд"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-type-dark.svg"><img src=".github/icons/file-type.svg" width="15" height="15"></picture></a>&nbsp;Поместить первую строку в название (если заметка не исключена) | Переименовать активную заметку, кроме случаев, когда она в исключенной папке или с исключенным тегом или свойством.                                           |
-| <a href="#палитра-команд"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-stack-dark.svg"><img src=".github/icons/file-stack.svg" width="15" height="15"></picture></a>&nbsp;Поместить первую строку в название во всех заметках          | Переименовать все заметки в хранилище, кроме находящихся в исключенных папках или с исключенными тегами или свойствами.                                       |
-| <a href="#палитра-команд"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-cog-dark.svg"><img src=".github/icons/file-cog.svg" width="15" height="15"></picture></a>&nbsp;Переключить автоматическое переименование                        | Переключить настройку _Переименовывать заметки_ между _Автоматически, если открыты и изменены_ и _Только при помощи команды_.                                 |
-| <a href="#палитра-команд"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/square-x-dark.svg"><img src=".github/icons/square-x.svg" width="15" height="15"></picture></a>&nbsp;Отключить переименование для заметки                             | Исключить активную заметку из переименования.                                                                                                                 |
-| <a href="#палитра-команд"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/square-check-dark.svg"><img src=".github/icons/square-check.svg" width="15" height="15"></picture></a>&nbsp;Включить переименование для заметки                      | Прекратить исключать активную заметку из переименования.                                                                                                      |
-| <a href="#палитра-команд"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/link-dark.svg"><img src=".github/icons/link.svg" width="15" height="15"></picture></a>&nbsp;Добавить безопасную внутреннюю ссылку                                    | Создать внутреннюю ссылку с обработкой запрещенных символов согласно настройкам в разделе _Замена символов_.                                                  |
-| <a href="#палитра-команд"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/link-dark.svg"><img src=".github/icons/link.svg" width="15" height="15"></picture></a>&nbsp;Добавить безопасную внутреннюю ссылку с подписью                         | Создать внутреннюю ссылку с обработкой запрещенных символов согласно настройкам в разделе _Замена символов_, и с исходным текстом в качестве подписи.         |
-| <a href="#палитра-команд"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/link-dark.svg"><img src=".github/icons/link.svg" width="15" height="15"></picture></a>&nbsp;Добавить внутреннюю ссылку с подписью и указанием пути                   | Создать внутреннюю ссылку с выделенным текстом в качестве подписи. Указать путь вручную.                                                                      |
-| <a href="#палитра-команд"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/clipboard-type-dark.svg"><img src=".github/icons/clipboard-type.svg" width="15" height="15"></picture></a>&nbsp;Вставить имя файла в позицию курсора                 | Вставить текущее имя файла в позицию курсора. Преобразовать замены запрещенных символов обратно в их исходные формы, как указано в разделе _Замена символов_. |
-
-### Контекстное меню файла, папки, тега и поиска по хранилищу
-
-| Команда                                                                                                                                                                                                                                                                                 | Описание                                                                 |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| <a href="#контекстное-меню-файла-папки-тега-и-поиска-по-хранилищу"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/file-type-dark.svg"><img src=".github/icons/file-type.svg" width="15" height="15"></picture></a>&nbsp;Поместить первую строку в название | Переименовать выбранные заметки.                                         |
-| <a href="#контекстное-меню-файла-папки-тега-и-поиска-по-хранилищу"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/square-x-dark.svg"><img src=".github/icons/square-x.svg" width="15" height="15"></picture></a>&nbsp;Отключить переименование             | Исключить выбранные заметки, папки или тег из переименования.            |
-| <a href="#контекстное-меню-файла-папки-тега-и-поиска-по-хранилищу"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/square-check-dark.svg"><img src=".github/icons/square-check.svg" width="15" height="15"></picture></a>&nbsp;Включить переименование      | Прекратить исключать выбранные заметки, папки или тег из переименования. |
-
-## Поддержка
-
-- [Откройте ишью](https://github.com/greetclammy/first-line-is-title/issues) при возникновении проблем.
-- Предложения по улучшению принимаются, но приоритет отдается стабильности. Pull requests приветствуются.
+Found a bug or have a feature request? [Open an issue](https://github.com/churnish/first-line-is-title/issues).
