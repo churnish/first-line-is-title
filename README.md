@@ -29,28 +29,6 @@ Automatically set the first line as note title, just like in Apple Notes! Forget
 - By default, note modification time is preserved on rename.
 - Multiple safeguards are in place to prevent unintended changes but **regular [backups](https://help.obsidian.md/backup) remain your ultimate safety net**.
 
-## Installation
-
-Until _First Line is Title_ is [made available](https://github.com/obsidianmd/obsidian-releases/pull/10689) in the plugin directory, follow the steps below to install it:
-
-1. Download and enable the community plugin [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
-2. Run _Add a beta plugin for testing_ in Command palette.
-3. Paste https://github.com/greetclammy/first-line-is-title in the text field.
-4. Select _Latest version_.
-5. Check _Enable after installing the plugin_.
-6. Press _Add Plugin_.
-
-<details><summary>Install manually</summary>
-
-Note: to get updates for _First Line is Title_, you will have to check for and install them manually.
-
-1. Download `first-line-is-title.zip` in the `Assets` of the [latest release](https://github.com/greetclammy/first-line-is-title/releases).
-2. Unzip the folder and place it in the `.obsidian/plugins` folder (hidden on most OSes) at the root of your vault.
-3. Reload plugins or app.
-4. Enable _First Line is Title_ in Obsidian settings > Community plugins > Installed plugins.
-
-</details>
-
 ## Commands
 
 ### Ribbon
@@ -84,11 +62,6 @@ Note: to get updates for _First Line is Title_, you will have to check for and i
 | <a href="#file-folder-tag-and-vault-search-context-menu"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/square-x-dark.svg"><img src=".github/icons/square-x.svg" width="15" height="15"></picture></a>&nbsp;Disable renaming          | Exclude selected note(s), folder(s) or tag from renaming.        |
 | <a href="#file-folder-tag-and-vault-search-context-menu"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/square-check-dark.svg"><img src=".github/icons/square-check.svg" width="15" height="15"></picture></a>&nbsp;Enable renaming   | Stop excluding selected note(s), folder(s) or tag from renaming. |
 
-## Support
-
-- Please [open an issue](https://github.com/greetclammy/first-line-is-title/issues) if you run into any problems.
-- Feature requests considered but not prioritized; further development focused on stability. PRs welcome.
-
 ## Installation
 
 Until _First Line is Title_ is [made available](https://github.com/obsidianmd/obsidian-releases/pull/10689) in the plugin directory, follow the steps below to install it:
@@ -110,3 +83,7 @@ Until _First Line is Title_ is [made available](https://github.com/obsidianmd/ob
 6. Enable _First Line is Title_ in Obsidian settings > Community plugins > Installed plugins.
 
 </details>
+
+## Support
+
+Found a bug or have a feature request? [Open an issue](https://github.com/churnish/first-line-is-title/issues).
