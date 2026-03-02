@@ -88,3 +88,25 @@ Note: to get updates for _First Line is Title_, you will have to check for and i
 
 - Please [open an issue](https://github.com/greetclammy/first-line-is-title/issues) if you run into any problems.
 - Feature requests considered but not prioritized; further development focused on stability. PRs welcome.
+
+## Installation
+
+Until _First Line is Title_ is [made available](https://github.com/obsidianmd/obsidian-releases/pull/10689) in the plugin directory, follow the steps below to install it:
+
+1. Download and enable the [BRAT](https://obsidian.md/plugins?id=obsidian42-brat) plugin.
+2. Run _Add a beta plugin for testing_ in the Command palette.
+3. Paste https://github.com/churnish/first-line-is-title in the text field.
+4. Select _Latest version_.
+5. Check _Enable after installing the plugin_.
+6. Press _Add Plugin_.
+
+<details><summary>Install manually</summary>
+
+1. Download `first-line-is-title.zip` in the `Assets` of the [latest release](https://github.com/churnish/first-line-is-title/releases).
+2. Open the vault folder in the system file manager.
+3. Open your Obsidian configuration folder (`.obsidian` by default, hidden on most OSes).
+4. Unzip `first-line-is-title.zip` and place it in the `plugins` folder.
+5. Reload plugins or app.
+6. Enable _First Line is Title_ in Obsidian settings > Community plugins > Installed plugins.
+
+</details>
