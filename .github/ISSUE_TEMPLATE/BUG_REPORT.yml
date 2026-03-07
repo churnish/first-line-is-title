@@ -2,6 +2,7 @@ name: Bug report
 description: Report something that is not working as expected in the First Line is Title plugin
 labels:
   - Bug report
+  - "⚪️ Pending"
 body:
   - type: markdown
     attributes:
@@ -19,6 +20,12 @@ body:
           required: true
         - label: I can reproduce the issue in the sandbox vault, or after disabling all other third-party plugins and CSS snippets, switching to default theme, then restarting Obsidian
           required: false
+  - type: markdown
+    attributes:
+      value: "&#8203;"
+  - type: markdown
+    attributes:
+      value: '## Required'
   - type: textarea
     id: steps-to-reproduce
     attributes:
@@ -45,14 +52,6 @@ body:
     validations:
       required: true
   - type: textarea
-    id: additional-info
-    attributes:
-      label: Additional information (optional)
-      description: Provide any additional information that you think might be helpful in solving the issue.
-      placeholder: Add additional information here...
-    validations:
-      required: false
-  - type: textarea
     id: debug-info
     attributes:
       label: Debug information
@@ -67,10 +66,24 @@ body:
       render: text
     validations:
       required: true
+  - type: markdown
+    attributes:
+      value: "&#8203;"
+  - type: markdown
+    attributes:
+      value: '## Optional'
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional information
+      description: Provide any additional information that you think might be helpful in solving the issue.
+      placeholder: Add additional information here...
+    validations:
+      required: false
   - type: textarea
     id: console-logs
     attributes:
-      label: Console logs (optional)
+      label: Console logs
       description: |-
         To share console logs:
 
@@ -86,7 +99,7 @@ body:
   - type: textarea
     id: plugin-settings
     attributes:
-      label: Plugin settings (optional)
+      label: Plugin settings
       description: |-
         To share your plugin settings:
 

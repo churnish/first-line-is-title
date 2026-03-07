@@ -2,6 +2,7 @@ name: Feature request
 description: Suggest an improvement or new feature for the First Line is Title plugin
 labels:
   - Feature request
+  - "⚪️ Pending"
 body:
   - type: markdown
     attributes:
@@ -17,6 +18,12 @@ body:
           required: true
         - label: I have updated to the latest version of Obsidian
           required: true
+  - type: markdown
+    attributes:
+      value: "&#8203;"
+  - type: markdown
+    attributes:
+      value: '## Required'
   - type: textarea
     id: use-case
     attributes:
@@ -33,10 +40,16 @@ body:
       placeholder: Describe solution here...
     validations:
       required: true
+  - type: markdown
+    attributes:
+      value: "&#8203;"
+  - type: markdown
+    attributes:
+      value: '## Optional'
   - type: textarea
     id: workaround
     attributes:
-      label: Current workaround (optional)
+      label: Current workaround
       description: If you're using any workarounds, it might be helpful to us to get some inspiration.
       placeholder: Describe workaround here...
     validations:
@@ -44,7 +57,7 @@ body:
   - type: textarea
     id: additional-info
     attributes:
-      label: Additional information (optional)
+      label: Additional information
       description: Provide any additional information that you think would be helpful to understand your suggestion.
       placeholder: Add additional information here...
     validations:
@@ -52,7 +65,7 @@ body:
   - type: textarea
     id: debug-info
     attributes:
-      label: Debug information (optional)
+      label: Debug information
       description: |-
         To share your Obsidian debug info:
 
@@ -62,35 +75,5 @@ body:
         4. Paste the copied text here.
       placeholder: Paste debug info here...
       render: text
-    validations:
-      required: false
-  - type: textarea
-    id: console-logs
-    attributes:
-      label: Console logs (optional)
-      description: |-
-        To share console logs:
-
-        1. Open developer tools in Obsidian (`Ctrl+Shift+I` on Windows/Linux, `Cmd+Option+I` on macOS).
-        2. Open the **Console** tab.
-        3. Reproduce the bug.
-        4. Share any console output that appears below.
-
-        **Note:** Console logs can contain file paths, note titles, and other vault details. Please review before sharing.
-      placeholder: Add console logs here...
-    validations:
-      required: false
-  - type: textarea
-    id: plugin-settings
-    attributes:
-      label: Plugin settings (optional)
-      description: |-
-        To share your plugin settings:
-
-        1. Open the vault folder in the system file manager.
-        2. Open your Obsidian configuration folder (`.obsidian` by default, hidden on most OSes).
-        3. Open `plugins/first-line-is-title`.
-        4. Attach the `data.json` file below.
-      placeholder: Attach data.json here...
     validations:
       required: false
