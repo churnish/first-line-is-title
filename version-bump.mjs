@@ -1,5 +1,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
 const isPreflight = process.argv.includes('--preflight');
 const targetVersion = process.env.npm_package_version;
@@ -19,6 +21,21 @@ try {
 }
 
 if (isPreflight) process.exit(0);
+
+// ── Sync shared docs ──
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const knowledgeDir = join(__dirname, '..', 'knowledge');
+
+const sharedDocs = ['release-guide.md'];
+for (const doc of sharedDocs) {
+  const src = join(knowledgeDir, doc);
+  if (existsSync(src)) {
+    writeFileSync(doc, readFileSync(src, 'utf8'));
+    execSync(`git add ${doc}`, { stdio: 'inherit' });
+    console.log(`Synced ${doc} from knowledge/`);
+  }
+}
 
 try {
   execSync('npm outdated eslint-plugin-obsidianmd --json', {
@@ -77,10 +94,13 @@ execSync('git add manifest.json', { stdio: 'inherit' });
 
 if (existsSync('versions.json')) {
   let versions = JSON.parse(readFileSync('versions.json', 'utf8'));
-  versions[targetVersion] = manifest.minAppVersion;
-  writeFileSync('versions.json', JSON.stringify(versions, null, '\t') + '\n');
-  execSync('git add versions.json', { stdio: 'inherit' });
-  console.log(`Updated versions.json for ${targetVersion}`);
+  const lastMinVersion = Object.values(versions).pop();
+  if (lastMinVersion !== manifest.minAppVersion) {
+    versions[targetVersion] = manifest.minAppVersion;
+    writeFileSync('versions.json', JSON.stringify(versions, null, '\t') + '\n');
+    execSync('git add versions.json', { stdio: 'inherit' });
+    console.log(`Updated versions.json for ${targetVersion}`);
+  }
 }
 
 console.log(`Updated manifest.json to version ${targetVersion}`);
