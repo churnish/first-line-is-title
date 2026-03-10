@@ -2,7 +2,7 @@ name: Bug report
 description: Report something that is not working as expected in the First Line is Title plugin
 labels:
   - Bug report
-  - "⚪️ Pending"
+  - '⚪️ Pending'
 body:
   - type: markdown
     attributes:
@@ -22,7 +22,7 @@ body:
           required: false
   - type: markdown
     attributes:
-      value: "&#8203;"
+      value: '&#8203;'
   - type: markdown
     attributes:
       value: '## Required'
@@ -68,7 +68,7 @@ body:
       required: true
   - type: markdown
     attributes:
-      value: "&#8203;"
+      value: '&#8203;'
   - type: markdown
     attributes:
       value: '## Optional'

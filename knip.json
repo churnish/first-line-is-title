@@ -11,11 +11,9 @@
     "prettier",
     "typescript-eslint"
   ],
-  "ignoreBinaries": ["eslint", "knip"],
+  "ignoreBinaries": ["eslint", "knip", "vitest"],
   "exclude": ["exports"],
   "ignore": [
-    "src/utils.ts",
-    "src/types.ts",
     "src/utils/timestamp-rate-limiter.ts"
   ],
   "ignoreExportsUsedInFile": true

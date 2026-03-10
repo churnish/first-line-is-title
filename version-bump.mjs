@@ -22,6 +22,11 @@ try {
 
 if (isPreflight) process.exit(0);
 
+if (!targetVersion) {
+  console.error('npm_package_version is not set. Run via npm version.');
+  process.exit(1);
+}
+
 // ── Sync shared docs ──
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -32,8 +37,10 @@ for (const doc of sharedDocs) {
   const src = join(knowledgeDir, doc);
   if (existsSync(src)) {
     writeFileSync(doc, readFileSync(src, 'utf8'));
-    execSync(`git add ${doc}`, { stdio: 'inherit' });
+    execSync(`git add "${doc}"`, { stdio: 'inherit' });
     console.log(`Synced ${doc} from knowledge/`);
+  } else {
+    console.warn(`Skipping ${doc}: not found at ${src}`);
   }
 }
 
@@ -63,11 +70,6 @@ try {
       process.exit(1);
     }
   }
-}
-
-if (!targetVersion) {
-  console.error('npm_package_version is not set. Run via npm version.');
-  process.exit(1);
 }
 
 // ── Side effects ──

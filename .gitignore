@@ -1,15 +1,16 @@
-.claude/
-node_modules/
-node_modules.nosync/
-
 * 2
 * 2.*
 *Audit*
 *AUDIT*
 *audit*
+
+.claude/
+node_modules/
+
+*.js.map
 *.zip
 
 .DS_Store
-CLAUDE.md
 data.json
 main.js
+package-lock.json
