@@ -1,13 +1,11 @@
-* 2
-* 2.*
-*Audit*
-*AUDIT*
-*audit*
+* [0-9]
+* [0-9].*
 
 .claude/
+.vscode/
 node_modules/
 
-*.js.map
+*.map
 *.zip
 
 .DS_Store
