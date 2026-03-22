@@ -4,6 +4,7 @@
 .claude/
 .vscode/
 node_modules/
+plans/
 
 *.map
 *.zip

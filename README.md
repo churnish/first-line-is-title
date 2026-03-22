@@ -7,7 +7,7 @@ Automatically set the first line as note title, just like in Apple Notes! Forget
 ![](https://github.com/user-attachments/assets/eed638e0-f695-4fdd-a0a6-2ace66585d58)
 
 > [!TIP]
-> The plugin is best used with the tab title bar and/or inline title enabled in Obsidian settings > Appearance > Interface.
+> The plugin is best used with the tab title bar and/or inline title enabled in Obsidian settings → Appearance → Interface.
 
 ## Key features
 
@@ -64,25 +64,22 @@ Automatically set the first line as note title, just like in Apple Notes! Forget
 
 ## Installation
 
-Until _First Line is Title_ is [made available](https://github.com/obsidianmd/obsidian-releases/pull/10689) in the plugin directory, follow the steps below to install it:
+Until _First Line is Title_ is [made available](https://github.com/obsidianmd/obsidian-releases/pull/10689) in the plugin directory, to install it:
 
-1. Download and enable the [BRAT](https://obsidian.md/plugins?id=obsidian42-brat) plugin.
-2. Run _Add a beta plugin for testing_ in the Command palette.
-3. Paste https://github.com/churnish/first-line-is-title.
-4. Select _Latest version_.
-5. Check _Enable after installing the plugin_.
-6. Press _Add Plugin_.
+1. Download and enable the [BRAT](https://churnish.github.io/http-protocol-redirector?r=obsidian://show-plugin?id=obsidian42-brat) plugin.
+2. [Install via BRAT](https://churnish.github.io/http-protocol-redirector?r=obsidian://brat?plugin=churnish/first-line-is-title).
+3. Select **Add plugin**.
 
 <details><summary>Install manually</summary>
 
-Note: To get updates for *First Line is Title*, you will have to check for and install them manually.
+Note: To get updates for _First Line is Title_, you will have to check for and install them manually.
 
 1. Download `first-line-is-title.zip` in the `Assets` of the [latest release](https://github.com/churnish/first-line-is-title/releases).
 2. Open the vault folder in the system file manager.
 3. Open your Obsidian configuration folder (`.obsidian` by default, hidden on most OSes).
 4. Unzip `first-line-is-title.zip` and place it in the `plugins` folder.
 5. Reload plugins or app.
-6. Enable _First Line is Title_ in Obsidian settings > Community plugins > Installed plugins.
+6. Enable _First Line is Title_ in Obsidian settings → Community plugins → Installed plugins.
 
 </details>
 
