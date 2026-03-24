@@ -14,7 +14,7 @@ body:
       options:
         - label: I have searched existing issues and this is not a duplicate
           required: true
-        - label: I've updated to the latest versions of Obsidian, Obsidian installer, and First Line is Title
+        - label: I have updated to the latest versions of Obsidian, Obsidian installer, and First Line is Title
           required: true
         - label: I can reproduce the issue in the sandbox vault, or after disabling all other third-party plugins and CSS snippets, switching to default theme, then restarting Obsidian
           required: false
