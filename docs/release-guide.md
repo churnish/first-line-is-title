@@ -8,7 +8,7 @@ last updated: 2026-03-11
 
 > **Warning**
 >
-> Source of truth: `plugins/knowledge/release-guide.md`. Copied to each plugin's `docs/` during `npm version` via `version-bump.mjs`. Edit the source, not the copy.
+> Source of truth: `plugins/local/release-guide.md`. Copied to each plugin's `docs/` during `npm version` via `version-bump.mjs`. Edit the source, not the copy.
 
 ## Commands
 
