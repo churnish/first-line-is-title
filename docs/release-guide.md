@@ -1,8 +1,8 @@
 ---
 title: Release guide
 description: "End-to-end release workflow: npm version commands, preversion/version/postversion lifecycle, GitHub Action build, wiki publishing, and rollback procedures."
-author: "\U0001F916 Generated with Claude Code"
-last updated: 2026-03-11
+author: 🤖 Generated with Claude Code
+updated: 2026-03-11
 ---
 # Release guide
 
