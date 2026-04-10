@@ -187,7 +187,7 @@ export function hasDisablePropertyInFile(
     if (!frontmatter) return false;
 
     // Get the property value
-    const propertyValue = frontmatter[disableKey];
+    const propertyValue = (frontmatter as Record<string, unknown>)[disableKey];
 
     if (propertyValue === undefined || propertyValue === null) return false;
 
@@ -351,7 +351,7 @@ export function extractTitle(line: string, settings: PluginSettings): string {
 
   if (!backslashReplacementEnabled && !hasPlaceholderCollision) {
     // Backslash disabled: use as escape character, omit from output
-    line = line.replace(/\\(.)/g, (_match, char) => {
+    line = line.replace(/\\(.)/g, (_match: string, char: string) => {
       const placeholder = `⸢FLITESC${escapeCounter++}⸥`;
       escapeMap.set(placeholder, char);
       return placeholder;
@@ -383,46 +383,70 @@ export function extractTitle(line: string, settings: PluginSettings): string {
       line = line.replace(/<!--.*?-->/g, '');
     } else if (settings.markupStripping.stripMarkupSettings.comments) {
       // Strip markup but keep content: remove markers only
-      line = line.replace(/%%(.+?)%%/g, (match, content, offset) => {
-        return checkEscaped(match, offset) ? match : content;
-      });
-      line = line.replace(/<!--(.+?)-->/g, (match, content, offset) => {
-        return checkEscaped(match, offset) ? match : content;
-      });
+      line = line.replace(
+        /%%(.+?)%%/g,
+        (match: string, content: string, offset: number) => {
+          return checkEscaped(match, offset) ? match : content;
+        }
+      );
+      line = line.replace(
+        /<!--(.+?)-->/g,
+        (match: string, content: string, offset: number) => {
+          return checkEscaped(match, offset) ? match : content;
+        }
+      );
     }
 
     // Strip bold markup
     if (settings.markupStripping.stripMarkupSettings.bold) {
-      line = line.replace(/\*\*(.*?)\*\*/g, (match, content, offset) => {
-        return checkEscaped(match, offset) ? match : content;
-      });
-      line = line.replace(/__(.*?)__/g, (match, content, offset) => {
-        return checkEscaped(match, offset) ? match : content;
-      });
+      line = line.replace(
+        /\*\*(.*?)\*\*/g,
+        (match: string, content: string, offset: number) => {
+          return checkEscaped(match, offset) ? match : content;
+        }
+      );
+      line = line.replace(
+        /__(.*?)__/g,
+        (match: string, content: string, offset: number) => {
+          return checkEscaped(match, offset) ? match : content;
+        }
+      );
     }
 
     // Strip italic markup
     if (settings.markupStripping.stripMarkupSettings.italic) {
-      line = line.replace(/\*([^*]*?)\*/g, (match, content, offset) => {
-        return checkEscaped(match, offset) ? match : content;
-      });
-      line = line.replace(/_([^_]*?)_/g, (match, content, offset) => {
-        return checkEscaped(match, offset) ? match : content;
-      });
+      line = line.replace(
+        /\*([^*]*?)\*/g,
+        (match: string, content: string, offset: number) => {
+          return checkEscaped(match, offset) ? match : content;
+        }
+      );
+      line = line.replace(
+        /_([^_]*?)_/g,
+        (match: string, content: string, offset: number) => {
+          return checkEscaped(match, offset) ? match : content;
+        }
+      );
     }
 
     // Strip strikethrough markup
     if (settings.markupStripping.stripMarkupSettings.strikethrough) {
-      line = line.replace(/~~(.*?)~~/g, (match, content, offset) => {
-        return checkEscaped(match, offset) ? match : content;
-      });
+      line = line.replace(
+        /~~(.*?)~~/g,
+        (match: string, content: string, offset: number) => {
+          return checkEscaped(match, offset) ? match : content;
+        }
+      );
     }
 
     // Strip highlight markup
     if (settings.markupStripping.stripMarkupSettings.highlight) {
-      line = line.replace(/==(.*?)==/g, (match, content, offset) => {
-        return checkEscaped(match, offset) ? match : content;
-      });
+      line = line.replace(
+        /==(.*?)==/g,
+        (match: string, content: string, offset: number) => {
+          return checkEscaped(match, offset) ? match : content;
+        }
+      );
     }
 
     // Strip code block markup (must run before code markup stripping)
@@ -458,9 +482,12 @@ export function extractTitle(line: string, settings: PluginSettings): string {
 
     // Strip code markup
     if (settings.markupStripping.stripMarkupSettings.code) {
-      line = line.replace(/`(.*?)`/g, (match, content, offset) => {
-        return checkEscaped(match, offset) ? match : content;
-      });
+      line = line.replace(
+        /`(.*?)`/g,
+        (match: string, content: string, offset: number) => {
+          return checkEscaped(match, offset) ? match : content;
+        }
+      );
     }
 
     // Strip inline math markup
@@ -468,7 +495,7 @@ export function extractTitle(line: string, settings: PluginSettings): string {
       // Only match if no whitespace after opening $ and before closing $
       line = line.replace(
         /\$((?:\S(?:.*?\S)?)?)\$/g,
-        (match, content, offset) => {
+        (match: string, content: string, offset: number) => {
           return checkEscaped(match, offset) ? match : content;
         }
       );
@@ -479,7 +506,7 @@ export function extractTitle(line: string, settings: PluginSettings): string {
     if (settings.markupStripping.stripMarkupSettings.callouts) {
       line = line.replace(
         /^>\s*\[![^\]]+\][-+]?(?:\s+(.*))?$/,
-        (_, content) => content ?? ''
+        (_: string, content: string) => content ?? ''
       );
     }
 
@@ -550,7 +577,10 @@ export function extractTitle(line: string, settings: PluginSettings): string {
     settings.markupStripping.stripMarkupSettings.markdownLinks
   ) {
     const regularEmbedRegex = /!\[(.*?)\]\((.*?)\)/g;
-    line = line.replace(regularEmbedRegex, (_match, caption) => caption);
+    line = line.replace(
+      regularEmbedRegex,
+      (_match: string, caption: string) => caption
+    );
   }
 
   // Handle headers - only if the original line was a valid heading and strip heading markup is enabled
@@ -612,7 +642,7 @@ export function extractTitle(line: string, settings: PluginSettings): string {
     settings.markupStripping.stripMarkupSettings.markdownLinks
   ) {
     const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-    line = line.replace(markdownLinkRegex, (_, title) => title);
+    line = line.replace(markdownLinkRegex, (_: string, title: string) => title);
 
     // Remove empty links (but keep surrounding text)
     // This handles cases like "test [](smile.md)" -> "test"

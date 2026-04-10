@@ -799,7 +799,7 @@ export class ProcessTagModal extends Modal {
           ? cache.frontmatter.tags
           : [cache.frontmatter.tags];
         for (const tag of frontmatterTags) {
-          const normalizedTag = normalizeTag(tag);
+          const normalizedTag = normalizeTag(String(tag));
           if (normalizedTag === this.normalizedTag) {
             fileHasTag = true;
             break;
@@ -963,7 +963,7 @@ export class ProcessTagModal extends Modal {
           : [cache.frontmatter.tags];
 
         for (const tag of frontmatterTags) {
-          const normalizedTag = normalizeTag(tag);
+          const normalizedTag = normalizeTag(String(tag));
           if (normalizedTag === this.normalizedTag) {
             hasMatchingTag = true;
             break;

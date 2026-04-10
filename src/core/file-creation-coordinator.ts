@@ -427,7 +427,7 @@ export class FileCreationCoordinator {
 
     let folder = file.parent;
     while (folder) {
-      const match = folderTemplates.find(
+      const match = (folderTemplates as unknown[]).find(
         (ft: unknown) =>
           ft &&
           typeof ft === 'object' &&
@@ -470,7 +470,7 @@ export class FileCreationCoordinator {
     const fileTemplates = settings?.file_templates;
     if (!Array.isArray(fileTemplates)) return false;
 
-    for (const ft of fileTemplates) {
+    for (const ft of fileTemplates as unknown[]) {
       if (!ft || typeof ft !== 'object') continue;
       try {
         const regex =

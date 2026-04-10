@@ -178,7 +178,10 @@ export class AliasManager {
       let frontmatter: Record<string, unknown> | null = null;
       if (frontmatterInfo.exists) {
         try {
-          frontmatter = parseYaml(frontmatterInfo.frontmatter);
+          frontmatter = parseYaml(frontmatterInfo.frontmatter) as Record<
+            string,
+            unknown
+          > | null;
         } catch {
           // YAML is malformed (e.g., user is mid-typing) - skip alias update until valid
           verboseLog(
@@ -226,11 +229,12 @@ export class AliasManager {
       let aliasNeedsRepositioning = false;
       for (const aliasPropertyKey of aliasPropertyKeys) {
         let existingAliases: string[] = [];
-        if (frontmatter && frontmatter[aliasPropertyKey]) {
-          if (Array.isArray(frontmatter[aliasPropertyKey])) {
-            existingAliases = frontmatter[aliasPropertyKey] as string[];
+        const rawValue = frontmatter?.[aliasPropertyKey];
+        if (rawValue) {
+          if (Array.isArray(rawValue)) {
+            existingAliases = [...(rawValue as string[])];
           } else {
-            existingAliases = [frontmatter[aliasPropertyKey] as string];
+            existingAliases = [rawValue as string];
           }
         }
 
@@ -466,7 +470,7 @@ export class AliasManager {
         const aliasPropertyKeys = this.getAliasPropertyKeys();
         await this.app.fileManager.processFrontMatter(
           currentFileForFrontmatter,
-          (frontmatter) => {
+          (frontmatter: Record<string, unknown>) => {
             // Insert alias into all specified properties
             for (const aliasPropertyKey of aliasPropertyKeys) {
               // Use array format for 'aliases' property, inline format for custom properties
@@ -537,17 +541,18 @@ export class AliasManager {
       const aliasPropertyKeys = this.getAliasPropertyKeys();
       await this.app.fileManager.processFrontMatter(
         currentFileForUpdate,
-        (frontmatter) => {
+        (frontmatter: Record<string, unknown>) => {
           // Insert alias into all specified properties
           for (const aliasPropertyKey of aliasPropertyKeys) {
             // Check if property is 'aliases' - if yes, use current behavior
             if (aliasPropertyKey === 'aliases') {
               let existingAliases: string[] = [];
-              if (frontmatter[aliasPropertyKey]) {
-                if (Array.isArray(frontmatter[aliasPropertyKey])) {
-                  existingAliases = [...frontmatter[aliasPropertyKey]];
+              const rawAliases = frontmatter[aliasPropertyKey];
+              if (rawAliases) {
+                if (Array.isArray(rawAliases)) {
+                  existingAliases = [...(rawAliases as string[])];
                 } else {
-                  existingAliases = [frontmatter[aliasPropertyKey]];
+                  existingAliases = [rawAliases as string];
                 }
               }
 
@@ -588,26 +593,24 @@ export class AliasManager {
               }
             } else {
               // New behavior for non-aliases properties
-              const propertyExists = Object.prototype.hasOwnProperty.call(
-                frontmatter,
-                aliasPropertyKey
-              );
+              const propertyExists = aliasPropertyKey in frontmatter;
 
+              const rawPropValue = frontmatter[aliasPropertyKey];
               if (
                 !propertyExists ||
-                frontmatter[aliasPropertyKey] === null ||
-                frontmatter[aliasPropertyKey] === undefined ||
-                frontmatter[aliasPropertyKey] === ''
+                rawPropValue === null ||
+                rawPropValue === undefined ||
+                rawPropValue === ''
               ) {
                 // Property doesn't exist or has no value - insert inline
                 frontmatter[aliasPropertyKey] = markedAlias;
               } else {
                 // Property has existing values
                 let existingValues: string[] = [];
-                if (Array.isArray(frontmatter[aliasPropertyKey])) {
-                  existingValues = [...frontmatter[aliasPropertyKey]];
+                if (Array.isArray(rawPropValue)) {
+                  existingValues = [...(rawPropValue as string[])];
                 } else {
-                  existingValues = [frontmatter[aliasPropertyKey]];
+                  existingValues = [rawPropValue as string];
                 }
 
                 // Find existing plugin value index (ZWSP-wrapped)
@@ -722,17 +725,12 @@ export class AliasManager {
 
       await this.app.fileManager.processFrontMatter(
         currentFileForRemoval,
-        (frontmatter) => {
+        (frontmatter: Record<string, unknown>) => {
           const aliasPropertyKeys = this.getAliasPropertyKeys();
 
           // Remove plugin aliases from all specified properties
           for (const aliasPropertyKey of aliasPropertyKeys) {
-            const propertyExists = Object.prototype.hasOwnProperty.call(
-              frontmatter,
-              aliasPropertyKey
-            );
-
-            if (!propertyExists) {
+            if (!(aliasPropertyKey in frontmatter)) {
               continue;
             }
 
@@ -754,7 +752,7 @@ export class AliasManager {
 
             // Normalize to array
             if (Array.isArray(propValue)) {
-              existingValues = [...propValue];
+              existingValues = [...(propValue as string[])];
             } else {
               existingValues = [propValue as string];
             }
@@ -831,41 +829,45 @@ export class AliasManager {
         await activeView.save();
       }
 
-      await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-        const aliasPropertyKeys = this.getAliasPropertyKeys();
+      await this.app.fileManager.processFrontMatter(
+        file,
+        (frontmatter: Record<string, unknown>) => {
+          const aliasPropertyKeys = this.getAliasPropertyKeys();
 
-        // Remove the specified alias from all specified properties
-        for (const aliasPropertyKey of aliasPropertyKeys) {
-          if (frontmatter[aliasPropertyKey]) {
-            let existingAliases: string[] = [];
+          // Remove the specified alias from all specified properties
+          for (const aliasPropertyKey of aliasPropertyKeys) {
+            const rawValue = frontmatter[aliasPropertyKey];
+            if (rawValue) {
+              let existingAliases: string[] = [];
 
-            // Normalize to array
-            if (Array.isArray(frontmatter[aliasPropertyKey])) {
-              existingAliases = [...frontmatter[aliasPropertyKey]];
-            } else {
-              existingAliases = [frontmatter[aliasPropertyKey]];
-            }
-
-            // Remove the specified alias and any empty strings
-            const filteredAliases = existingAliases.filter(
-              (alias) => alias !== trimmedAlias && alias !== ''
-            );
-
-            // Update or remove the property
-            if (filteredAliases.length === 0) {
-              if (this.settings.aliases.keepEmptyAliasProperty) {
-                // Keep empty property as null
-                frontmatter[aliasPropertyKey] = null;
+              // Normalize to array
+              if (Array.isArray(rawValue)) {
+                existingAliases = [...(rawValue as string[])];
               } else {
-                // Delete empty property
-                delete frontmatter[aliasPropertyKey];
+                existingAliases = [rawValue as string];
               }
-            } else {
-              frontmatter[aliasPropertyKey] = filteredAliases;
+
+              // Remove the specified alias and any empty strings
+              const filteredAliases = existingAliases.filter(
+                (alias) => alias !== trimmedAlias && alias !== ''
+              );
+
+              // Update or remove the property
+              if (filteredAliases.length === 0) {
+                if (this.settings.aliases.keepEmptyAliasProperty) {
+                  // Keep empty property as null
+                  frontmatter[aliasPropertyKey] = null;
+                } else {
+                  // Delete empty property
+                  delete frontmatter[aliasPropertyKey];
+                }
+              } else {
+                frontmatter[aliasPropertyKey] = filteredAliases;
+              }
             }
           }
         }
-      });
+      );
 
       verboseLog(
         this.plugin,
@@ -971,7 +973,10 @@ export class AliasManager {
     // Using parseYaml instead of cache avoids timing issues with cache updates
     let frontmatter: Record<string, unknown> | null = null;
     try {
-      frontmatter = parseYaml(fmInfo.frontmatter);
+      frontmatter = parseYaml(fmInfo.frontmatter) as Record<
+        string,
+        unknown
+      > | null;
     } catch {
       verboseLog(
         this.plugin,
@@ -1004,13 +1009,13 @@ export class AliasManager {
         // Search from end for ZWSP-wrapped value
         let found = false;
         for (let i = propValue.length - 1; i >= 0; i--) {
-          const val = propValue[i];
+          const val: unknown = propValue[i];
           if (isPluginAlias(val)) {
             verboseLog(
               this.plugin,
               `TRY_EDITOR_UPDATE [6]: key=${key} FOUND at index=${i}`
             );
-            positions.push({ key, oldValue: val, arrayIndex: i });
+            positions.push({ key, oldValue: val as string, arrayIndex: i });
             found = true;
             break;
           }

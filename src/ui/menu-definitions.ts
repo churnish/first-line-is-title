@@ -246,13 +246,12 @@ export class MenuDefinitions {
             );
             if (!fileCache || !fileCache.frontmatter) return true;
 
-            const value =
-              fileCache.frontmatter[
-                this.plugin.settings.exclusions.disableRenamingKey
-              ];
+            const value = (fileCache.frontmatter as Record<string, unknown>)[
+              this.plugin.settings.exclusions.disableRenamingKey
+            ];
             if (value === undefined) return true;
 
-            const valueStr = String(value).toLowerCase();
+            const valueStr = String(value as string).toLowerCase();
             const expectedValue = String(
               this.plugin.settings.exclusions.disableRenamingValue
             ).toLowerCase();
@@ -264,7 +263,7 @@ export class MenuDefinitions {
               await this.plugin.propertyManager.ensurePropertyTypeIsCheckbox();
               await this.plugin.app.fileManager.processFrontMatter(
                 fileContext.file,
-                (frontmatter) => {
+                (frontmatter: Record<string, unknown>) => {
                   frontmatter[
                     this.plugin.settings.exclusions.disableRenamingKey
                   ] = this.plugin.parsePropertyValue(
@@ -298,13 +297,12 @@ export class MenuDefinitions {
             );
             if (!fileCache || !fileCache.frontmatter) return false;
 
-            const value =
-              fileCache.frontmatter[
-                this.plugin.settings.exclusions.disableRenamingKey
-              ];
+            const value = (fileCache.frontmatter as Record<string, unknown>)[
+              this.plugin.settings.exclusions.disableRenamingKey
+            ];
             if (value === undefined) return false;
 
-            const valueStr = String(value).toLowerCase();
+            const valueStr = String(value as string).toLowerCase();
             const expectedValue = String(
               this.plugin.settings.exclusions.disableRenamingValue
             ).toLowerCase();
@@ -315,7 +313,7 @@ export class MenuDefinitions {
             try {
               await this.plugin.app.fileManager.processFrontMatter(
                 fileContext.file,
-                (frontmatter) => {
+                (frontmatter: Record<string, unknown>) => {
                   delete frontmatter[
                     this.plugin.settings.exclusions.disableRenamingKey
                   ];

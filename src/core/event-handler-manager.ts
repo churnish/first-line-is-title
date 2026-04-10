@@ -233,10 +233,10 @@ export class EventHandlerManager {
         const plugin = this.plugin;
         const remove = around(Menu.prototype, {
           showAtPosition(old) {
-            return function (...args) {
+            return function (this: Menu, ...args: unknown[]) {
               remove();
               plugin.contextMenuManager.addTagMenuItems(this, tagInfo.tagName);
-              return old.apply(this, args);
+              return old.apply(this, args) as Menu;
             };
           },
         });

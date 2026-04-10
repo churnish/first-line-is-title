@@ -642,7 +642,10 @@ export class FileOperations {
 
     let frontmatter: Record<string, unknown>;
     try {
-      frontmatter = parseYaml(frontmatterInfo.frontmatter);
+      frontmatter = parseYaml(frontmatterInfo.frontmatter) as Record<
+        string,
+        unknown
+      >;
     } catch (error) {
       verboseLog(this.plugin, `Failed to parse YAML: ${error}`);
       return false;

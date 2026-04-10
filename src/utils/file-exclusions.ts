@@ -79,7 +79,7 @@ export function fileHasExcludedProperties(
         return true;
       }
 
-      const frontmatterValue = frontmatter[propKey];
+      const frontmatterValue: unknown = frontmatter[propKey];
 
       if (typeof frontmatterValue === 'string') {
         if (frontmatterValue === propValue) {
@@ -90,7 +90,9 @@ export function fileHasExcludedProperties(
           return true;
         }
       } else if (frontmatterValue != null) {
-        if (String(frontmatterValue) === propValue) {
+        if (
+          String(frontmatterValue as string | number | boolean) === propValue
+        ) {
           return true;
         }
       }
@@ -235,7 +237,7 @@ export function isFileExcluded(
       fileCache.frontmatter &&
       fileCache.frontmatter.tags
     ) {
-      const frontmatterTags = fileCache.frontmatter.tags;
+      const frontmatterTags: unknown = fileCache.frontmatter.tags;
       // Handle both string arrays and single strings
       const fileTags = Array.isArray(frontmatterTags)
         ? frontmatterTags

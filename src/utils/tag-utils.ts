@@ -26,7 +26,10 @@ export function parseTagsFromYAML(content: string): string[] {
   // Parse YAML using Obsidian API
   let frontmatter: Record<string, unknown>;
   try {
-    frontmatter = parseYaml(frontmatterInfo.frontmatter);
+    frontmatter = parseYaml(frontmatterInfo.frontmatter) as Record<
+      string,
+      unknown
+    >;
   } catch {
     return tags;
   }
@@ -103,7 +106,7 @@ export function fileHasTargetTags(
       fileCache.frontmatter &&
       fileCache.frontmatter.tags
     ) {
-      const frontmatterTags = fileCache.frontmatter.tags;
+      const frontmatterTags: unknown = fileCache.frontmatter.tags;
       fileTags = Array.isArray(frontmatterTags)
         ? frontmatterTags.map(String)
         : [String(frontmatterTags)];

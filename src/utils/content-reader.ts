@@ -136,7 +136,9 @@ export async function readFileContent(
     return content;
   } catch (error) {
     console.error(`Failed to read file ${file.path}:`, error);
-    throw new Error(`Failed to read file: ${error.message}`);
+    throw new Error(
+      `Failed to read file: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 

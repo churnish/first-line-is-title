@@ -138,7 +138,10 @@ export class PluginInitializer {
           corePluginsPath
         );
       const corePluginsData = await adapter.read(corePluginsPath);
-      const corePlugins = JSON.parse(corePluginsData);
+      const corePlugins = JSON.parse(corePluginsData) as Record<
+        string,
+        unknown
+      >;
       if (this.settings.core.verboseLogging)
         console.debug(
           'Core Templates plugin enabled status:',
@@ -157,8 +160,11 @@ export class PluginInitializer {
             templatesDataPath
           );
         const templatesData = await adapter.read(templatesDataPath);
-        const templatesConfig = JSON.parse(templatesData);
-        templatesFolder = templatesConfig.folder;
+        const templatesConfig = JSON.parse(templatesData) as Record<
+          string,
+          unknown
+        >;
+        templatesFolder = (templatesConfig.folder as string) ?? null;
         if (this.settings.core.verboseLogging)
           console.debug(
             'Core Templates folder configured as:',
@@ -198,8 +204,11 @@ export class PluginInitializer {
             templaterDataPath
           );
         const templaterData = await adapter.read(templaterDataPath);
-        const templaterConfig = JSON.parse(templaterData);
-        templaterFolder = templaterConfig.templates_folder;
+        const templaterConfig = JSON.parse(templaterData) as Record<
+          string,
+          unknown
+        >;
+        templaterFolder = (templaterConfig.templates_folder as string) ?? null;
         if (this.settings.core.verboseLogging)
           console.debug('Templater folder configured as:', templaterFolder);
       } catch (error) {

@@ -68,9 +68,11 @@ export default class FirstLineIsTitle extends Plugin {
         this.app,
         this.settings,
         this.renameEngine,
-        this.saveSettings.bind(this),
-        this.debugLog.bind(this),
-        this.processMultipleFiles.bind(this)
+        () => this.saveSettings(),
+        (settingName: string, value: unknown) =>
+          this.debugLog(settingName, value),
+        (files: TFile[], action: 'rename') =>
+          this.processMultipleFiles(files, action)
       );
     }
     return this._folderOperations;
@@ -82,8 +84,9 @@ export default class FirstLineIsTitle extends Plugin {
         this.app,
         this.settings,
         this.renameEngine,
-        this.saveSettings.bind(this),
-        this.debugLog.bind(this)
+        () => this.saveSettings(),
+        (settingName: string, value: unknown) =>
+          this.debugLog(settingName, value)
       );
     }
     return this._tagOperations;
@@ -354,7 +357,7 @@ export default class FirstLineIsTitle extends Plugin {
           : undefined;
         await this.app.fileManager.processFrontMatter(
           activeFile,
-          (frontmatter) => {
+          (frontmatter: Record<string, unknown>) => {
             frontmatter[this.settings.exclusions.disableRenamingKey] =
               this.parsePropertyValue(
                 this.settings.exclusions.disableRenamingValue
@@ -397,7 +400,7 @@ export default class FirstLineIsTitle extends Plugin {
           : undefined;
         await this.app.fileManager.processFrontMatter(
           activeFile,
-          (frontmatter) => {
+          (frontmatter: Record<string, unknown>) => {
             delete frontmatter[this.settings.exclusions.disableRenamingKey];
           },
           originalMtime !== undefined ? { mtime: originalMtime } : undefined
@@ -727,7 +730,8 @@ export default class FirstLineIsTitle extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    const loadedData = (await this.loadData()) || {};
+    const loadedData = ((await this.loadData()) ||
+      {}) as Partial<PluginSettings>;
 
     // Use deep merge to preserve nested properties
     this.settings = deepMerge(DEFAULT_SETTINGS, loadedData);

@@ -1,6 +1,6 @@
 import { Setting, SettingGroup, setIcon, Notice } from 'obsidian';
 import { SettingsTabBase, FirstLineIsTitlePlugin } from './settings-base';
-import { NotificationMode, FileReadMethod } from '../types';
+import { NotificationMode, FileReadMethod, PluginSettings } from '../types';
 import { DEFAULT_SETTINGS } from '../constants';
 import { ClearSettingsModal } from '../modals';
 import { verboseLog } from '../utils';
@@ -21,8 +21,8 @@ export class OtherTab extends SettingsTabBase {
       this.plugin as typeof this.plugin & {
         updateAutomaticRenameVisibility?: () => void;
       }
-    ).updateAutomaticRenameVisibility =
-      this.updateAutomaticRenameVisibility.bind(this);
+    ).updateAutomaticRenameVisibility = () =>
+      this.updateAutomaticRenameVisibility();
   }
 
   render(): void {
@@ -197,11 +197,14 @@ export class OtherTab extends SettingsTabBase {
                     reader.readAsText(selectedFile, 'UTF-8');
                     reader.onload = (readerEvent) => {
                       void (async () => {
-                        let importedJson;
+                        let importedJson: Record<string, unknown> | undefined;
                         const content = readerEvent.target?.result;
                         if (typeof content === 'string') {
                           try {
-                            importedJson = JSON.parse(content);
+                            importedJson = JSON.parse(content) as Record<
+                              string,
+                              unknown
+                            >;
                           } catch {
                             new Notice(t('notifications.invalidImportFile'));
                             console.error(t('notifications.invalidImportFile'));
@@ -244,7 +247,7 @@ export class OtherTab extends SettingsTabBase {
                           }
 
                           // Deep copy for rollback (reference would be unsafe if settings were modified in-place)
-                          let previousSettings;
+                          let previousSettings: PluginSettings;
                           try {
                             previousSettings = structuredClone(
                               this.plugin.settings
@@ -253,7 +256,7 @@ export class OtherTab extends SettingsTabBase {
                             // Fallback for non-cloneable values (shouldn't happen with settings)
                             previousSettings = JSON.parse(
                               JSON.stringify(this.plugin.settings)
-                            );
+                            ) as PluginSettings;
                           }
                           try {
                             this.plugin.settings = newSettings;
@@ -353,23 +356,23 @@ export class OtherTab extends SettingsTabBase {
                   this.plugin,
                   async () => {
                     // Deep copy for rollback (reference would be unsafe if settings were modified in-place)
-                    let previousSettings;
+                    let previousSettings: PluginSettings;
                     try {
                       previousSettings = structuredClone(this.plugin.settings);
                     } catch {
                       // Fallback for non-cloneable values (shouldn't happen with settings)
                       previousSettings = JSON.parse(
                         JSON.stringify(this.plugin.settings)
-                      );
+                      ) as PluginSettings;
                     }
-                    let newSettings;
+                    let newSettings: PluginSettings;
                     try {
                       newSettings = structuredClone(DEFAULT_SETTINGS);
                     } catch {
                       // Fallback for non-cloneable values (shouldn't happen with settings)
                       newSettings = JSON.parse(
                         JSON.stringify(DEFAULT_SETTINGS)
-                      );
+                      ) as PluginSettings;
                     }
 
                     const locale = getCurrentLocale();

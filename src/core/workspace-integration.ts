@@ -91,9 +91,11 @@ export class WorkspaceIntegration {
 
       this.saveCommandPatchCleanup = around(saveCommand, {
         checkCallback(original) {
-          return function (checking: boolean) {
+          return function (checking: boolean): boolean | void {
             // First call the original save logic
-            const result = original ? original.call(this, checking) : true;
+            const result = (original ? original.call(this, checking) : true) as
+              | boolean
+              | void;
 
             // If not checking and save succeeded, run our rename logic - process immediately regardless of check interval
             if (!checking && settings.core.renameOnSave) {

@@ -49,7 +49,7 @@ export class PropertyManager {
     const path = this.getTypesJsonPath();
     try {
       const content = await this.app.vault.adapter.read(path);
-      return JSON.parse(content);
+      return JSON.parse(content) as TypesJson;
     } catch {
       // If file doesn't exist or is invalid, return empty structure
       verboseLog(
