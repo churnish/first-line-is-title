@@ -10,6 +10,7 @@ import {
   updateDisabledRowsAccessibility,
   addForbiddenCharProtection,
   FirstLineIsTitlePlugin,
+  mountLegacyHost,
 } from './settings-base';
 import { t, getCurrentLocale } from '../i18n';
 import { CustomReplacement } from '../types';
@@ -130,7 +131,7 @@ function buildRuleRow(
       t('settings.customRules.emptyRule', 'Empty rule'),
     searchable: false,
     render: (setting) => {
-      const host = setting.settingEl.createDiv({ cls: 'flit-settings-page' });
+      const host = mountLegacyHost(setting.settingEl);
 
       const enableSetting = new Setting(host).setName(
         t('settings.customRules.headers.enable')

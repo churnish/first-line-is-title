@@ -9,6 +9,7 @@ import {
   updateInteractiveState,
   addForbiddenCharProtection,
   FirstLineIsTitlePlugin,
+  mountLegacyHost,
 } from './settings-base';
 import { DEFAULT_SETTINGS } from '../constants';
 import { t, getCurrentLocale } from '../i18n';
@@ -251,7 +252,7 @@ export function buildCharacterReplacementsPage(
     isEnabled: () => boolean,
     isWindowsAndroid: boolean
   ) => {
-    const host = setting.settingEl.createDiv({ cls: 'flit-settings-page' });
+    const host = mountLegacyHost(setting.settingEl);
     const tableContainer = host.createDiv({
       cls: isWindowsAndroid
         ? 'flit-table-container flit-windows-android-table'

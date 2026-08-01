@@ -5,7 +5,7 @@ import {
   SettingDefinitionPage,
   Notice,
 } from 'obsidian';
-import { FirstLineIsTitlePlugin } from './settings-base';
+import { FirstLineIsTitlePlugin, mountLegacyHost } from './settings-base';
 import { t, getCurrentLocale } from '../i18n';
 
 // Plugin names (proper nouns, not subject to sentence case)
@@ -236,7 +236,7 @@ export function buildAliasPage(
       name: t('settings.alias.limitations.title'),
       visible: () => !Platform.isMobile,
       render: (setting) => {
-        const host = setting.settingEl.createDiv({ cls: 'flit-settings-page' });
+        const host = mountLegacyHost(setting.settingEl);
         const list = host.createEl('ul', {
           cls: 'setting-item-description flit-margin-top-15 flit-margin-bottom-15',
         });

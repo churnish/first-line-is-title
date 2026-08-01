@@ -155,3 +155,22 @@ export function addForbiddenCharProtection(
     }
   });
 }
+
+/**
+ * Mounts a container for legacy imperative markup inside a declarative setting
+ * row, carrying the `.flit-settings-page` class the pre-migration stylesheet is
+ * scoped to.
+ *
+ * Must be used instead of appending to `settingEl` directly. Obsidian reuses the
+ * same row element across re-renders and only rebuilds the info/control
+ * children, so anything appended straight to `settingEl` survives and would
+ * accumulate one copy per render. Clearing `settingEl` wholesale is not an
+ * option either — that drops the name element and silently removes the row from
+ * settings search.
+ */
+export function mountLegacyHost(settingEl: HTMLElement): HTMLElement {
+  settingEl
+    .querySelectorAll(':scope > .flit-settings-page')
+    .forEach((stale) => stale.remove());
+  return settingEl.createDiv({ cls: 'flit-settings-page' });
+}

@@ -11,6 +11,7 @@ import {
   updateDisabledRowsAccessibility,
   addForbiddenCharProtection,
   FirstLineIsTitlePlugin,
+  mountLegacyHost,
 } from './settings-base';
 import { ExcludedProperty, FileNameExclusion } from '../types';
 import { FolderSuggest, TagSuggest } from '../suggests';
@@ -319,7 +320,7 @@ function buildFileNameExclusionRow(
     name: exclusion.text || t('settings.replaceCharacters.emptyPlaceholder'),
     searchable: false,
     render: (setting) => {
-      const host = setting.settingEl.createDiv({ cls: 'flit-settings-page' });
+      const host = mountLegacyHost(setting.settingEl);
 
       const enableSetting = new Setting(host).setName(
         t('settings.exclusions.fileNames.headers.enable')
