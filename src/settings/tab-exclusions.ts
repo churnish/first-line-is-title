@@ -6,37 +6,16 @@ import {
   SettingDefinitionPage,
   SettingDefinitionRender,
 } from 'obsidian';
-import { SettingsTabBase, FirstLineIsTitlePlugin } from './settings-base';
+import {
+  updateInteractiveState,
+  updateDisabledRowsAccessibility,
+  addForbiddenCharProtection,
+  FirstLineIsTitlePlugin,
+} from './settings-base';
 import { ExcludedProperty, FileNameExclusion } from '../types';
 import { FolderSuggest, TagSuggest } from '../suggests';
 import { t, getCurrentLocale } from '../i18n';
 import { TIMING } from '../constants/timing';
-
-/**
- * Bridges the declarative page to `SettingsTabBase`'s protected DOM helpers,
- * which the render-mounted file-name rows still rely on.
- */
-class ExclusionsDomHelpers extends SettingsTabBase {
-  constructor(plugin: FirstLineIsTitlePlugin) {
-    super(plugin, document.createElement('div'));
-  }
-
-  render(): void {
-    // Rendering is driven by the declarative page; this legacy hook is unused.
-  }
-
-  applyMasterInteractiveState(container: HTMLElement, enabled: boolean): void {
-    this.updateInteractiveState(container, enabled);
-  }
-
-  refreshDisabledRows(container: HTMLElement): void {
-    this.updateDisabledRowsAccessibility(container);
-  }
-
-  protectInput(input: HTMLInputElement): void {
-    this.addForbiddenCharProtection(input);
-  }
-}
 
 async function persistSettings(plugin: FirstLineIsTitlePlugin): Promise<void> {
   try {
@@ -331,7 +310,6 @@ function buildPropertyRow(
 function buildFileNameExclusionRow(
   plugin: FirstLineIsTitlePlugin,
   tab: PluginSettingTab,
-  helpers: ExclusionsDomHelpers,
   exclusion: FileNameExclusion
 ): SettingDefinitionRender {
   const exclusionIndex = () =>
@@ -373,7 +351,7 @@ function buildFileNameExclusionRow(
             !exclusion.enabled
           );
         });
-        helpers.refreshDisabledRows(host);
+        updateDisabledRowsAccessibility(host);
       };
 
       enableSetting.addToggle((toggle) => {
@@ -400,7 +378,7 @@ function buildFileNameExclusionRow(
             );
             await persistSettings(plugin);
           });
-        helpers.protectInput(text.inputEl);
+        addForbiddenCharProtection(text.inputEl);
       });
 
       onlyAtStartSetting.addToggle((toggle) => {
@@ -448,7 +426,7 @@ function buildFileNameExclusionRow(
       // the pre-migration behaviour.
       const masterEnabled = plugin.settings.exclusions.enableFileNameExclusions;
       setting.setDisabled(!masterEnabled);
-      helpers.applyMasterInteractiveState(host, masterEnabled);
+      updateInteractiveState(host, masterEnabled);
     },
   };
 }
@@ -500,7 +478,6 @@ export function buildExclusionsPage(
   plugin: FirstLineIsTitlePlugin,
   tab: PluginSettingTab
 ): SettingDefinitionPage {
-  const helpers = new ExclusionsDomHelpers(plugin);
   const exclusions = () => plugin.settings.exclusions;
   const exclusionModeOptions = {
     'Only exclude...': t(
@@ -698,7 +675,7 @@ export function buildExclusionsPage(
         heading: t('settings.exclusions.fileNames.title'),
         emptyState: t('settings.exclusions.fileNames.emptyState'),
         items: exclusions().fileNameExclusions.map((exclusion) =>
-          buildFileNameExclusionRow(plugin, tab, helpers, exclusion)
+          buildFileNameExclusionRow(plugin, tab, exclusion)
         ),
         onDelete: (index) => {
           void (async () => {

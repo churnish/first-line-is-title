@@ -539,10 +539,7 @@ export function extractTitle(line: string, settings: PluginSettings): string {
       line = line.replace(/^\d+\. /, '');
     }
 
-    if (
-      settings.markupStripping.stripMarkupSettings.htmlTags ||
-      settings.markupStripping.omitHtmlTags
-    ) {
+    if (settings.markupStripping.stripMarkupSettings.htmlTags) {
       let previousLine = '';
       while (line !== previousLine) {
         previousLine = line;

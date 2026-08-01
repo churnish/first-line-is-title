@@ -30,6 +30,10 @@ vi.mock('../../src/utils', () => ({
 // Page builders are covered by their own tabs; stub them to isolate the shell.
 vi.mock('../../src/settings/tab-general', () => ({
   buildGeneralDefinitions: vi.fn(() => []),
+  buildFooterDefinitions: vi.fn(() => [
+    { name: 'settings.general.renameAllNotes.name', render: vi.fn() },
+    { name: '', render: vi.fn() },
+  ]),
 }));
 vi.mock('../../src/settings/tab-exclusions', () => ({
   buildExclusionsPage: vi.fn(() => ({ type: 'page', name: 'Exclusions' })),
@@ -100,17 +104,17 @@ describe('FirstLineIsTitleSettings', () => {
   });
 
   describe('getSettingDefinitions', () => {
-    it('returns the seven sub-pages with general settings kept at top level', () => {
-      const defs = tab.getSettingDefinitions();
-      expect(defs).toHaveLength(7);
-      expect(
-        defs.every((def) => (def as { type?: string }).type === 'page')
-      ).toBe(true);
+    it('exposes the seven sections as navigable sub-pages', () => {
+      const pages = tab
+        .getSettingDefinitions()
+        .filter((def) => (def as { type?: string }).type === 'page');
+      expect(pages).toHaveLength(7);
     });
 
     it('orders the pages as the settings UI presents them', () => {
       const names = tab
         .getSettingDefinitions()
+        .filter((def) => (def as { type?: string }).type === 'page')
         .map((def) => (def as { name?: string }).name);
       expect(names).toEqual([
         'Exclusions',
@@ -121,6 +125,21 @@ describe('FirstLineIsTitleSettings', () => {
         'Commands',
         'Other',
       ]);
+    });
+
+    it('places the page-level actions below every sub-page', () => {
+      const defs = tab.getSettingDefinitions();
+      const lastPageIndex = defs.findLastIndex(
+        (def) => (def as { type?: string }).type === 'page'
+      );
+      const trailing = defs.slice(lastPageIndex + 1);
+      expect(trailing).toHaveLength(2);
+      expect((trailing[0] as { name?: string }).name).toBe(
+        'settings.general.renameAllNotes.name'
+      );
+      // The feedback call to action is deliberately unnamed so it stays out of
+      // the settings search index.
+      expect((trailing[1] as { name?: string }).name).toBe('');
     });
   });
 

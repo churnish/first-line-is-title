@@ -5,35 +5,14 @@ import {
   SettingDefinitionPage,
   SettingDefinitionRender,
 } from 'obsidian';
-import { SettingsTabBase, FirstLineIsTitlePlugin } from './settings-base';
+import {
+  updateInteractiveState,
+  updateDisabledRowsAccessibility,
+  addForbiddenCharProtection,
+  FirstLineIsTitlePlugin,
+} from './settings-base';
 import { t, getCurrentLocale } from '../i18n';
 import { CustomReplacement } from '../types';
-
-/**
- * Bridges the declarative page to `SettingsTabBase`'s protected DOM helpers,
- * which the render-mounted rule rows still rely on.
- */
-class CustomRulesDomHelpers extends SettingsTabBase {
-  constructor(plugin: FirstLineIsTitlePlugin) {
-    super(plugin, document.createElement('div'));
-  }
-
-  render(): void {
-    // Rendering is driven by the declarative page; this legacy hook is unused.
-  }
-
-  applyMasterInteractiveState(container: HTMLElement, enabled: boolean): void {
-    this.updateInteractiveState(container, enabled);
-  }
-
-  refreshDisabledRows(container: HTMLElement): void {
-    this.updateDisabledRowsAccessibility(container);
-  }
-
-  protectInput(input: HTMLInputElement): void {
-    this.addForbiddenCharProtection(input);
-  }
-}
 
 async function persistSettings(plugin: FirstLineIsTitlePlugin): Promise<void> {
   try {
@@ -139,7 +118,6 @@ function buildApplyAfterMarkupDescription(): DocumentFragment {
 function buildRuleRow(
   plugin: FirstLineIsTitlePlugin,
   tab: PluginSettingTab,
-  helpers: CustomRulesDomHelpers,
   rule: CustomReplacement
 ): SettingDefinitionRender {
   const ruleIndex = () =>
@@ -184,7 +162,7 @@ function buildRuleRow(
             !rule.enabled
           );
         });
-        helpers.refreshDisabledRows(host);
+        updateDisabledRowsAccessibility(host);
       };
 
       enableSetting.addToggle((toggle) => {
@@ -222,7 +200,7 @@ function buildRuleRow(
             );
             await persistSettings(plugin);
           });
-        helpers.protectInput(text.inputEl);
+        addForbiddenCharProtection(text.inputEl);
       });
 
       onlyAtStartSetting.addToggle((toggle) => {
@@ -258,7 +236,7 @@ function buildRuleRow(
       const masterEnabled =
         plugin.settings.customRules.enableCustomReplacements;
       setting.setDisabled(!masterEnabled);
-      helpers.applyMasterInteractiveState(host, masterEnabled);
+      updateInteractiveState(host, masterEnabled);
     },
   };
 }
@@ -275,7 +253,6 @@ export function buildCustomRulesPage(
   plugin: FirstLineIsTitlePlugin,
   tab: PluginSettingTab
 ): SettingDefinitionPage {
-  const helpers = new CustomRulesDomHelpers(plugin);
   const rules = () => plugin.settings.customRules.customReplacements;
 
   return {
@@ -295,7 +272,7 @@ export function buildCustomRulesPage(
         type: 'list',
         heading: t('settings.tabs.customRules'),
         emptyState: t('settings.customRules.emptyState', 'No custom rules.'),
-        items: rules().map((rule) => buildRuleRow(plugin, tab, helpers, rule)),
+        items: rules().map((rule) => buildRuleRow(plugin, tab, rule)),
         onDelete: (index) => {
           void (async () => {
             rules().splice(index, 1);

@@ -632,6 +632,18 @@ br + .flit-table-container {
   position: relative;
 }
 
+/* Under the declarative settings API these legacy blocks mount inside a
+   .setting-item, which is display:flex/nowrap — without this the block is
+   squeezed into whatever width is left beside .setting-item-info. Wrapping it
+   onto its own line restores the full-width layout the tables were built for. */
+.setting-item:has(> .flit-settings-page) {
+  flex-wrap: wrap;
+}
+
+.setting-item > .flit-settings-page {
+  flex-basis: 100%;
+}
+
 /* ==========================================================================
    Divider and Border Cleanup
    REQUIRES !important: Override Obsidian's default borders on setting items

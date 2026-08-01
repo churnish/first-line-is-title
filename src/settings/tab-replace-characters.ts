@@ -5,7 +5,11 @@ import {
   SettingDefinitionPage,
   setIcon,
 } from 'obsidian';
-import { SettingsTabBase, FirstLineIsTitlePlugin } from './settings-base';
+import {
+  updateInteractiveState,
+  addForbiddenCharProtection,
+  FirstLineIsTitlePlugin,
+} from './settings-base';
 import { DEFAULT_SETTINGS } from '../constants';
 import { t, getCurrentLocale } from '../i18n';
 import {
@@ -46,29 +50,6 @@ interface CharTableConfig {
   /** Masks stored per-character values until the section has been enabled once. */
   isEnabled: () => boolean;
   isWindowsAndroid: boolean;
-}
-
-/**
- * Bridges the declarative page to `SettingsTabBase`'s protected DOM helpers,
- * which the render-mounted character tables still rely on.
- */
-class CharTableDomHelpers extends SettingsTabBase {
-  constructor(plugin: FirstLineIsTitlePlugin) {
-    super(plugin, document.createElement('div'));
-  }
-
-  render(): void {
-    // Rendering is driven by the declarative page; this legacy hook is unused.
-  }
-
-  applyMasterInteractiveState(container: HTMLElement, enabled: boolean): void {
-    this.updateInteractiveState(container, enabled);
-    this.updateDisabledRowsAccessibility(container);
-  }
-
-  protectInput(input: HTMLInputElement, isWindowsAndroid: boolean): void {
-    this.addForbiddenCharProtection(input, isWindowsAndroid);
-  }
 }
 
 async function persistSettings(plugin: FirstLineIsTitlePlugin): Promise<void> {
@@ -114,7 +95,6 @@ function renderTableHeader(wrapper: HTMLElement): void {
 
 function renderCharacterRows(
   plugin: FirstLineIsTitlePlugin,
-  helpers: CharTableDomHelpers,
   config: CharTableConfig
 ): void {
   config.chars.forEach((key) => {
@@ -197,7 +177,7 @@ function renderCharacterRows(
       })();
     });
 
-    helpers.protectInput(textInput, config.isWindowsAndroid);
+    addForbiddenCharProtection(textInput, config.isWindowsAndroid);
 
     const trimLeftContainer = rowEl.createDiv({
       cls: 'flit-toggle-column center',
@@ -265,8 +245,6 @@ export function buildCharacterReplacementsPage(
   plugin: FirstLineIsTitlePlugin,
   tab: PluginSettingTab
 ): SettingDefinitionPage {
-  const helpers = new CharTableDomHelpers(plugin);
-
   const mountTable = (
     setting: Setting,
     chars: CharKey[],
@@ -284,7 +262,7 @@ export function buildCharacterReplacementsPage(
     });
 
     renderTableHeader(tableWrapper);
-    renderCharacterRows(plugin, helpers, {
+    renderCharacterRows(plugin, {
       wrapper: tableWrapper,
       chars,
       isEnabled,
@@ -293,7 +271,7 @@ export function buildCharacterReplacementsPage(
 
     const masterEnabled =
       plugin.settings.replaceCharacters.enableForbiddenCharReplacements;
-    helpers.applyMasterInteractiveState(host, masterEnabled);
+    updateInteractiveState(host, masterEnabled);
     tableContainer.classList.toggle('flit-master-disabled', !masterEnabled);
   };
 

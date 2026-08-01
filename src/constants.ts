@@ -244,7 +244,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
       htmlTags: true,
     },
     stripMarkupInAlias: false,
-    omitHtmlTags: false,
     stripCommentsEntirely: true,
     stripTemplaterSyntax: true,
     stripTableMarkup: true,

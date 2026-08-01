@@ -195,7 +195,6 @@ export interface MarkupStrippingSettings {
     htmlTags: boolean;
   };
   stripMarkupInAlias: boolean;
-  omitHtmlTags: boolean;
   stripCommentsEntirely: boolean;
   stripTemplaterSyntax: boolean;
   stripTableMarkup: boolean;

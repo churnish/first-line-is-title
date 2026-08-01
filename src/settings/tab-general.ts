@@ -135,6 +135,17 @@ export function buildGeneralDefinitions(
         key: 'core.renameOnSave',
       },
     },
+  ];
+}
+
+/**
+ * Actions that belong below every settings section rather than inside one.
+ * Appended after the sub-page links so they read as page-level footers.
+ */
+export function buildFooterDefinitions(
+  plugin: FirstLineIsTitlePlugin
+): SettingDefinitionItem[] {
+  return [
     {
       // `render` rather than `action` so the button keeps its label instead of
       // turning the whole row into a click target.

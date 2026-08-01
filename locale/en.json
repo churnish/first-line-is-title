@@ -170,11 +170,7 @@
       "add": "Add"
     }
   },
-  "ariaLabels": {
-    "restoreDefault": "Restore default",
-    "restoreDefaultContentRead": "Restore default content read method",
-    "remove": "Remove"
-  },
+  "ariaLabels": {},
   "settings": {
     "tabs": {
       "exclusions": "Exclusions",
@@ -498,9 +494,6 @@
         "onlyMatchLineStart": "Only match line start",
         "onlyMatchWholeLine": "Only match whole line"
       },
-      "moveUp": "Move up",
-      "moveDown": "Move down",
-      "delete": "Delete",
       "addReplacement": "Add replacement",
       "processingOrder": {
         "title": "Processing order",
@@ -516,7 +509,9 @@
           "stripMarkup": "Strip markup",
           "part2": "."
         }
-      }
+      },
+      "emptyState": "No custom rules.",
+      "emptyRule": "Empty rule"
     },
     "stripMarkup": {
       "name": "Strip markup",
@@ -726,14 +721,6 @@
         "desc": {
           "part1": "Instead, put ",
           "mathBlock": "Math block",
-          "part2": " in title."
-        }
-      },
-      "tables": {
-        "name": "Strip table markup",
-        "desc": {
-          "part1": "Instead, put ",
-          "table": "Table",
           "part2": " in title."
         }
       },

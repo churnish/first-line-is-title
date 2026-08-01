@@ -186,11 +186,7 @@
       "add": "Добавить"
     }
   },
-  "ariaLabels": {
-    "restoreDefault": "Восстановить по умолчанию",
-    "restoreDefaultContentRead": "Восстановить метод чтения по умолчанию",
-    "remove": "Удалить"
-  },
+  "ariaLabels": {},
   "settings": {
     "tabs": {
       "exclusions": "Исключения",
@@ -514,9 +510,6 @@
         "onlyMatchLineStart": "Только в начале строки",
         "onlyMatchWholeLine": "Только вся строка"
       },
-      "moveUp": "Переместить вверх",
-      "moveDown": "Переместить вниз",
-      "delete": "Удалить",
       "addReplacement": "Добавить правило",
       "processingOrder": {
         "title": "Порядок обработки",
@@ -532,7 +525,9 @@
           "stripMarkup": "Удаление разметки",
           "part2": "."
         }
-      }
+      },
+      "emptyState": "Нет пользовательских правил.",
+      "emptyRule": "Пустое правило"
     },
     "stripMarkup": {
       "name": "Удалять разметку",
@@ -742,14 +737,6 @@
         "desc": {
           "part1": "Вместо этого поместить в название ",
           "mathBlock": "Формула",
-          "part2": "."
-        }
-      },
-      "tables": {
-        "name": "Удалять разметку таблиц",
-        "desc": {
-          "part1": "Вместо этого поместить в название ",
-          "table": "Таблица",
           "part2": "."
         }
       },

@@ -14,7 +14,7 @@ import {
   WINDOWS_ANDROID_CHAR_KEYS,
 } from '../types/char-replacement';
 
-import { buildGeneralDefinitions } from './tab-general';
+import { buildGeneralDefinitions, buildFooterDefinitions } from './tab-general';
 import { buildExclusionsPage } from './tab-exclusions';
 import { buildCharacterReplacementsPage } from './tab-replace-characters';
 import { buildCustomRulesPage } from './tab-custom-rules';
@@ -199,6 +199,8 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
       buildAliasPage(this.plugin, this),
       buildCommandsPage(this.plugin, this),
       buildOtherPage(this.plugin, this),
+      // Page-level actions sit below every section.
+      ...buildFooterDefinitions(this.plugin),
     ];
   }
 
