@@ -59,8 +59,8 @@ vi.mock('../../src/settings/tab-alias', () => ({
 vi.mock('../../src/settings/tab-commands', () => ({
   buildCommandsPage: vi.fn(() => ({ type: 'page', name: 'Commands' })),
 }));
-vi.mock('../../src/settings/tab-other', () => ({
-  buildOtherPage: vi.fn(() => ({ type: 'page', name: 'Other' })),
+vi.mock('../../src/settings/tab-advanced', () => ({
+  buildAdvancedPage: vi.fn(() => ({ type: 'page', name: 'Advanced' })),
 }));
 
 import { FirstLineIsTitleSettings } from '../../src/settings/settings-main';
@@ -123,7 +123,7 @@ describe('FirstLineIsTitleSettings', () => {
         'Markup stripping',
         'Alias',
         'Commands',
-        'Other',
+        'Advanced',
       ]);
     });
 

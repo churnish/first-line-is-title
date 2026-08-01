@@ -170,7 +170,9 @@ function buildCommandRow(
           })
       );
 
-      const iconEl = setting.nameEl.createDiv({ cls: 'setting-item-icon' });
+      const iconEl = setting.nameEl.createDiv({
+        cls: 'flit-setting-item-icon',
+      });
       setIcon(iconEl, config.icon);
       setting.nameEl.insertBefore(iconEl, setting.nameEl.firstChild);
     },
@@ -183,11 +185,12 @@ function buildCommandSection(
 ): SettingDefinitionGroup {
   return {
     type: 'group',
-    // No `heading` — the master toggle row below already carries the section
-    // name, and a group heading would render it a second time.
+    heading: t(section.titleKey),
     items: [
       {
-        name: t(section.titleKey),
+        // The heading already names the section, so the master row is labelled
+        // generically; its description carries the specifics.
+        name: t('settings.commands.enable'),
         desc: t(section.descKey),
         control: {
           type: 'toggle',

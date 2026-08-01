@@ -938,20 +938,23 @@ hr.flit-divider {
    Setting Item Icons
    ========================================================================== */
 
-.flit-settings-page .setting-item-icon {
+/* Own class rather than Obsidian's .setting-item-icon, and unscoped: these rows
+   are declarative and have no .flit-settings-page ancestor to scope under. */
+.flit-setting-item-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: var(--icon-s, 16px);
+  height: var(--icon-s, 16px);
   margin-right: 8px;
   color: var(--text-muted);
   flex-shrink: 0;
+  vertical-align: text-bottom;
 }
 
-.flit-settings-page .setting-item-icon svg {
-  width: 16px;
-  height: 16px;
+.flit-setting-item-icon svg {
+  width: var(--icon-s, 16px);
+  height: var(--icon-s, 16px);
 }
 
 /* ==========================================================================

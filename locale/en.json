@@ -179,7 +179,7 @@
       "stripMarkup": "Markup stripping",
       "alias": "Alias",
       "commands": "Commands",
-      "other": "Other"
+      "advanced": "Advanced"
     },
     "general": {
       "renameNotes": {
@@ -744,24 +744,25 @@
     },
     "commands": {
       "desc": "Set which commands and context menu items are available.",
+      "enable": "Enable",
       "file": {
-        "title": "File commands",
+        "title": "Files",
         "desc": "Enable commands in the file context menu."
       },
       "folder": {
-        "title": "Folder commands",
+        "title": "Folders",
         "desc": "Enable commands in the folder context menu."
       },
       "tag": {
-        "title": "Tag commands",
+        "title": "Tags",
         "desc": "Enable commands in the tag context menu."
       },
       "search": {
-        "title": "Vault search commands",
+        "title": "Search",
         "desc": "Enable commands in the context menu for search results."
       }
     },
-    "other": {
+    "advanced": {
       "desc": "Set title formatting, notifications and plugin data.",
       "charCount": {
         "name": "Character count",

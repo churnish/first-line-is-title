@@ -21,7 +21,7 @@ import { buildCustomRulesPage } from './tab-custom-rules';
 import { buildMarkupStrippingPage } from './tab-strip-markup';
 import { buildAliasPage } from './tab-alias';
 import { buildCommandsPage } from './tab-commands';
-import { buildOtherPage } from './tab-other';
+import { buildAdvancedPage } from './tab-advanced';
 
 /**
  * Side effects that must run when a `control` writes a given key.
@@ -198,7 +198,7 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
       buildMarkupStrippingPage(this.plugin, this),
       buildAliasPage(this.plugin, this),
       buildCommandsPage(this.plugin, this),
-      buildOtherPage(this.plugin, this),
+      buildAdvancedPage(this.plugin, this),
       // Page-level actions sit below every section.
       ...buildFooterDefinitions(this.plugin),
     ];
