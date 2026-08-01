@@ -1,7 +1,10 @@
-import { PluginSettingTab, SettingDefinitionItem, setIcon } from 'obsidian';
+import { PluginSettingTab, SettingDefinitionItem } from 'obsidian';
 import { FirstLineIsTitlePlugin } from './settings-base';
 import { RenameAllFilesModal } from '../modals';
 import { t, getCurrentLocale } from '../i18n';
+
+const FEEDBACK_URL =
+  'https://github.com/greetclammy/first-line-is-title/issues';
 
 /**
  * Builds a description where one term is emphasized. Russian typography uses
@@ -59,19 +62,6 @@ export function buildGeneralDefinitions(
       control: {
         type: 'toggle',
         key: 'core.onlyRenameIfHeading',
-      },
-    },
-    {
-      name: t('settings.general.titleCase.name'),
-      desc: t('settings.general.titleCase.desc'),
-      control: {
-        type: 'dropdown',
-        key: 'core.titleCase',
-        options: {
-          preserve: t('settings.general.titleCase.preserve'),
-          uppercase: t('settings.general.titleCase.uppercase'),
-          lowercase: t('settings.general.titleCase.lowercase'),
-        },
       },
     },
     {
@@ -162,25 +152,16 @@ export function buildFooterDefinitions(
       },
     },
     {
-      // Decorative call to action, not a setting — no name, so it stays out of
-      // the settings search index.
-      name: '',
+      name: t('settings.general.sendFeedback.name'),
+      desc: t('settings.general.sendFeedback.desc'),
       render: (setting) => {
-        const host = setting.settingEl.createDiv({ cls: 'flit-settings-page' });
-        const feedbackContainer = host.createDiv({
-          cls: 'flit-feedback-container',
-        });
-        const button = feedbackContainer.createEl('button', {
-          cls: 'mod-cta flit-leave-feedback-button flit-feedback-button',
-        });
-        button.addEventListener('click', () => {
-          window.open(
-            'https://github.com/greetclammy/first-line-is-title/issues',
-            '_blank'
-          );
-        });
-        setIcon(button.createEl('div'), 'message-square-reply');
-        button.appendText(t('settings.general.leaveFeedback'));
+        setting.addButton((button) =>
+          button
+            .setButtonText(t('settings.general.sendFeedback.button'))
+            .onClick(() => {
+              window.open(FEEDBACK_URL, '_blank');
+            })
+        );
       },
     },
   ];

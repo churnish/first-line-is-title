@@ -1154,11 +1154,6 @@ hr.flit-divider {
   text-decoration: underline;
 }
 
-/* Fix Leave feedback button focus outline clipping */
-.flit-leave-feedback-button {
-  margin: 4px 0;
-}
-
 /* ==========================================================================
    Property Visibility Classes
    REQUIRES !important: Override any inline display styles
@@ -1307,27 +1302,6 @@ hr.flit-divider {
 /* Justify content utilities */
 .flit-justify-center {
   justify-content: center;
-}
-
-/* Feedback button container */
-.flit-feedback-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  margin-top: 20px;
-  margin-bottom: 0;
-  padding: 4px 0;
-  overflow: visible;
-}
-
-/* Feedback button styling */
-.flit-feedback-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  line-height: 1;
 }
 
 /* Border utilities */

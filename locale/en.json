@@ -196,13 +196,6 @@
         "name": "Only rename if first line is heading",
         "desc": "Don't rename notes if the first line is not a heading."
       },
-      "titleCase": {
-        "name": "Title case",
-        "desc": "Transform the case of the title when renaming.",
-        "preserve": "Preserve case",
-        "uppercase": "Uppercase",
-        "lowercase": "Lowercase"
-      },
       "moveCursorToFirstLine": {
         "name": "Move cursor to first line",
         "desc": "Place the cursor in the first line when creating a new note."
@@ -244,7 +237,11 @@
         "desc": "Process all notes in the vault. Can also be run from the Command palette.",
         "button": "Rename"
       },
-      "leaveFeedback": "Leave feedback"
+      "sendFeedback": {
+        "name": "Send feedback",
+        "desc": "Request features or report issues.",
+        "button": "Open"
+      }
     },
     "exclusions": {
       "desc": "Set how notes should be excluded from processing.",
@@ -826,6 +823,13 @@
         "name": "Clear settings",
         "desc": "Reset all plugin settings to their default values.",
         "modalButton": "Clear settings"
+      },
+      "titleCase": {
+        "name": "Title case",
+        "desc": "Transform the case of the title when renaming.",
+        "preserve": "Preserve case",
+        "uppercase": "Uppercase",
+        "lowercase": "Lowercase"
       }
     },
     "errors": {

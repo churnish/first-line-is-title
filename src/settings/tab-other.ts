@@ -254,6 +254,19 @@ export function buildOtherPage(
     name: t('settings.tabs.other'),
     items: [
       {
+        name: t('settings.other.titleCase.name'),
+        desc: t('settings.other.titleCase.desc'),
+        control: {
+          type: 'dropdown',
+          key: 'core.titleCase',
+          options: {
+            preserve: t('settings.other.titleCase.preserve'),
+            uppercase: t('settings.other.titleCase.uppercase'),
+            lowercase: t('settings.other.titleCase.lowercase'),
+          },
+        },
+      },
+      {
         name: t('settings.other.charCount.name'),
         desc: descriptionWithDefault(
           'settings.other.charCount.desc',
