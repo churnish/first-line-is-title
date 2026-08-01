@@ -184,7 +184,7 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
         if (this.activationGeneration !== currentGeneration) {
           return;
         }
-        this.renderTab(tabInfo.id);
+        this.renderActiveSubTab(tabInfo.id);
       } finally {
         // Only reset if this is still the current generation
         if (this.activationGeneration === currentGeneration) {
@@ -367,7 +367,7 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
       cls: 'flit-settings-page',
     });
 
-    this.renderTab(this.plugin.settings.core.currentSettingsTab);
+    this.renderActiveSubTab(this.plugin.settings.core.currentSettingsTab);
 
     // Remove focus from active tab to prevent outline on initial display
     setTimeout(() => {
@@ -431,7 +431,9 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
     return rows;
   }
 
-  private renderTab(tabId: string): void {
+  // Must not be named `renderTab` - that shadows PluginSettingTab.prototype.renderTab(),
+  // which Obsidian's core Setting modal calls on every tab switch to trigger display().
+  private renderActiveSubTab(tabId: string): void {
     if (!this.settingsPage) return;
 
     this.settingsPage.empty();
