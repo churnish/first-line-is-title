@@ -126,7 +126,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         trimRight: false,
       },
       question: {
-        replacement: '﹖',
+        replacement: '？',
         enabled: false,
         trimLeft: false,
         trimRight: false,
@@ -290,7 +290,7 @@ export const TITLE_CHAR_REVERSAL_MAP: Record<string, string> = {
   '∕': '/', // Unicode: \u2215 -> slash
   '։': ':', // Unicode: \u0589 -> colon
   '∗': '*', // Unicode: \u2217 -> asterisk
-  '﹖': '?', // Unicode: \uFE56 -> question
+  '？': '?', // Unicode: \uFF1F -> question
   '‹': '<', // Unicode: \u2039 -> lessThan
   '›': '>', // Unicode: \u203A -> greaterThan
   '＂': '"', // Unicode: \uFF02 -> quote
