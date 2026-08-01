@@ -13,8 +13,6 @@
   ],
   "ignoreBinaries": ["eslint", "knip", "vitest"],
   "exclude": ["exports"],
-  "ignore": [
-    "src/utils/timestamp-rate-limiter.ts"
-  ],
+  "ignore": ["src/utils/timestamp-rate-limiter.ts"],
   "ignoreExportsUsedInFile": true
 }

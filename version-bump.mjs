@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
-import { dirname, join } from 'path';
+import { createInterface } from 'readline';
+import { basename, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const isPreflight = process.argv.includes('--preflight');
@@ -73,6 +74,50 @@ try {
   }
 }
 
+// ── Dependency freshness check ──
+
+try {
+  execSync('npm outdated --json', { encoding: 'utf8' });
+} catch (err) {
+  let outdated;
+  try {
+    outdated = JSON.parse(err.stdout);
+  } catch {}
+
+  // Deduplicate array entries and filter to packages npm update can fix
+  const updatable = {};
+  if (outdated) {
+    for (const [pkg, entry] of Object.entries(outdated)) {
+      const info = Array.isArray(entry) ? entry[0] : entry;
+      if (info.current !== info.wanted) updatable[pkg] = info;
+    }
+  }
+
+  if (Object.keys(updatable).length > 0) {
+    console.log('\n📦 Updatable packages:');
+    for (const [pkg, info] of Object.entries(updatable)) {
+      console.log(`  ${pkg}: ${info.current} → ${info.wanted}`);
+    }
+
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    const answer = await new Promise((resolve) => {
+      rl.question('\nUpdate before releasing? (y/n) ', (a) => {
+        rl.close();
+        resolve(a.trim().toLowerCase());
+      });
+    });
+
+    if (answer === 'y') {
+      execSync('npm update', { stdio: 'inherit' });
+      execSync('git add package.json', { stdio: 'inherit' });
+      console.log('Dependencies updated.\n');
+    }
+  }
+}
+
 // ── Side effects ──
 
 try {
@@ -107,3 +152,11 @@ if (lastMinVersion !== manifest.minAppVersion) {
 }
 
 console.log(`Updated manifest.json to version ${targetVersion}`);
+
+const pluginName = basename(__dirname);
+const deepwikiPlugins = ['dynamic-views', 'first-line-is-title'];
+if (deepwikiPlugins.includes(pluginName)) {
+  console.log(
+    `\n🔄 After release, refresh the wiki: https://deepwiki.com/churnish/${pluginName}\n`
+  );
+}
