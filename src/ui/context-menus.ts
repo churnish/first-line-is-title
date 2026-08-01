@@ -208,7 +208,7 @@ export class ContextMenuManager {
     ) {
       const menuItem = menuEl.createEl('div', { cls: 'menu-item' });
       const iconEl = menuItem.createEl('div', { cls: 'menu-item-icon' });
-      setIcon(iconEl, 'square-x');
+      setIcon(iconEl, 'pen-off');
       menuItem.createEl('div', {
         cls: 'menu-item-title',
         text: menuText.disable,
@@ -282,7 +282,7 @@ export class ContextMenuManager {
       menu.addItem((item) => {
         item
           .setTitle(tp('commands.disableRenamingNFolders', folders.length))
-          .setIcon('square-x')
+          .setIcon('pen-off')
           .onClick(async () => {
             await this.plugin.processMultipleFolders(folders, 'disable');
           });

@@ -62,7 +62,7 @@ export class MenuDefinitions {
             );
             return menuText.disable;
           },
-          icon: 'square-x',
+          icon: 'pen-off',
           visible: (context) => {
             if (!this.plugin.settings.core.enableTagCommands) return false;
             const tagContext = context as TagContext;
@@ -147,7 +147,7 @@ export class MenuDefinitions {
             );
             return menuText.disable;
           },
-          icon: 'square-x',
+          icon: 'pen-off',
           visible: (context) => {
             if (!this.plugin.settings.core.enableFolderCommands) return false;
             const folderContext = context as FolderContext;
@@ -234,7 +234,7 @@ export class MenuDefinitions {
         {
           id: 'file-disable-renaming',
           title: t('commands.disableRenamingForNote'),
-          icon: 'square-x',
+          icon: 'pen-off',
           visible: (context) => {
             if (!this.plugin.settings.core.enableFileCommands) return false;
             if (!this.plugin.settings.core.commandVisibility.fileExclude)

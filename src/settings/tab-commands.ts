@@ -156,7 +156,7 @@ export class CommandsTab extends SettingsTabBase {
         {
           nameKey: 'commands.disableRenamingForNote',
           descKey: 'commands.descriptions.excludeNote',
-          icon: 'square-x',
+          icon: 'pen-off',
           settingPath: ['core', 'commandVisibility', 'fileExclude'],
         },
         {
@@ -188,7 +188,7 @@ export class CommandsTab extends SettingsTabBase {
         {
           nameKey: 'commands.disableRenamingInFolder',
           descKey: 'commands.descriptions.excludeFolder',
-          icon: 'square-x',
+          icon: 'pen-off',
           settingPath: ['core', 'commandVisibility', 'folderExclude'],
         },
         {
@@ -216,7 +216,7 @@ export class CommandsTab extends SettingsTabBase {
         {
           nameKey: 'commands.disableRenamingForTag',
           descKey: 'commands.descriptions.excludeTag',
-          icon: 'square-x',
+          icon: 'pen-off',
           settingPath: ['core', 'commandVisibility', 'tagExclude'],
         },
         {
@@ -248,7 +248,7 @@ export class CommandsTab extends SettingsTabBase {
         {
           nameKey: 'commands.disableRenaming',
           descKey: 'commands.descriptions.excludeAllNotesInSearchResults',
-          icon: 'square-x',
+          icon: 'pen-off',
           settingPath: ['core', 'vaultSearchContextMenuVisibility', 'disable'],
         },
         {

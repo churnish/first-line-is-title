@@ -290,7 +290,7 @@ export class CommandRegistrar {
     this.plugin.addCommand({
       id: 'disable-renaming-for-note',
       name: t('commands.disableRenamingForNote'),
-      icon: 'square-x',
+      icon: 'pen-off',
       checkCallback: (checking: boolean) => {
         const activeFile = this.app.workspace.getActiveFile();
         if (!activeFile || activeFile.extension !== 'md') {
