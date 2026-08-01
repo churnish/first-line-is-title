@@ -252,6 +252,7 @@ export function buildOtherPage(
   return {
     type: 'page',
     name: t('settings.tabs.other'),
+    desc: t('settings.other.desc'),
     items: [
       {
         name: t('settings.other.titleCase.name'),
@@ -397,31 +398,43 @@ export function buildOtherPage(
             },
           },
           {
+            // `render` rather than `action` so the row carries a labelled
+            // button, matching "Rename all notes" and "Send feedback".
             name: t('settings.other.clearSettings.name'),
             desc: t('settings.other.clearSettings.desc'),
-            action: () => {
-              const body = createFragment((frag) => {
-                frag.createEl('p', {
-                  text: t('modals.resetAllSettings'),
-                  cls: 'mod-warning',
-                });
-              });
+            render: (setting) => {
+              setting.addButton((button) =>
+                button
+                  .setButtonText(t('settings.other.clearSettings.button'))
+                  // Red tint without the filled-CTA treatment, since this is a
+                  // secondary destructive action rather than the page's primary
+                  // one.
+                  .setDestructive()
+                  .onClick(() => {
+                    const body = createFragment((frag) => {
+                      frag.createEl('p', {
+                        text: t('modals.resetAllSettings'),
+                        cls: 'mod-warning',
+                      });
+                    });
 
-              new ConfirmationModal(plugin.app)
-                .setTitle(t('modals.caution'))
-                .setContent(body)
-                .addButton((btn) =>
-                  btn
-                    .setButtonText(t('modals.buttons.clear'))
-                    // Non-deprecated equivalent of setWarning(): mod-destructive mod-cta
-                    .setDestructive()
-                    .setCta()
-                    .onClick(() => {
-                      void resetAllSettings(plugin, tab);
-                    })
-                )
-                .addCancelButton()
-                .open();
+                    new ConfirmationModal(plugin.app)
+                      .setTitle(t('modals.caution'))
+                      .setContent(body)
+                      .addButton((btn) =>
+                        btn
+                          .setButtonText(t('modals.buttons.clear'))
+                          // Non-deprecated equivalent of setWarning()
+                          .setDestructive()
+                          .setCta()
+                          .onClick(() => {
+                            void resetAllSettings(plugin, tab);
+                          })
+                      )
+                      .addCancelButton()
+                      .open();
+                  })
+              );
             },
           },
         ],

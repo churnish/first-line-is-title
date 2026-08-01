@@ -44,7 +44,7 @@ const MARKUP_TOGGLES: MarkupToggle[] = [
 ];
 
 /**
- * Terms that some descriptions italicise (or quote, in Russian) instead of
+ * Terms that some descriptions bold (or quote, in Russian) instead of
  * rendering as a code sample. Only ever one per description, always in part 1.
  */
 const EMPHASISED_TERM_KEYS = ['table', 'mathBlock', 'diagram'];
@@ -90,7 +90,7 @@ function buildMultiPartDescription(descKey: string): DocumentFragment {
             if (isRussian) {
               frag.appendText('«' + termValue + '»');
             } else {
-              frag.createEl('em', { text: termValue });
+              frag.createEl('strong', { text: termValue });
             }
             foundAny = true;
             break;
@@ -193,6 +193,7 @@ export function buildMarkupStrippingPage(
   return {
     type: 'page',
     name: t('settings.tabs.stripMarkup'),
+    desc: t('settings.stripMarkup.desc'),
     items,
   };
 }

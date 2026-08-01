@@ -25,7 +25,7 @@ async function persistSettings(plugin: FirstLineIsTitlePlugin): Promise<void> {
 
 /**
  * Appends a locale-aware emphasised fragment. Russian uses guillemets rather
- * than italics.
+ * than bold.
  */
 function appendEmphasis(
   parent: HTMLElement | DocumentFragment,
@@ -34,7 +34,7 @@ function appendEmphasis(
   if (getCurrentLocale() === 'ru') {
     parent.appendText('«' + t(localeKey) + '»');
   } else {
-    parent.createEl('em', { text: t(localeKey) });
+    parent.createEl('strong', { text: t(localeKey) });
   }
 }
 

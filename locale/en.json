@@ -234,7 +234,7 @@
       },
       "renameAllNotes": {
         "name": "Rename all notes",
-        "desc": "Process all notes in the vault. Can also be run from the Command palette.",
+        "desc": "Process all notes in the vault. Can also be run from the command palette.",
         "button": "Rename"
       },
       "sendFeedback": {
@@ -344,6 +344,7 @@
       }
     },
     "alias": {
+      "desc": "Copy the first line to a property when renaming notes.",
       "addAlias": {
         "name": "Add alias",
         "desc": "Always copy the first line to a property when renaming notes."
@@ -742,6 +743,7 @@
       }
     },
     "commands": {
+      "desc": "Set which commands and context menu items are available.",
       "file": {
         "title": "File commands",
         "desc": "Enable commands in the file context menu."
@@ -760,6 +762,7 @@
       }
     },
     "other": {
+      "desc": "Set title formatting, notifications and plugin data.",
       "charCount": {
         "name": "Character count",
         "desc": "The maximum number of characters to put in file name.",
@@ -822,7 +825,8 @@
       "clearSettings": {
         "name": "Clear settings",
         "desc": "Reset all plugin settings to their default values.",
-        "modalButton": "Clear settings"
+        "modalButton": "Clear settings",
+        "button": "Clear"
       },
       "titleCase": {
         "name": "Title case",

@@ -8,7 +8,7 @@ const FEEDBACK_URL =
 
 /**
  * Builds a description where one term is emphasized. Russian typography uses
- * guillemets instead of italics, matching the pre-migration rendering.
+ * guillemets instead of bold, matching the pre-migration rendering.
  */
 function buildEmphasizedDescription(
   part1Key: string,
@@ -20,7 +20,7 @@ function buildEmphasizedDescription(
     if (getCurrentLocale() === 'ru') {
       frag.appendText('«' + t(emphasizedKey) + '»');
     } else {
-      frag.createEl('em', { text: t(emphasizedKey) });
+      frag.createEl('strong', { text: t(emphasizedKey) });
     }
     frag.appendText(t(part2Key));
   });

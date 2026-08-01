@@ -223,7 +223,7 @@ function appendAllOsesNote(parent: HTMLElement | DocumentFragment): void {
     if (locale === 'ru') {
       parent.appendText('«' + t(localeKey) + '»');
     } else {
-      parent.createEl('em', { text: t(localeKey) });
+      parent.createEl('strong', { text: t(localeKey) });
     }
   };
 

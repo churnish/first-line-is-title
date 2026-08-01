@@ -208,6 +208,7 @@ export function buildCommandsPage(
   return {
     type: 'page',
     name: t('settings.tabs.commands'),
+    desc: t('settings.commands.desc'),
     items: COMMAND_SECTIONS.map((section) =>
       buildCommandSection(plugin, section)
     ),

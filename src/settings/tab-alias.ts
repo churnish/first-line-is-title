@@ -14,12 +14,12 @@ const PLUGIN_NOTEBOOK_NAVIGATOR = 'Notebook Navigator';
 const PLUGIN_FRONT_MATTER_TITLE = 'Front Matter Title';
 const PLUGIN_HOVER_EDITOR = 'Hover Editor';
 
-/** Russian typography uses guillemets where English italicises a UI label. */
+/** Russian typography uses guillemets where English bolds a UI label. */
 function appendEmphasisedTerm(frag: DocumentFragment, text: string): void {
   if (getCurrentLocale() === 'ru') {
     frag.appendText('«' + text + '»');
   } else {
-    frag.createEl('em', { text });
+    frag.createEl('strong', { text });
   }
 }
 
@@ -233,34 +233,43 @@ export function buildAliasPage(
     },
     {
       // Desktop-only: the caveats it lists have no mobile equivalent.
-      name: t('settings.alias.limitations.title'),
+      type: 'group',
+      heading: t('settings.alias.limitations.title'),
       visible: () => !Platform.isMobile,
-      render: (setting) => {
-        const host = mountLegacyHost(setting.settingEl);
-        const list = host.createEl('ul', {
-          cls: 'setting-item-description flit-margin-top-15 flit-margin-bottom-15',
-        });
+      items: [
+        {
+          name: '',
+          render: (setting) => {
+            const host = mountLegacyHost(setting.settingEl);
+            const list = host.createEl('ul', {
+              cls: 'setting-item-description flit-margin-top-15 flit-margin-bottom-15',
+            });
 
-        const pagePreviewBullet = list.createEl('li');
-        pagePreviewBullet.appendText(
-          t('settings.alias.limitations.bullet1.part1')
-        );
-        pagePreviewBullet.createEl('a', {
-          text: PLUGIN_HOVER_EDITOR,
-          href: 'obsidian://show-plugin?id=obsidian-hover-editor',
-        });
-        pagePreviewBullet.appendText(
-          t('settings.alias.limitations.bullet1.part2')
-        );
+            const pagePreviewBullet = list.createEl('li');
+            pagePreviewBullet.appendText(
+              t('settings.alias.limitations.bullet1.part1')
+            );
+            pagePreviewBullet.createEl('a', {
+              text: PLUGIN_HOVER_EDITOR,
+              href: 'obsidian://show-plugin?id=obsidian-hover-editor',
+            });
+            pagePreviewBullet.appendText(
+              t('settings.alias.limitations.bullet1.part2')
+            );
 
-        list.createEl('li', { text: t('settings.alias.limitations.bullet2') });
-      },
+            list.createEl('li', {
+              text: t('settings.alias.limitations.bullet2'),
+            });
+          },
+        },
+      ],
     },
   ];
 
   return {
     type: 'page',
     name: t('settings.tabs.alias'),
+    desc: t('settings.alias.desc'),
     items,
   };
 }
