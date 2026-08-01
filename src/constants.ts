@@ -54,11 +54,10 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     hasSetupExclusions: false,
     hasSetPropertyType: false,
     lastUsageDate: '',
-    currentSettingsTab: 'general',
     hasEnabledForbiddenChars: false,
     hasEnabledWindowsAndroid: false,
     hasEnabledCustomReplacements: false,
-    hasEnabledSafewords: false,
+    hasEnabledFileNameExclusions: false,
     hasEnabledAliases: false,
     modalCheckboxStates: {
       folderRename: {
@@ -101,6 +100,16 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     excludeChildTags: true,
     disableRenamingKey: 'no rename',
     disableRenamingValue: 'true',
+    enableFileNameExclusions: false,
+    fileNameExclusions: [
+      {
+        text: 'To do',
+        onlyAtStart: false,
+        onlyWholeLine: false,
+        enabled: false,
+        caseSensitive: false,
+      },
+    ],
   },
   replaceCharacters: {
     enableForbiddenCharReplacements: false,
@@ -212,18 +221,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
       },
     ],
     applyCustomRulesAfterForbiddenChars: false,
-  },
-  safewords: {
-    enableSafewords: false,
-    safewords: [
-      {
-        text: 'To do',
-        onlyAtStart: false,
-        onlyWholeLine: false,
-        enabled: false,
-        caseSensitive: false,
-      },
-    ],
   },
   markupStripping: {
     enableStripMarkup: true,

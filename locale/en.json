@@ -104,7 +104,7 @@
     "notRenamedSelfReference": "Note not renamed due to self-referential link in first line: {{filename}}",
     "notRenamedNoHeading": "Note not renamed due to no heading in first line: {{filename}}",
     "notRenamedExcluded": "Note not renamed due to being excluded: {{filename}}",
-    "safewordPreventedRename": "Safeword prevented rename of: {{filename}}",
+    "fileNameExclusionPreventedRename": "Excluded file name prevented rename of: {{filename}}",
     "noNotesFoundInFolder": "No notes found in: {{folder}}",
     "disabledRenamingInFolder": "Disabled renaming in: {{folder}}",
     "enabledRenamingInFolder": "Enabled renaming in: {{folder}}",
@@ -177,12 +177,10 @@
   },
   "settings": {
     "tabs": {
-      "general": "General",
       "exclusions": "Exclusions",
-      "replaceCharacters": "Replace characters",
+      "replaceCharacters": "Character replacements",
       "customRules": "Custom rules",
-      "safewords": "Safewords",
-      "stripMarkup": "Strip markup",
+      "stripMarkup": "Markup stripping",
       "alias": "Alias",
       "commands": "Commands",
       "other": "Other"
@@ -270,7 +268,8 @@
           "excludeAllExcept": "Exclude all except..."
         },
         "placeholder": "Folder name",
-        "addButton": "Add folder"
+        "addButton": "Add folder",
+        "emptyState": "No folders added."
       },
       "tags": {
         "title": "Tags",
@@ -297,7 +296,8 @@
           "desc": "Set how tags should be excluded."
         },
         "placeholder": "Tag name",
-        "addButton": "Add tag"
+        "addButton": "Add tag",
+        "emptyState": "No tags added."
       },
       "properties": {
         "title": "Properties",
@@ -321,7 +321,8 @@
         "keyPlaceholder": "key",
         "valuePlaceholder": "value",
         "separator": ":",
-        "addButton": "Add property"
+        "addButton": "Add property",
+        "emptyState": "No properties added."
       },
       "disableProperty": {
         "title": "Property to disable renaming",
@@ -330,6 +331,23 @@
         "caseInsensitive": "Case-insensitive.",
         "updateWarning": "Changing this will not automatically update properties that have been previously added to notes. Update manually after changing.",
         "default": "Default: no rename:true"
+      },
+      "fileNames": {
+        "title": "File names",
+        "desc": "Set file names to match.",
+        "enableFileNameExclusions": {
+          "name": "Exclude by file name",
+          "desc": "Don't rename notes if the file name contains a text string specified below."
+        },
+        "addButton": "Add file name",
+        "emptyState": "No file names added.",
+        "headers": {
+          "enable": "Enable",
+          "text": "Text",
+          "onlyMatchStart": "Only match file name start",
+          "onlyMatchWhole": "Only match whole file name",
+          "caseSensitive": "Case-sensitive"
+        }
       }
     },
     "alias": {
@@ -823,22 +841,9 @@
         "modalButton": "Clear settings"
       }
     },
-    "safewords": {
-      "enableSafewords": {
-        "name": "Enable safewords",
-        "desc": "Don't rename notes if the file name contains a text string specified below."
-      },
-      "addButton": "Add safeword",
-      "headers": {
-        "enable": "Enable",
-        "safeword": "Safeword",
-        "onlyMatchStart": "Only match file name start",
-        "onlyMatchWhole": "Only match whole file name",
-        "caseSensitive": "Case-sensitive"
-      }
-    },
     "errors": {
-      "saveFailed": "Failed to save settings."
+      "saveFailed": "Failed to save settings.",
+      "importFailed": "Failed to import settings."
     }
   }
 }

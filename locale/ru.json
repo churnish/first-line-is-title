@@ -110,7 +110,7 @@
     "notRenamedSelfReference": "Заметка не переименована из-за самореферентной ссылки в первой строке: {{filename}}",
     "notRenamedNoHeading": "Заметка не переименована из-за отсутствия заголовка в первой строке: {{filename}}",
     "notRenamedExcluded": "Заметка не переименована из-за исключения: {{filename}}",
-    "safewordPreventedRename": "Стоп-слово предотвратило переименование: {{filename}}",
+    "fileNameExclusionPreventedRename": "Исключенное имя файла предотвратило переименование: {{filename}}",
     "noNotesFoundInFolder": "Заметки не найдены в: {{folder}}",
     "disabledRenamingInFolder": "Переименование отключено в: {{folder}}",
     "enabledRenamingInFolder": "Переименование включено в: {{folder}}",
@@ -193,11 +193,9 @@
   },
   "settings": {
     "tabs": {
-      "general": "Основные",
       "exclusions": "Исключения",
       "replaceCharacters": "Замена символов",
       "customRules": "Правила замены",
-      "safewords": "Стоп-слова",
       "stripMarkup": "Удаление разметки",
       "alias": "Псевдоним",
       "commands": "Команды",
@@ -286,7 +284,8 @@
           "excludeAllExcept": "Исключить все, кроме..."
         },
         "placeholder": "Название папки",
-        "addButton": "Добавить папку"
+        "addButton": "Добавить папку",
+        "emptyState": "Папки не добавлены."
       },
       "tags": {
         "title": "Теги",
@@ -313,7 +312,8 @@
           "desc": "Укажите, как должны исключаться теги."
         },
         "placeholder": "Название тега",
-        "addButton": "Добавить тег"
+        "addButton": "Добавить тег",
+        "emptyState": "Теги не добавлены."
       },
       "properties": {
         "title": "Свойства",
@@ -337,7 +337,8 @@
         "keyPlaceholder": "ключ",
         "valuePlaceholder": "значение",
         "separator": ":",
-        "addButton": "Добавить свойство"
+        "addButton": "Добавить свойство",
+        "emptyState": "Свойства не добавлены."
       },
       "disableProperty": {
         "title": "Свойство для отключения переименования",
@@ -346,6 +347,23 @@
         "caseInsensitive": "Регистр не учитывается.",
         "updateWarning": "Изменение этого свойства не обновит автоматически ранее добавленные в заметках свойства. Обновите вручную после изменения.",
         "default": "По умолчанию: no rename:true"
+      },
+      "fileNames": {
+        "title": "Имена файлов",
+        "desc": "Укажите, какие имена файлов учитывать.",
+        "enableFileNameExclusions": {
+          "name": "Исключать по имени файла",
+          "desc": "Не переименовывать заметки, если в имени файла встречается текст, указанный ниже."
+        },
+        "addButton": "Добавить имя файла",
+        "emptyState": "Имена файлов не добавлены.",
+        "headers": {
+          "enable": "Включить",
+          "text": "Текст",
+          "onlyMatchStart": "Только в начале имени файла",
+          "onlyMatchWhole": "Только полное имя файла",
+          "caseSensitive": "Учитывать регистр"
+        }
       }
     },
     "alias": {
@@ -839,22 +857,9 @@
         "modalButton": "Сбросить настройки"
       }
     },
-    "safewords": {
-      "enableSafewords": {
-        "name": "Включить стоп-слова",
-        "desc": "Не переименовывать заметки, если в имени файла встречается текст, указанный ниже."
-      },
-      "addButton": "Добавить стоп-слово",
-      "headers": {
-        "enable": "Включить",
-        "safeword": "Стоп-слово",
-        "onlyMatchStart": "Только в начале имени файла",
-        "onlyMatchWhole": "Только полное имя файла",
-        "caseSensitive": "Учитывать регистр"
-      }
-    },
     "errors": {
-      "saveFailed": "Не удалось сохранить настройки."
+      "saveFailed": "Не удалось сохранить настройки.",
+      "importFailed": "Не удалось импортировать настройки."
     }
   }
 }

@@ -8,7 +8,7 @@ export interface CustomReplacement {
   enabled: boolean;
 }
 
-export interface Safeword {
+export interface FileNameExclusion {
   text: string;
   onlyAtStart: boolean;
   onlyWholeLine: boolean;
@@ -97,11 +97,10 @@ export interface CoreSettings {
   hasSetupExclusions: boolean;
   hasSetPropertyType: boolean;
   lastUsageDate: string;
-  currentSettingsTab: string;
   hasEnabledForbiddenChars: boolean;
   hasEnabledWindowsAndroid: boolean;
   hasEnabledCustomReplacements: boolean;
-  hasEnabledSafewords: boolean;
+  hasEnabledFileNameExclusions: boolean;
   hasEnabledAliases: boolean;
   modalCheckboxStates: {
     folderRename: {
@@ -148,6 +147,8 @@ export interface ExclusionSettings {
   excludeChildTags: boolean;
   disableRenamingKey: string;
   disableRenamingValue: string;
+  enableFileNameExclusions: boolean;
+  fileNameExclusions: FileNameExclusion[];
 }
 
 /**
@@ -167,14 +168,6 @@ export interface CustomRulesSettings {
   enableCustomReplacements: boolean;
   customReplacements: CustomReplacement[];
   applyCustomRulesAfterForbiddenChars: boolean;
-}
-
-/**
- * Safewords settings
- */
-export interface SafewordsSettings {
-  enableSafewords: boolean;
-  safewords: Safeword[];
 }
 
 /**
@@ -238,7 +231,6 @@ export interface PluginSettings {
   exclusions: ExclusionSettings;
   replaceCharacters: ReplaceCharactersSettings;
   customRules: CustomRulesSettings;
-  safewords: SafewordsSettings;
   markupStripping: MarkupStrippingSettings;
   aliases: AliasSettings;
 }

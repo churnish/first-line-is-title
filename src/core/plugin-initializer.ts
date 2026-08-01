@@ -8,7 +8,7 @@ import { FirstLineIsTitlePlugin } from '../settings/settings-base';
  * - First-enable logic for settings
  *
  * Responsibilities:
- * - Initialize first-enable states for custom replacements, safewords, forbidden chars
+ * - Initialize first-enable states for custom replacements, file name exclusions, forbidden chars
  * - Handle settings defaults
  */
 export class PluginInitializer {
@@ -41,17 +41,20 @@ export class PluginInitializer {
       );
     }
 
-    // Safewords first-enable logic
+    // File name exclusions first-enable logic
     if (
-      this.settings.safewords.enableSafewords &&
-      !this.settings.core.hasEnabledSafewords
+      this.settings.exclusions.enableFileNameExclusions &&
+      !this.settings.core.hasEnabledFileNameExclusions
     ) {
-      this.settings.safewords.safewords.forEach((safeword) => {
-        safeword.enabled = true;
+      this.settings.exclusions.fileNameExclusions.forEach((exclusion) => {
+        exclusion.enabled = true;
       });
-      this.settings.core.hasEnabledSafewords = true;
+      this.settings.core.hasEnabledFileNameExclusions = true;
       settingsChanged = true;
-      verboseLog(this.plugin, 'Initialized safewords on first enable');
+      verboseLog(
+        this.plugin,
+        'Initialized file name exclusions on first enable'
+      );
     }
 
     // Forbidden chars first-enable logic

@@ -355,6 +355,11 @@ export class PluginSettingTab {
   containerEl: HTMLElement;
   icon: string;
 
+  // Declarative settings API (Obsidian 1.13+). Spies so tests can assert which
+  // refresh path a control write took.
+  update = vi.fn();
+  refreshDomState = vi.fn();
+
   constructor(app: App, plugin: Plugin) {
     this.app = app;
     this.plugin = plugin;
@@ -362,8 +367,30 @@ export class PluginSettingTab {
     this.icon = '';
   }
 
+  getSettingDefinitions(): unknown[] {
+    return [];
+  }
+  getControlValue(_key: string): unknown {
+    return undefined;
+  }
+  setControlValue(_key: string, _value: unknown): void {}
   display(): void {}
   hide(): void {}
+}
+
+// Mock ConfirmationModal (Obsidian 1.13+)
+export class ConfirmationModal extends Modal {
+  buttonContainerEl: HTMLElement;
+
+  constructor(app: App) {
+    super(app);
+    this.buttonContainerEl = document.createElement('div');
+  }
+
+  addClass = vi.fn().mockReturnThis();
+  addCheckbox = vi.fn().mockReturnThis();
+  addButton = vi.fn().mockReturnThis();
+  addCancelButton = vi.fn().mockReturnThis();
 }
 
 // Mock SettingGroup class

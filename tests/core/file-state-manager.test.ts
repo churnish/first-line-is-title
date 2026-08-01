@@ -501,15 +501,15 @@ describe('FileStateManager', () => {
       expect(manager.canShowSelfRefNotice('test.md')).toBe(true);
     });
 
-    it('should rate limit safeword notices', () => {
-      expect(manager.canShowSafewordNotice('test.md')).toBe(true);
+    it('should rate limit file name exclusion notices', () => {
+      expect(manager.canShowFileNameExclusionNotice('test.md')).toBe(true);
 
-      manager.setLastSafewordNotice('test.md');
-      expect(manager.canShowSafewordNotice('test.md')).toBe(false);
+      manager.setFileNameExclusionNotice('test.md');
+      expect(manager.canShowFileNameExclusionNotice('test.md')).toBe(false);
 
       // Advance past TTL (SELF_REF_NOTICE_TTL_MS = 2000ms)
       vi.advanceTimersByTime(2100);
-      expect(manager.canShowSafewordNotice('test.md')).toBe(true);
+      expect(manager.canShowFileNameExclusionNotice('test.md')).toBe(true);
     });
   });
 

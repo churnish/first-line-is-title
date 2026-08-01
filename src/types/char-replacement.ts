@@ -55,3 +55,31 @@ export const CHAR_KEYS: CharKey[] = [
   'backslash',
   'dot',
 ];
+
+/**
+ * Characters forbidden on all operating systems, in settings-table display order.
+ * Shared so the first-enable cascade and the settings table agree on membership.
+ */
+export const PRIMARY_CHAR_KEYS: CharKey[] = [
+  'leftBracket',
+  'rightBracket',
+  'hash',
+  'caret',
+  'pipe',
+  'backslash',
+  'slash',
+  'colon',
+  'dot',
+];
+
+/**
+ * Characters forbidden only on Windows and Android, in settings-table display order.
+ * Disjoint from {@link PRIMARY_CHAR_KEYS}.
+ */
+export const WINDOWS_ANDROID_CHAR_KEYS: CharKey[] = [
+  'asterisk',
+  'quote',
+  'lessThan',
+  'greaterThan',
+  'question',
+];

@@ -29,7 +29,7 @@ export interface FileState {
   lastSavedContentTimestamp?: number;
   titleRegionCache?: TitleRegionCache;
   lastSelfRefNotice?: number; // timestamp
-  lastSafewordNotice?: number; // timestamp
+  lastFileNameExclusionNotice?: number; // timestamp
 
   // Operation tracking
   operationData?: OperationData;
@@ -342,21 +342,22 @@ export class FileStateManager {
   }
 
   /**
-   * Set last safeword notice timestamp
+   * Set last file name exclusion notice timestamp
    */
-  setLastSafewordNotice(path: string): void {
+  setFileNameExclusionNotice(path: string): void {
     const state = this.getOrCreateState(path);
-    state.lastSafewordNotice = Date.now();
+    state.lastFileNameExclusionNotice = Date.now();
   }
 
   /**
-   * Check if can show safeword notice (rate limit)
+   * Check if can show file name exclusion notice (rate limit)
    */
-  canShowSafewordNotice(path: string): boolean {
+  canShowFileNameExclusionNotice(path: string): boolean {
     const state = this.fileStates.get(path);
-    if (!state?.lastSafewordNotice) return true;
+    if (!state?.lastFileNameExclusionNotice) return true;
     return (
-      Date.now() - state.lastSafewordNotice > TIMING.SELF_REF_NOTICE_TTL_MS
+      Date.now() - state.lastFileNameExclusionNotice >
+      TIMING.SELF_REF_NOTICE_TTL_MS
     );
   }
 
@@ -666,17 +667,17 @@ export class FileStateManager {
         }
       }
 
-      // Clean up stale self-ref and safeword notice timestamps
+      // Clean up stale self-ref and file name exclusion notice timestamps
       if (state.lastSelfRefNotice) {
         const age = now - state.lastSelfRefNotice;
         if (age > staleThreshold) {
           delete state.lastSelfRefNotice;
         }
       }
-      if (state.lastSafewordNotice) {
-        const age = now - state.lastSafewordNotice;
+      if (state.lastFileNameExclusionNotice) {
+        const age = now - state.lastFileNameExclusionNotice;
         if (age > staleThreshold) {
-          delete state.lastSafewordNotice;
+          delete state.lastFileNameExclusionNotice;
         }
       }
 

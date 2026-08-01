@@ -231,39 +231,39 @@ export function hasDisablePropertyInFile(
   }
 }
 
-export function containsSafeword(
+export function containsFileNameExclusion(
   filename: string,
   settings: PluginSettings
 ): boolean {
-  if (!settings.safewords.enableSafewords) return false;
+  if (!settings.exclusions.enableFileNameExclusions) return false;
 
   // Get filename without extension for comparison
   const filenameWithoutExt = filename.replace(/\.md$/, '');
 
-  for (const safeword of settings.safewords.safewords) {
-    if (!safeword.enabled || !safeword.text) continue;
+  for (const exclusion of settings.exclusions.fileNameExclusions) {
+    if (!exclusion.enabled || !exclusion.text) continue;
 
     // Check against both full filename and filename without extension
-    const compareFullFilename = safeword.caseSensitive
+    const compareFullFilename = exclusion.caseSensitive
       ? filename
       : filename.toLowerCase();
-    const compareFilenameWithoutExt = safeword.caseSensitive
+    const compareFilenameWithoutExt = exclusion.caseSensitive
       ? filenameWithoutExt
       : filenameWithoutExt.toLowerCase();
-    const compareText = safeword.caseSensitive
-      ? safeword.text
-      : safeword.text.toLowerCase();
+    const compareText = exclusion.caseSensitive
+      ? exclusion.text
+      : exclusion.text.toLowerCase();
 
     for (const compareFilename of [
       compareFullFilename,
       compareFilenameWithoutExt,
     ]) {
-      if (safeword.onlyWholeLine) {
+      if (exclusion.onlyWholeLine) {
         // Only match if the entire filename matches
         if (compareFilename.trim() === compareText.trim()) {
           return true;
         }
-      } else if (safeword.onlyAtStart) {
+      } else if (exclusion.onlyAtStart) {
         if (compareFilename.startsWith(compareText)) {
           return true;
         }

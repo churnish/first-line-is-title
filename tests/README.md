@@ -58,7 +58,7 @@ Tests run automatically on push via GitHub Actions (Node 18 & 20).
 | File Exclusions   | 85    | Folders (+subfolders), tags (frontmatter + inline), properties, strategies  |
 | Tag Utilities     | 63    | Normalization, YAML parsing, frontmatter stripping, child tag matching      |
 | Content Reader    | 48    | All read strategies (Editor/Cache/File), workspace search, popover handling |
-| Core Utilities    | 42    | Logging, headings, safewords, disable properties                            |
+| Core Utilities    | 42    | Logging, headings, file name exclusions, disable properties                 |
 | Debug Utilities   | 41    | Setting logs, content output, dumps                                         |
 
 **Total: 490+ tests**

@@ -78,8 +78,8 @@ function createMockPlugin() {
       // Notice rate limiting
       setLastSelfRefNotice: vi.fn(),
       canShowSelfRefNotice: vi.fn().mockReturnValue(true),
-      setLastSafewordNotice: vi.fn(),
-      canShowSafewordNotice: vi.fn().mockReturnValue(true),
+      setFileNameExclusionNotice: vi.fn(),
+      canShowFileNameExclusionNotice: vi.fn().mockReturnValue(true),
       // Operation tracking
       getOperationData: vi.fn().mockReturnValue(undefined),
       setOperationData: vi.fn(),

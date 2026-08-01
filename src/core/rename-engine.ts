@@ -6,7 +6,7 @@ import {
   detectOS,
   shouldProcessFile,
   canModifyFile,
-  containsSafeword,
+  containsFileNameExclusion,
   extractTitle,
   isValidHeading,
   findTitleSourceLine,
@@ -647,26 +647,31 @@ export class RenameEngine {
       searchWorkspace: showNotices, // Manual commands search for popover editors
     });
 
-    // Check if filename contains any safewords and skip if enabled (always respect safewords)
-    if (containsSafeword(file.name, this.plugin.settings)) {
+    // Check if filename matches any file name exclusions and skip if enabled (always respected)
+    if (containsFileNameExclusion(file.name, this.plugin.settings)) {
       if (showNotices && !isBatchOperation) {
         // Rate limit: show notice max once per 2 seconds per file
-        if (this.plugin.fileStateManager.canShowSafewordNotice(file.path)) {
+        if (
+          this.plugin.fileStateManager.canShowFileNameExclusionNotice(file.path)
+        ) {
           verboseLog(
             this.plugin,
-            `Showing notice: Safeword prevented rename of: ${file.basename}`
+            `Showing notice: Excluded file name prevented rename of: ${file.basename}`
           );
           new Notice(
-            t('notifications.safewordPreventedRename').replace(
+            t('notifications.fileNameExclusionPreventedRename').replace(
               '{{filename}}',
               file.basename
             )
           );
-          this.plugin.fileStateManager.setLastSafewordNotice(file.path);
+          this.plugin.fileStateManager.setFileNameExclusionNotice(file.path);
         }
       }
-      verboseLog(this.plugin, `Skipping file with safeword: ${file.path}`);
-      return { success: false, reason: 'safeword' };
+      verboseLog(
+        this.plugin,
+        `Skipping file with excluded file name: ${file.path}`
+      );
+      return { success: false, reason: 'file-name-exclusion' };
     }
 
     const currentName = file.basename;

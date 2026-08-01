@@ -743,16 +743,16 @@ export default class FirstLineIsTitle extends Plugin {
       this.settings.exclusions.excludedTags.push('');
     }
 
-    // Localize default safeword example (only if user hasn't enabled safewords yet)
+    // Localize default file name exclusion example (only if user hasn't enabled them yet)
     if (
-      !this.settings.core.hasEnabledSafewords &&
-      this.settings.safewords.safewords.length > 0
+      !this.settings.core.hasEnabledFileNameExclusions &&
+      this.settings.exclusions.fileNameExclusions.length > 0
     ) {
       const locale = getCurrentLocale();
       if (locale === 'ru') {
-        this.settings.safewords.safewords[0].text = 'Задачи';
+        this.settings.exclusions.fileNameExclusions[0].text = 'Задачи';
       } else {
-        this.settings.safewords.safewords[0].text = 'To do';
+        this.settings.exclusions.fileNameExclusions[0].text = 'To do';
       }
     }
 

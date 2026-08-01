@@ -5,7 +5,7 @@ import {
   detectOS,
   canModifyFile,
   hasDisablePropertyInFile,
-  containsSafeword,
+  containsFileNameExclusion,
   extractTitle,
 } from '../src/utils';
 import { createTestSettings, createMockFile, createMockApp } from './testUtils';
@@ -375,10 +375,10 @@ describe('utils', () => {
     });
   });
 
-  describe('containsSafeword', () => {
+  describe('containsFileNameExclusion', () => {
     beforeEach(() => {
-      settings.safewords.enableSafewords = true;
-      settings.safewords.safewords = [
+      settings.exclusions.enableFileNameExclusions = true;
+      settings.exclusions.fileNameExclusions = [
         {
           text: 'draft',
           onlyAtStart: false,
@@ -389,55 +389,55 @@ describe('utils', () => {
       ];
     });
 
-    it('should return false when safewords are disabled', () => {
-      settings.safewords.enableSafewords = false;
+    it('should return false when file name exclusions are disabled', () => {
+      settings.exclusions.enableFileNameExclusions = false;
 
-      expect(containsSafeword('draft note.md', settings)).toBe(false);
+      expect(containsFileNameExclusion('draft note.md', settings)).toBe(false);
     });
 
-    it('should detect safeword in filename', () => {
-      expect(containsSafeword('draft note.md', settings)).toBe(true);
+    it('should detect excluded file name in filename', () => {
+      expect(containsFileNameExclusion('draft note.md', settings)).toBe(true);
     });
 
-    it('should detect safeword in filename without extension', () => {
-      expect(containsSafeword('My draft', settings)).toBe(true);
+    it('should detect excluded file name without extension', () => {
+      expect(containsFileNameExclusion('My draft', settings)).toBe(true);
     });
 
     it('should be case-insensitive by default', () => {
-      expect(containsSafeword('DRAFT note.md', settings)).toBe(true);
-      expect(containsSafeword('Draft Note.md', settings)).toBe(true);
+      expect(containsFileNameExclusion('DRAFT note.md', settings)).toBe(true);
+      expect(containsFileNameExclusion('Draft Note.md', settings)).toBe(true);
     });
 
     it('should respect case sensitivity when enabled', () => {
-      settings.safewords.safewords[0].caseSensitive = true;
+      settings.exclusions.fileNameExclusions[0].caseSensitive = true;
 
-      expect(containsSafeword('draft note.md', settings)).toBe(true);
-      expect(containsSafeword('DRAFT note.md', settings)).toBe(false);
+      expect(containsFileNameExclusion('draft note.md', settings)).toBe(true);
+      expect(containsFileNameExclusion('DRAFT note.md', settings)).toBe(false);
     });
 
     it('should match only at start when onlyAtStart is true', () => {
-      settings.safewords.safewords[0].onlyAtStart = true;
+      settings.exclusions.fileNameExclusions[0].onlyAtStart = true;
 
-      expect(containsSafeword('draft note.md', settings)).toBe(true);
-      expect(containsSafeword('my draft.md', settings)).toBe(false);
+      expect(containsFileNameExclusion('draft note.md', settings)).toBe(true);
+      expect(containsFileNameExclusion('my draft.md', settings)).toBe(false);
     });
 
     it('should match whole line when onlyWholeLine is true', () => {
-      settings.safewords.safewords[0].onlyWholeLine = true;
+      settings.exclusions.fileNameExclusions[0].onlyWholeLine = true;
 
-      expect(containsSafeword('draft.md', settings)).toBe(true);
-      expect(containsSafeword('draft', settings)).toBe(true);
-      expect(containsSafeword('draft note.md', settings)).toBe(false);
+      expect(containsFileNameExclusion('draft.md', settings)).toBe(true);
+      expect(containsFileNameExclusion('draft', settings)).toBe(true);
+      expect(containsFileNameExclusion('draft note.md', settings)).toBe(false);
     });
 
-    it('should skip disabled safewords', () => {
-      settings.safewords.safewords[0].enabled = false;
+    it('should skip disabled file name exclusions', () => {
+      settings.exclusions.fileNameExclusions[0].enabled = false;
 
-      expect(containsSafeword('draft note.md', settings)).toBe(false);
+      expect(containsFileNameExclusion('draft note.md', settings)).toBe(false);
     });
 
-    it('should skip empty safewords', () => {
-      settings.safewords.safewords = [
+    it('should skip empty file name exclusions', () => {
+      settings.exclusions.fileNameExclusions = [
         {
           text: '',
           onlyAtStart: false,
@@ -447,11 +447,11 @@ describe('utils', () => {
         },
       ];
 
-      expect(containsSafeword('any file.md', settings)).toBe(false);
+      expect(containsFileNameExclusion('any file.md', settings)).toBe(false);
     });
 
-    it('should check multiple safewords', () => {
-      settings.safewords.safewords = [
+    it('should check multiple file name exclusions', () => {
+      settings.exclusions.fileNameExclusions = [
         {
           text: 'draft',
           onlyAtStart: false,
@@ -468,13 +468,15 @@ describe('utils', () => {
         },
       ];
 
-      expect(containsSafeword('draft note.md', settings)).toBe(true);
-      expect(containsSafeword('todo list.md', settings)).toBe(true);
-      expect(containsSafeword('final version.md', settings)).toBe(false);
+      expect(containsFileNameExclusion('draft note.md', settings)).toBe(true);
+      expect(containsFileNameExclusion('todo list.md', settings)).toBe(true);
+      expect(containsFileNameExclusion('final version.md', settings)).toBe(
+        false
+      );
     });
 
-    it('should handle safewords with special characters', () => {
-      settings.safewords.safewords = [
+    it('should handle file name exclusions with special characters', () => {
+      settings.exclusions.fileNameExclusions = [
         {
           text: '[draft]',
           onlyAtStart: false,
@@ -484,14 +486,14 @@ describe('utils', () => {
         },
       ];
 
-      expect(containsSafeword('[draft] note.md', settings)).toBe(true);
+      expect(containsFileNameExclusion('[draft] note.md', settings)).toBe(true);
     });
 
-    it('should trim filenames and safewords for whole line comparison', () => {
-      settings.safewords.safewords[0].onlyWholeLine = true;
-      settings.safewords.safewords[0].text = '  draft  ';
+    it('should trim filenames and file name exclusions for whole line comparison', () => {
+      settings.exclusions.fileNameExclusions[0].onlyWholeLine = true;
+      settings.exclusions.fileNameExclusions[0].text = '  draft  ';
 
-      expect(containsSafeword('  draft  .md', settings)).toBe(true);
+      expect(containsFileNameExclusion('  draft  .md', settings)).toBe(true);
     });
   });
 

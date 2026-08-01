@@ -1,372 +1,284 @@
 /**
- * Tests for settings tab race condition handling
+ * Tests for the declarative settings tab (Obsidian 1.13+).
  *
- * Tests verify the race condition patterns documented in the codebase:
- * - Generation counter for RAF callback guards
- * - AbortController for event listener cleanup
- * - Proper order of operations in display()
- * - Proper cleanup in hide()
+ * Focus is `setControlValue`: the declarative API has no per-control onChange,
+ * so this one method owns dot-path persistence, every cross-setting cascade,
+ * and the choice between `update()` and `refreshDomState()`.
  *
- * Note: Due to JSDOM limitations with AbortSignal in addEventListener,
- * these tests verify the patterns at the unit level rather than running
- * the full display() method.
+ * That choice is load-bearing. `refreshDomState()` re-evaluates visible/disabled
+ * predicates WITHOUT re-reading control values, so any cascade that force-writes
+ * a sibling's value must use `update()` or that sibling keeps rendering a stale
+ * value while the stored setting says otherwise.
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { App } from '../mockObsidian';
 import { DEFAULT_SETTINGS } from '../../src/constants';
+import type { PluginSettings } from '../../src/types';
 
-// Mock i18n
 vi.mock('../../src/i18n', () => ({
   t: vi.fn((key: string) => key),
   getCurrentLocale: vi.fn(() => 'en'),
 }));
 
-// Mock utils
 vi.mock('../../src/utils', () => ({
-  deduplicateExclusions: vi.fn((arr: unknown[]) => arr),
+  deduplicateExclusions: vi.fn(() => false),
+  detectOS: vi.fn(() => 'macOS'),
   verboseLog: vi.fn(),
 }));
 
-// Mock all tab classes
+// Page builders are covered by their own tabs; stub them to isolate the shell.
 vi.mock('../../src/settings/tab-general', () => ({
-  GeneralTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
+  buildGeneralDefinitions: vi.fn(() => []),
 }));
 vi.mock('../../src/settings/tab-exclusions', () => ({
-  IncludeExcludeTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
-}));
-vi.mock('../../src/settings/tab-alias', () => ({
-  PropertiesTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
+  buildExclusionsPage: vi.fn(() => ({ type: 'page', name: 'Exclusions' })),
 }));
 vi.mock('../../src/settings/tab-replace-characters', () => ({
-  ForbiddenCharsTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
-}));
-vi.mock('../../src/settings/tab-strip-markup', () => ({
-  StripMarkupTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
-}));
-vi.mock('../../src/settings/tab-custom-rules', () => ({
-  CustomReplacementsTab: vi.fn().mockImplementation(() => ({
-    display: vi.fn(),
+  buildCharacterReplacementsPage: vi.fn(() => ({
+    type: 'page',
+    name: 'Character replacements',
   })),
 }));
-vi.mock('../../src/settings/tab-safewords', () => ({
-  SafewordsTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
+vi.mock('../../src/settings/tab-custom-rules', () => ({
+  buildCustomRulesPage: vi.fn(() => ({ type: 'page', name: 'Custom rules' })),
+}));
+vi.mock('../../src/settings/tab-strip-markup', () => ({
+  buildMarkupStrippingPage: vi.fn(() => ({
+    type: 'page',
+    name: 'Markup stripping',
+  })),
+}));
+vi.mock('../../src/settings/tab-alias', () => ({
+  buildAliasPage: vi.fn(() => ({ type: 'page', name: 'Alias' })),
 }));
 vi.mock('../../src/settings/tab-commands', () => ({
-  CommandsTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
+  buildCommandsPage: vi.fn(() => ({ type: 'page', name: 'Commands' })),
 }));
 vi.mock('../../src/settings/tab-other', () => ({
-  OtherTab: vi.fn().mockImplementation(() => ({ display: vi.fn() })),
+  buildOtherPage: vi.fn(() => ({ type: 'page', name: 'Other' })),
 }));
 
-describe('Settings Tab Race Condition Patterns', () => {
-  let mockApp: App;
-  let mockPlugin: any;
+import { FirstLineIsTitleSettings } from '../../src/settings/settings-main';
+
+interface TestPlugin {
+  app: App;
+  settings: PluginSettings;
+  saveSettings: ReturnType<typeof vi.fn>;
+  debugLog: ReturnType<typeof vi.fn>;
+  updatePropertyVisibility: ReturnType<typeof vi.fn>;
+  editorLifecycle: { initializeCheckingSystem: ReturnType<typeof vi.fn> };
+}
+
+function makePlugin(): TestPlugin {
+  return {
+    app: new App(),
+    settings: structuredClone(DEFAULT_SETTINGS) as PluginSettings,
+    saveSettings: vi.fn().mockResolvedValue(undefined),
+    debugLog: vi.fn(),
+    updatePropertyVisibility: vi.fn(),
+    editorLifecycle: { initializeCheckingSystem: vi.fn() },
+  };
+}
+
+describe('FirstLineIsTitleSettings', () => {
+  let plugin: TestPlugin;
+  let tab: FirstLineIsTitleSettings;
+  let update: ReturnType<typeof vi.fn>;
+  let refreshDomState: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mockApp = new App();
-    mockPlugin = {
-      app: mockApp,
-      settings: { ...DEFAULT_SETTINGS },
-      saveSettings: vi.fn().mockResolvedValue(undefined),
-    };
+    plugin = makePlugin();
+    tab = new FirstLineIsTitleSettings(plugin.app as never, plugin as never);
+    update = tab.update as unknown as ReturnType<typeof vi.fn>;
+    refreshDomState = tab.refreshDomState as unknown as ReturnType<
+      typeof vi.fn
+    >;
+    update.mockClear();
+    refreshDomState.mockClear();
   });
 
-  describe('FirstLineIsTitleSettings class initialization', () => {
-    it('should have race condition safeguards initialized', async () => {
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
-
-      // Verify initialization of race condition safeguards
-      expect((settings as any).activationGeneration).toBe(0);
-      expect((settings as any).cachedTabRows).toEqual([]);
-      expect((settings as any).abortController).toBeNull();
-      expect((settings as any).resizeTimeout).toBeNull();
-      expect((settings as any).isDisplayed).toBe(false);
-    });
-  });
-
-  describe('Generation counter pattern', () => {
-    it('should use generation counter to guard async operations', async () => {
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
-
-      // Simulate what happens during tab activation
-      const startGeneration = (settings as any).activationGeneration;
-
-      // Increment generation (simulates another display() call during async operation)
-      (settings as any).activationGeneration++;
-
-      // The guard pattern: if generation changed, abort
-      const currentGeneration = (settings as any).activationGeneration;
-      expect(currentGeneration).toBeGreaterThan(startGeneration);
-    });
-  });
-
-  describe('AbortController pattern', () => {
-    it('should create new AbortController when null', async () => {
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
-
-      // Initially null
-      expect((settings as any).abortController).toBeNull();
-
-      // Simulate what display() does: create new controller
-      (settings as any).abortController = new AbortController();
-      expect((settings as any).abortController).not.toBeNull();
-      expect((settings as any).abortController.signal.aborted).toBe(false);
+  describe('getSettingDefinitions', () => {
+    it('returns the seven sub-pages with general settings kept at top level', () => {
+      const defs = tab.getSettingDefinitions();
+      expect(defs).toHaveLength(7);
+      expect(
+        defs.every((def) => (def as { type?: string }).type === 'page')
+      ).toBe(true);
     });
 
-    it('should abort previous controller before creating new one', async () => {
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
-
-      // Create first controller
-      const firstController = new AbortController();
-      (settings as any).abortController = firstController;
-
-      // Simulate what display() does: abort old, create new
-      firstController.abort();
-      const secondController = new AbortController();
-      (settings as any).abortController = secondController;
-
-      expect(firstController.signal.aborted).toBe(true);
-      expect(secondController.signal.aborted).toBe(false);
-    });
-  });
-
-  describe('Cached tab rows pattern', () => {
-    it('should clear cached rows on new display cycle', async () => {
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
-
-      // Simulate cached rows from previous display
-      (settings as any).cachedTabRows = [
-        [document.createElement('div')],
-        [document.createElement('div')],
-      ];
-
-      expect((settings as any).cachedTabRows.length).toBe(2);
-
-      // Simulate what display() does: clear cache
-      (settings as any).cachedTabRows = [];
-
-      expect((settings as any).cachedTabRows).toEqual([]);
-    });
-  });
-
-  describe('Resize timeout pattern', () => {
-    it('should clear resize timeout on new display cycle', async () => {
-      vi.useFakeTimers();
-
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
-
-      // Simulate a pending resize timeout
-      (settings as any).resizeTimeout = setTimeout(() => {}, 100);
-      expect((settings as any).resizeTimeout).not.toBeNull();
-
-      // Simulate what display() does: clear timeout
-      if ((settings as any).resizeTimeout) {
-        clearTimeout((settings as any).resizeTimeout);
-        (settings as any).resizeTimeout = null;
-      }
-
-      expect((settings as any).resizeTimeout).toBeNull();
-
-      vi.useRealTimers();
-    });
-  });
-
-  describe('Order of operations in display()', () => {
-    it('should follow correct cleanup order: abort -> clear cache -> empty DOM', async () => {
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
-
-      // Set up initial state
-      const oldController = new AbortController();
-      (settings as any).abortController = oldController;
-      (settings as any).cachedTabRows = [[document.createElement('div')]];
-
-      const operations: string[] = [];
-
-      // Simulate the order from display():
-      // 1. Abort old listeners first
-      operations.push('abort');
-      oldController.abort();
-
-      // 2. Then clear cached tab rows
-      operations.push('clearCache');
-      (settings as any).cachedTabRows = [];
-
-      // 3. Then clean DOM (containerEl.empty())
-      operations.push('emptyDOM');
-
-      // 4. Then create new controller
-      operations.push('newController');
-      (settings as any).abortController = new AbortController();
-
-      expect(operations).toEqual([
-        'abort',
-        'clearCache',
-        'emptyDOM',
-        'newController',
+    it('orders the pages as the settings UI presents them', () => {
+      const names = tab
+        .getSettingDefinitions()
+        .map((def) => (def as { name?: string }).name);
+      expect(names).toEqual([
+        'Exclusions',
+        'Character replacements',
+        'Custom rules',
+        'Markup stripping',
+        'Alias',
+        'Commands',
+        'Other',
       ]);
-      expect(oldController.signal.aborted).toBe(true);
-      expect((settings as any).cachedTabRows).toEqual([]);
-      expect((settings as any).abortController.signal.aborted).toBe(false);
     });
   });
 
-  describe('hide() cleanup', () => {
-    it('should abort controller on hide', async () => {
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
-
-      // Set up state as if display() was called
-      (settings as any).abortController = new AbortController();
-      (settings as any).isDisplayed = true;
-
-      const controller = (settings as any).abortController;
-
-      // Call hide
-      settings.hide();
-
-      expect(controller.signal.aborted).toBe(true);
+  describe('getControlValue', () => {
+    it('reads a nested key by dot-path', () => {
+      plugin.settings.core.renameOnSave = true;
+      expect(tab.getControlValue('core.renameOnSave')).toBe(true);
     });
 
-    it('should clear resize timeout on hide', async () => {
-      vi.useFakeTimers();
+    it('returns undefined for an unknown path rather than throwing', () => {
+      expect(tab.getControlValue('core.nope.deeper')).toBeUndefined();
+    });
+  });
 
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
-
-      // Set up state as if display() was called with pending resize
-      (settings as any).abortController = new AbortController();
-      (settings as any).resizeTimeout = setTimeout(() => {}, 100);
-      (settings as any).isDisplayed = true;
-
-      expect((settings as any).resizeTimeout).not.toBeNull();
-
-      settings.hide();
-
-      expect((settings as any).resizeTimeout).toBeNull();
-
-      vi.useRealTimers();
+  describe('setControlValue', () => {
+    it('persists a nested key by dot-path and saves once', async () => {
+      await tab.setControlValue('core.renameOnSave', true);
+      expect(plugin.settings.core.renameOnSave).toBe(true);
+      expect(plugin.saveSettings).toHaveBeenCalledTimes(1);
     });
 
-    it('should set isDisplayed to false on hide', async () => {
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
-
-      // Set up state as if display() was called
-      (settings as any).abortController = new AbortController();
-      (settings as any).isDisplayed = true;
-
-      settings.hide();
-
-      expect((settings as any).isDisplayed).toBe(false);
+    it('refreshes DOM state only, when no value-mutating cascade applies', async () => {
+      await tab.setControlValue('core.renameOnSave', true);
+      expect(refreshDomState).toHaveBeenCalledTimes(1);
+      expect(update).not.toHaveBeenCalled();
     });
 
-    it('should increment activationGeneration on hide to invalidate in-flight operations', async () => {
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
+    it('still saves exactly once when a cascade mutates several settings', async () => {
+      await tab.setControlValue('markupStripping.enableStripMarkup', false);
+      expect(plugin.saveSettings).toHaveBeenCalledTimes(1);
+    });
+  });
 
-      // Set up state as if display() was called
-      (settings as any).abortController = new AbortController();
-      (settings as any).isDisplayed = true;
-      const generationBeforeHide = (settings as any).activationGeneration;
-
-      settings.hide();
-
-      // Generation should have incremented to invalidate any in-flight tab activations
-      expect((settings as any).activationGeneration).toBe(
-        generationBeforeHide + 1
+  describe('force-off cascades', () => {
+    it('clears convertReplacementCharactersInTitle when char replacements go off', async () => {
+      plugin.settings.core.convertReplacementCharactersInTitle = true;
+      await tab.setControlValue(
+        'replaceCharacters.enableForbiddenCharReplacements',
+        false
+      );
+      expect(plugin.settings.core.convertReplacementCharactersInTitle).toBe(
+        false
       );
     });
+
+    it('clears applyCustomRulesInAlias when custom rules go off', async () => {
+      plugin.settings.markupStripping.applyCustomRulesInAlias = true;
+      await tab.setControlValue('customRules.enableCustomReplacements', false);
+      expect(plugin.settings.markupStripping.applyCustomRulesInAlias).toBe(
+        false
+      );
+    });
+
+    it('clears both alias-side flags when markup stripping goes off', async () => {
+      plugin.settings.markupStripping.stripMarkupInAlias = true;
+      plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping = true;
+      await tab.setControlValue('markupStripping.enableStripMarkup', false);
+      expect(plugin.settings.markupStripping.stripMarkupInAlias).toBe(false);
+      expect(
+        plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping
+      ).toBe(false);
+    });
+
+    it('re-renders via update() so force-written siblings never show a stale value', async () => {
+      await tab.setControlValue('markupStripping.enableStripMarkup', false);
+      expect(update).toHaveBeenCalledTimes(1);
+      expect(refreshDomState).not.toHaveBeenCalled();
+    });
   });
 
-  describe('RAF callback guard pattern', () => {
-    it('should skip callback if generation changes', async () => {
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
+  describe('first-enable cascades', () => {
+    it('bulk-enables custom replacements the first time they are switched on', async () => {
+      plugin.settings.core.hasEnabledCustomReplacements = false;
+      plugin.settings.customRules.customReplacements.forEach((rule) => {
+        rule.enabled = false;
+      });
 
-      let callbackExecuted = false;
+      await tab.setControlValue('customRules.enableCustomReplacements', true);
 
-      // Simulate the RAF callback guard pattern from computeTabRows:
-      const capturedGeneration = (settings as any).activationGeneration;
-
-      // Increment generation (simulates another display() call)
-      (settings as any).activationGeneration++;
-
-      // The guard: if generation changed, skip
-      if (
-        (settings as any).activationGeneration === capturedGeneration &&
-        !(settings as any).abortController?.signal.aborted
-      ) {
-        callbackExecuted = true;
-      }
-
-      expect(callbackExecuted).toBe(false);
+      expect(
+        plugin.settings.customRules.customReplacements.every((r) => r.enabled)
+      ).toBe(true);
+      expect(plugin.settings.core.hasEnabledCustomReplacements).toBe(true);
     });
 
-    it('should skip callback if aborted', async () => {
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
+    it('does not bulk-enable again once the latch is set', async () => {
+      plugin.settings.core.hasEnabledCustomReplacements = true;
+      plugin.settings.customRules.customReplacements.forEach((rule) => {
+        rule.enabled = false;
+      });
 
-      let callbackExecuted = false;
+      await tab.setControlValue('customRules.enableCustomReplacements', true);
 
-      // Set up controller and abort it
-      (settings as any).abortController = new AbortController();
-      const capturedGeneration = (settings as any).activationGeneration;
-      (settings as any).abortController.abort();
-
-      // The guard: if aborted, skip
-      if (
-        (settings as any).activationGeneration === capturedGeneration &&
-        !(settings as any).abortController?.signal.aborted
-      ) {
-        callbackExecuted = true;
-      }
-
-      expect(callbackExecuted).toBe(false);
+      expect(
+        plugin.settings.customRules.customReplacements.some((r) => r.enabled)
+      ).toBe(false);
     });
 
-    it('should execute callback if generation and abort signal are valid', async () => {
-      const { FirstLineIsTitleSettings } =
-        await import('../../src/settings/settings-main');
-      const settings = new FirstLineIsTitleSettings(mockApp, mockPlugin);
+    it('seeds alias defaults the first time aliases are switched on', async () => {
+      plugin.settings.core.hasEnabledAliases = false;
+      plugin.settings.aliases.keepEmptyAliasProperty = false;
+      plugin.settings.markupStripping.enableStripMarkup = true;
+      plugin.settings.markupStripping.stripMarkupInAlias = false;
 
-      let callbackExecuted = false;
+      await tab.setControlValue('aliases.enableAliases', true);
 
-      // Set up valid state
-      (settings as any).abortController = new AbortController();
-      const capturedGeneration = (settings as any).activationGeneration;
+      expect(plugin.settings.aliases.keepEmptyAliasProperty).toBe(true);
+      expect(plugin.settings.markupStripping.stripMarkupInAlias).toBe(true);
+      expect(plugin.settings.core.hasEnabledAliases).toBe(true);
+    });
 
-      // The guard: both checks pass, callback should execute
-      if (
-        (settings as any).activationGeneration === capturedGeneration &&
-        !(settings as any).abortController?.signal.aborted
-      ) {
-        callbackExecuted = true;
-      }
+    it('does not seed alias dependants whose own feature is disabled', async () => {
+      plugin.settings.core.hasEnabledAliases = false;
+      plugin.settings.markupStripping.enableStripMarkup = false;
+      plugin.settings.customRules.enableCustomReplacements = false;
+      plugin.settings.markupStripping.stripMarkupInAlias = false;
+      plugin.settings.markupStripping.applyCustomRulesInAlias = false;
 
-      expect(callbackExecuted).toBe(true);
+      await tab.setControlValue('aliases.enableAliases', true);
+
+      expect(plugin.settings.markupStripping.stripMarkupInAlias).toBe(false);
+      expect(plugin.settings.markupStripping.applyCustomRulesInAlias).toBe(
+        false
+      );
+    });
+
+    it('bulk-enables file-name exclusions on first enable', async () => {
+      plugin.settings.core.hasEnabledFileNameExclusions = false;
+      plugin.settings.exclusions.fileNameExclusions.forEach((entry) => {
+        entry.enabled = false;
+      });
+
+      await tab.setControlValue('exclusions.enableFileNameExclusions', true);
+
+      expect(
+        plugin.settings.exclusions.fileNameExclusions.every((e) => e.enabled)
+      ).toBe(true);
+      expect(plugin.settings.core.hasEnabledFileNameExclusions).toBe(true);
+    });
+  });
+
+  describe('side-effect cascades', () => {
+    it('refreshes property visibility when the hiding mode changes', async () => {
+      await tab.setControlValue('aliases.hideAliasProperty', 'always');
+      expect(plugin.updatePropertyVisibility).toHaveBeenCalledTimes(1);
+    });
+
+    it('refreshes property visibility when sidebar hiding changes', async () => {
+      await tab.setControlValue('aliases.hideAliasInSidebar', true);
+      expect(plugin.updatePropertyVisibility).toHaveBeenCalledTimes(1);
+    });
+
+    it('reinitialises the checking system when the interval changes', async () => {
+      await tab.setControlValue('core.checkInterval', 750);
+      expect(
+        plugin.editorLifecycle.initializeCheckingSystem
+      ).toHaveBeenCalledTimes(1);
+      expect(plugin.settings.core.checkInterval).toBe(750);
     });
   });
 });

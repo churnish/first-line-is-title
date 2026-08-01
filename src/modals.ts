@@ -1086,55 +1086,6 @@ export class ProcessTagModal extends Modal {
   }
 }
 
-export class ClearSettingsModal extends Modal {
-  plugin: FirstLineIsTitlePlugin;
-  onConfirm: () => Promise<void>;
-
-  constructor(
-    app: App,
-    plugin: FirstLineIsTitlePlugin,
-    onConfirm: () => Promise<void>
-  ) {
-    super(app);
-    this.plugin = plugin;
-    this.onConfirm = onConfirm;
-  }
-
-  onOpen() {
-    const { contentEl } = this;
-    contentEl.empty();
-
-    this.setTitle(t('modals.caution'));
-    contentEl.createEl('p', {
-      text: t('modals.resetAllSettings'),
-      cls: 'mod-warning',
-    });
-
-    const buttonContainer = contentEl.createDiv({
-      cls: 'modal-button-container flit-modal-button-container',
-    });
-
-    const clearButton = buttonContainer.createEl('button', {
-      text: t('modals.buttons.clear'),
-    });
-    clearButton.addClass('mod-warning');
-    clearButton.onclick = async () => {
-      this.close();
-      await this.onConfirm();
-    };
-
-    const cancelButton = buttonContainer.createEl('button', {
-      text: t('modals.buttons.cancel'),
-    });
-    cancelButton.onclick = () => this.close();
-  }
-
-  onClose() {
-    const { contentEl } = this;
-    contentEl.empty();
-  }
-}
-
 export class RenameModal extends Modal {
   plugin: FirstLineIsTitlePlugin;
   files: TFile[];
