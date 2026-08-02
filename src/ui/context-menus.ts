@@ -31,7 +31,7 @@ export class ContextMenuManager {
     let menu = evt.obsidian_contextmenu;
     if (!menu) {
       menu = evt.obsidian_contextmenu = new Menu();
-      setTimeout(
+      window.setTimeout(
         () => menu!.showAtPosition({ x: evt.pageX, y: evt.pageY }),
         TIMING.NEXT_TICK_MS
       );
@@ -188,10 +188,10 @@ export class ContextMenuManager {
     const menuText = this.getTagMenuText(tagName);
 
     if (this.plugin.settings.core.commandVisibility.tagPutFirstLineInTitle) {
-      const menuItem = menuEl.createEl('div', { cls: 'menu-item' });
-      const iconEl = menuItem.createEl('div', { cls: 'menu-item-icon' });
+      const menuItem = menuEl.createDiv({ cls: 'menu-item' });
+      const iconEl = menuItem.createDiv({ cls: 'menu-item-icon' });
       setIcon(iconEl, 'file-type');
-      menuItem.createEl('div', {
+      menuItem.createDiv({
         cls: 'menu-item-title',
         text: t('commands.putFirstLineInTitle'),
       });
@@ -206,10 +206,10 @@ export class ContextMenuManager {
       shouldShowDisable &&
       this.plugin.settings.core.commandVisibility.tagExclude
     ) {
-      const menuItem = menuEl.createEl('div', { cls: 'menu-item' });
-      const iconEl = menuItem.createEl('div', { cls: 'menu-item-icon' });
+      const menuItem = menuEl.createDiv({ cls: 'menu-item' });
+      const iconEl = menuItem.createDiv({ cls: 'menu-item-icon' });
       setIcon(iconEl, 'pen-off');
-      menuItem.createEl('div', {
+      menuItem.createDiv({
         cls: 'menu-item-title',
         text: menuText.disable,
       });
@@ -224,10 +224,10 @@ export class ContextMenuManager {
       !shouldShowDisable &&
       this.plugin.settings.core.commandVisibility.tagStopExcluding
     ) {
-      const menuItem = menuEl.createEl('div', { cls: 'menu-item' });
-      const iconEl = menuItem.createEl('div', { cls: 'menu-item-icon' });
+      const menuItem = menuEl.createDiv({ cls: 'menu-item' });
+      const iconEl = menuItem.createDiv({ cls: 'menu-item-icon' });
       setIcon(iconEl, 'square-check');
-      menuItem.createEl('div', {
+      menuItem.createDiv({
         cls: 'menu-item-title',
         text: menuText.enable,
       });

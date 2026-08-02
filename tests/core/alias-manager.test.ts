@@ -96,7 +96,7 @@ function createMockPlugin(settingsOverrides: Partial<PluginSettings> = {}) {
         return content.substring(endIndex + 5);
       }),
     },
-    pendingMetadataUpdates: new Set<string>(),
+    pendingMetadataUpdates: new Set<TFile>(),
   } as any;
 }
 
@@ -434,18 +434,13 @@ describe('AliasManager', () => {
         }
       );
 
-      await aliasManager.addAliasToFile(
-        file,
-        title,
-        'filename',
-        content,
-        title
-      );
+      await aliasManager.addAliasToFile(file, title, 'filename', content);
 
       const zwsp = '\u200B';
-      // Both 'aliases' and 'aka' (custom property) should be arrays for consistency
+      // 'aliases' is Obsidian's canonical list property, so it stays an array.
+      // Custom properties use inline (scalar) format for a single value.
       expect(capturedFrontmatter.aliases).toEqual([`${zwsp}${title}${zwsp}`]);
-      expect(capturedFrontmatter.aka).toEqual([`${zwsp}${title}${zwsp}`]);
+      expect(capturedFrontmatter.aka).toBe(`${zwsp}${title}${zwsp}`);
     });
 
     it("should allow 'Untitled' alias when first line is literally 'Untitled'", async () => {
@@ -564,15 +559,9 @@ describe('AliasManager', () => {
         }
       );
 
-      await aliasManager.addAliasToFile(
-        file,
-        title,
-        'filename',
-        content,
-        title
-      );
+      await aliasManager.addAliasToFile(file, title, 'filename', content);
 
-      expect(plugin.pendingMetadataUpdates.has(file.path)).toBe(true);
+      expect(plugin.pendingMetadataUpdates.has(file)).toBe(true);
     });
 
     // Tests for firstNonEmptyLine parameter edge cases (Issue #22)
@@ -581,6 +570,9 @@ describe('AliasManager', () => {
       // Should NOT add alias because original line "# Untitled" is not literally "Untitled"
       // The "#" prefix means markup processing produced "Untitled", not the user
 
+      // Markup must be stripped for the alias so "# Untitled" reduces to "Untitled"
+      plugin.settings.markupStripping.stripMarkupInAlias = true;
+
       const removeAliasesSpy = vi.spyOn(
         aliasManager,
         'removePluginAliasesFromFile'
@@ -588,10 +580,9 @@ describe('AliasManager', () => {
 
       await aliasManager.addAliasToFile(
         file,
-        'Untitled', // titleSourceLine (after processing)
-        'filename',
-        '# Untitled\nBody', // content
-        '# Untitled' // firstNonEmptyLine (before processing - has # prefix)
+        '# Untitled', // originalFirstNonEmptyLine (before processing - has # prefix)
+        'filename', // newTitle
+        '# Untitled\nBody' // content
       );
 
       // Should remove aliases because "# Untitled" doesn't literally match "Untitled" pattern
@@ -602,6 +593,8 @@ describe('AliasManager', () => {
       // First line is template code, but after processing results in "Untitled"
       // Should NOT add alias since original wasn't literally "Untitled"
 
+      plugin.settings.markupStripping.stripMarkupInAlias = true;
+
       const removeAliasesSpy = vi.spyOn(
         aliasManager,
         'removePluginAliasesFromFile'
@@ -609,10 +602,9 @@ describe('AliasManager', () => {
 
       await aliasManager.addAliasToFile(
         file,
-        'Untitled', // titleSourceLine (result after processing empty template)
-        'filename',
-        '<%* template code %>\nBody', // content
-        '<%* template code %>' // firstNonEmptyLine (template syntax)
+        '<%* template code %>', // originalFirstNonEmptyLine (template syntax)
+        'filename', // newTitle
+        '<%* template code %>\nBody' // content
       );
 
       expect(removeAliasesSpy).toHaveBeenCalledWith(file);
@@ -761,7 +753,7 @@ describe('AliasManager', () => {
       expect(capturedFrontmatter.aka).toBeNull(); // keepEmptyAliasProperty is true
     });
 
-    it('should keep array format for non-aliases properties after removal', async () => {
+    it('should collapse non-aliases properties to a scalar after removal', async () => {
       plugin.settings.aliases.aliasPropertyKey = 'aka';
       const zwsp = '\u200B';
 
@@ -778,8 +770,8 @@ describe('AliasManager', () => {
 
       await aliasManager.removePluginAliasesFromFile(file);
 
-      // Should keep array format for consistency
-      expect(capturedFrontmatter.aka).toEqual(['User Value']);
+      // Custom properties collapse to inline (scalar) format when one value remains
+      expect(capturedFrontmatter.aka).toBe('User Value');
     });
 
     it('should filter out empty strings', async () => {
@@ -830,7 +822,7 @@ describe('AliasManager', () => {
 
       await aliasManager.removePluginAliasesFromFile(file);
 
-      expect(plugin.pendingMetadataUpdates.has(file.path)).toBe(true);
+      expect(plugin.pendingMetadataUpdates.has(file)).toBe(true);
     });
 
     it('should handle ENOENT error gracefully', async () => {

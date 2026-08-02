@@ -69,7 +69,7 @@ function importSettingsFromFile(
   plugin: FirstLineIsTitlePlugin,
   tab: PluginSettingTab
 ): void {
-  const input = document.createElement('input');
+  const input = createEl('input');
   input.setAttrs({
     type: 'file',
     accept: '.json',
@@ -193,7 +193,7 @@ function exportSettingsToFile(plugin: FirstLineIsTitlePlugin): void {
       }
     }
 
-    const exportLink = document.createElement('a');
+    const exportLink = createEl('a');
     exportLink.setAttrs({
       download: fileName,
       href: `data:application/json;charset=utf-8,${encodeURIComponent(settingsText)}`,

@@ -106,6 +106,7 @@
     "disabledRenamingForNNotes": "Переименование отключено для {{count}} заметок.",
     "enabledRenamingForNNotes": "Переименование включено для {{count}} заметок.",
     "renameEngineNotInitialized": "Движок переименования не инициализирован. Перезапустите Obsidian.",
+    "propertyManagerNotInitialized": "Менеджер свойств не инициализирован. Перезапустите Obsidian.",
     "renamedTo": "Переименовано в: {{filename}}",
     "notRenamedSelfReference": "Заметка не переименована из-за самореферентной ссылки в первой строке: {{filename}}",
     "notRenamedNoHeading": "Заметка не переименована из-за отсутствия заголовка в первой строке: {{filename}}",
@@ -389,7 +390,7 @@
           "part1": "В соответствии со значением ",
           "charCount": "Количество символов",
           "part2": " в разделе ",
-          "other": "Прочее",
+          "advanced": "Дополнительно",
           "part3": "."
         }
       },

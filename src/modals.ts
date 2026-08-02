@@ -1378,7 +1378,11 @@ export class DisableEnableModal extends Modal {
 
     // Ensure property type is set to checkbox before adding properties
     if (this.action === 'disable') {
-      await this.plugin.propertyManager?.ensurePropertyTypeIsCheckbox();
+      if (!this.plugin.propertyManager) {
+        new Notice(t('notifications.propertyManagerNotInitialized'));
+        return;
+      }
+      await this.plugin.propertyManager.ensurePropertyTypeIsCheckbox();
     }
 
     verboseLog(this.plugin, `Renaming ${filesToProcess.length} notes...`);
@@ -1419,17 +1423,20 @@ export class DisableEnableModal extends Modal {
           console.error(`Error processing ${file.path}`, error);
         }
       }
-
-      if (errors.length > 0) {
-        const errorMsg = t('notifications.renamedNotesWithErrors')
-          .replace('{{renamed}}', String(processedCount))
-          .replace('{{total}}', String(filesToProcess.length))
-          .replace('{{errors}}', String(errors.length));
-        new Notice(errorMsg, 0);
-        console.error('Process errors:', errors);
-      }
     } finally {
       pleaseWaitNotice.hide();
+    }
+
+    // Report exactly one outcome. Reporting success alongside errors contradicts
+    // itself and misreports a total failure as "…for 0 notes" (Issue #6).
+    if (errors.length > 0) {
+      const errorMsg = t('notifications.renamedNotesWithErrors')
+        .replace('{{renamed}}', String(processedCount))
+        .replace('{{total}}', String(filesToProcess.length))
+        .replace('{{errors}}', String(errors.length));
+      new Notice(errorMsg, 0);
+      console.error('Process errors:', errors);
+    } else {
       const notificationKey =
         this.action === 'disable'
           ? 'notifications.disabledRenamingForNNotes'

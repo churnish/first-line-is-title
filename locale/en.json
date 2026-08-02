@@ -100,6 +100,7 @@
     "disabledRenamingForNNotes": "Disabled renaming for {{count}} notes.",
     "enabledRenamingForNNotes": "Enabled renaming for {{count}} notes.",
     "renameEngineNotInitialized": "Rename engine not initialized. Please restart Obsidian.",
+    "propertyManagerNotInitialized": "Property manager not initialized. Please restart Obsidian.",
     "renamedTo": "Renamed to: {{filename}}",
     "notRenamedSelfReference": "Note not renamed due to self-referential link in first line: {{filename}}",
     "notRenamedNoHeading": "Note not renamed due to no heading in first line: {{filename}}",
@@ -373,7 +374,7 @@
           "part1": "In accordance with the ",
           "charCount": "Character count",
           "part2": " value in ",
-          "other": "Other",
+          "advanced": "Advanced",
           "part3": " settings."
         }
       },

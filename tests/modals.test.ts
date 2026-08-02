@@ -26,6 +26,8 @@ vi.mock('../src/i18n', () => ({
         'Renamed {{renamed}}/{{total}} notes ({{errors}} errors)',
       'notifications.renameEngineNotInitialized':
         'Rename engine not initialized',
+      'notifications.propertyManagerNotInitialized':
+        'Property manager not initialized',
       'notifications.disabledRenamingForNNotes':
         'Disabled renaming for {{count}} notes',
       'notifications.enabledRenamingForNNotes':

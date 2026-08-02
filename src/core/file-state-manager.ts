@@ -19,8 +19,8 @@ export interface FileState {
   path: string;
 
   // Lifecycle timers
-  creationDelayTimer?: NodeJS.Timeout;
-  throttleTimer?: NodeJS.Timeout; // checkInterval > 0 delayed processing
+  creationDelayTimer?: number;
+  throttleTimer?: number; // checkInterval > 0 delayed processing
 
   // Content tracking
   lastEditorContent?: string;
@@ -85,10 +85,10 @@ export class FileStateManager {
   /**
    * Set creation delay timer for a file
    */
-  setCreationDelayTimer(path: string, timer: NodeJS.Timeout): void {
+  setCreationDelayTimer(path: string, timer: number): void {
     const state = this.getOrCreateState(path);
     if (state.creationDelayTimer) {
-      clearTimeout(state.creationDelayTimer);
+      window.clearTimeout(state.creationDelayTimer);
     }
     state.creationDelayTimer = timer;
   }
@@ -99,7 +99,7 @@ export class FileStateManager {
   clearCreationDelayTimer(path: string): void {
     const state = this.fileStates.get(path);
     if (state?.creationDelayTimer) {
-      clearTimeout(state.creationDelayTimer);
+      window.clearTimeout(state.creationDelayTimer);
       delete state.creationDelayTimer;
     }
   }
@@ -114,10 +114,10 @@ export class FileStateManager {
   /**
    * Set throttle timer for a file (checkInterval > 0 delayed processing)
    */
-  setThrottleTimer(path: string, timer: NodeJS.Timeout): void {
+  setThrottleTimer(path: string, timer: number): void {
     const state = this.getOrCreateState(path);
     if (state.throttleTimer) {
-      clearTimeout(state.throttleTimer);
+      window.clearTimeout(state.throttleTimer);
     }
     state.throttleTimer = timer;
   }
@@ -128,7 +128,7 @@ export class FileStateManager {
   clearThrottleTimer(path: string): void {
     const state = this.fileStates.get(path);
     if (state?.throttleTimer) {
-      clearTimeout(state.throttleTimer);
+      window.clearTimeout(state.throttleTimer);
       delete state.throttleTimer;
     }
   }
@@ -146,7 +146,7 @@ export class FileStateManager {
   clearAllThrottleTimers(): void {
     for (const state of this.fileStates.values()) {
       if (state.throttleTimer) {
-        clearTimeout(state.throttleTimer);
+        window.clearTimeout(state.throttleTimer);
         delete state.throttleTimer;
       }
     }
@@ -587,8 +587,9 @@ export class FileStateManager {
   notifyFileDeleted(path: string): void {
     const state = this.fileStates.get(path);
     if (state) {
-      if (state.creationDelayTimer) clearTimeout(state.creationDelayTimer);
-      if (state.throttleTimer) clearTimeout(state.throttleTimer);
+      if (state.creationDelayTimer)
+        window.clearTimeout(state.creationDelayTimer);
+      if (state.throttleTimer) window.clearTimeout(state.throttleTimer);
       this.fileStates.delete(path);
     }
   }
@@ -696,8 +697,9 @@ export class FileStateManager {
    */
   dispose(): void {
     for (const state of this.fileStates.values()) {
-      if (state.creationDelayTimer) clearTimeout(state.creationDelayTimer);
-      if (state.throttleTimer) clearTimeout(state.throttleTimer);
+      if (state.creationDelayTimer)
+        window.clearTimeout(state.creationDelayTimer);
+      if (state.throttleTimer) window.clearTimeout(state.throttleTimer);
     }
     this.fileStates.clear();
   }

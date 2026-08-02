@@ -471,7 +471,7 @@ export class RenameEngine {
           }
 
           // Schedule recheck after short delay to let UI settle
-          setTimeout(() => {
+          window.setTimeout(() => {
             void (async () => {
               const recheckFile =
                 this.plugin.app.vault.getAbstractFileByPath(newPath);
@@ -1200,7 +1200,7 @@ export class RenameEngine {
       // Track rename to prevent stale CREATE events from processing this file
       this.plugin.recentlyRenamedPaths.add(oldPath);
       this.plugin.recentlyRenamedPaths.add(newPath);
-      setTimeout(() => {
+      window.setTimeout(() => {
         this.plugin.recentlyRenamedPaths.delete(oldPath);
         this.plugin.recentlyRenamedPaths.delete(newPath);
       }, 1000);

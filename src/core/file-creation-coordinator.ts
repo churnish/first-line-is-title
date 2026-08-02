@@ -523,7 +523,7 @@ export class FileCreationCoordinator {
         return;
       }
 
-      const timeout = setTimeout(() => {
+      const timeout = window.setTimeout(() => {
         if (!eventFired) {
           verboseLog(
             this.plugin,
@@ -546,7 +546,7 @@ export class FileCreationCoordinator {
             data.file.path === file.path
           ) {
             eventFired = true;
-            clearTimeout(timeout);
+            window.clearTimeout(timeout);
             this.plugin.app.workspace.offref(eventRef);
             verboseLog(this.plugin, `Templater event fired for: ${file.path}`);
             resolve(true);
@@ -555,7 +555,7 @@ export class FileCreationCoordinator {
       );
 
       // Clean up event listener if timeout occurs
-      setTimeout(() => {
+      window.setTimeout(() => {
         if (!eventFired) {
           this.plugin.app.workspace.offref(eventRef);
         }

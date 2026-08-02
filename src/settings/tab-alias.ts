@@ -43,7 +43,7 @@ function buildAliasPropertyKeyDescription(): DocumentFragment {
   return createFragment((frag) => {
     frag.appendText(t('settings.alias.aliasPropertyName.desc'));
 
-    const notes = frag.createEl('div', {
+    const notes = frag.createDiv({
       cls: 'flit-margin-top-6 flit-margin-bottom-0',
     });
     const list = notes.createEl('ul', {
@@ -106,7 +106,7 @@ function buildTruncateAliasDescription(): DocumentFragment {
       t('settings.alias.truncateAlias.desc.charCount')
     );
     frag.appendText(t('settings.alias.truncateAlias.desc.part2'));
-    appendEmphasisedTerm(frag, t('settings.alias.truncateAlias.desc.other'));
+    appendEmphasisedTerm(frag, t('settings.alias.truncateAlias.desc.advanced'));
     frag.appendText(t('settings.alias.truncateAlias.desc.part3'));
   });
 }
@@ -115,6 +115,10 @@ export function buildAliasPage(
   plugin: FirstLineIsTitlePlugin,
   tab: PluginSettingTab
 ): SettingDefinitionPage {
+  // Everything below the master toggle is meaningless while aliases are off,
+  // so it is hidden rather than shown greyed out.
+  const aliasesEnabled = () => plugin.settings.aliases.enableAliases;
+
   const items: SettingDefinitionItem[] = [
     {
       name: t('settings.alias.addAlias.name'),
@@ -127,6 +131,7 @@ export function buildAliasPage(
     {
       // Empty input silently falls back to `aliases`, which `validate` cannot
       // express — it rejects rather than corrects. Hence `render`, not `control`.
+      visible: aliasesEnabled,
       name: t('settings.alias.aliasPropertyName.name'),
       desc: buildAliasPropertyKeyDescription(),
       render: (setting) => {
@@ -151,6 +156,7 @@ export function buildAliasPage(
       },
     },
     {
+      visible: aliasesEnabled,
       name: t('settings.alias.onlyAddIfDiffers.name'),
       desc: t('settings.alias.onlyAddIfDiffers.desc'),
       control: {
@@ -159,6 +165,7 @@ export function buildAliasPage(
       },
     },
     {
+      visible: aliasesEnabled,
       name: t('settings.alias.truncateAlias.name'),
       desc: buildTruncateAliasDescription(),
       control: {
@@ -167,6 +174,7 @@ export function buildAliasPage(
       },
     },
     {
+      visible: aliasesEnabled,
       name: t('settings.alias.applyCustomRules.name'),
       desc: buildLabelReferenceDescription(
         'settings.alias.applyCustomRules.desc',
@@ -179,6 +187,7 @@ export function buildAliasPage(
       },
     },
     {
+      visible: aliasesEnabled,
       name: t('settings.alias.stripMarkup.name'),
       desc: buildLabelReferenceDescription(
         'settings.alias.stripMarkup.desc',
@@ -191,6 +200,7 @@ export function buildAliasPage(
       },
     },
     {
+      visible: aliasesEnabled,
       name: t('settings.alias.keepEmptyProperty.name'),
       desc: t('settings.alias.keepEmptyProperty.desc'),
       control: {
@@ -199,6 +209,7 @@ export function buildAliasPage(
       },
     },
     {
+      visible: aliasesEnabled,
       name: t('settings.alias.placeAliasLast.name'),
       desc: t('settings.alias.placeAliasLast.desc'),
       control: {
@@ -207,6 +218,7 @@ export function buildAliasPage(
       },
     },
     {
+      visible: aliasesEnabled,
       name: t('settings.alias.hideProperty.name'),
       desc: t('settings.alias.hideProperty.desc'),
       control: {
@@ -223,6 +235,7 @@ export function buildAliasPage(
       name: t('settings.alias.hideInSidebar.name'),
       desc: t('settings.alias.hideInSidebar.desc'),
       visible: () =>
+        aliasesEnabled() &&
         ['when_empty', 'always'].includes(
           plugin.settings.aliases.hideAliasProperty
         ),
@@ -235,7 +248,7 @@ export function buildAliasPage(
       // Desktop-only: the caveats it lists have no mobile equivalent.
       type: 'group',
       heading: t('settings.alias.limitations.title'),
-      visible: () => !Platform.isMobile,
+      visible: () => aliasesEnabled() && !Platform.isMobile,
       items: [
         {
           name: '',

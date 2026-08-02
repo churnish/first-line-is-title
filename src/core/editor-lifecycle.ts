@@ -38,7 +38,7 @@ export class EditorLifecycleManager {
   >();
 
   // Track files in creation delay period with their timer references
-  private creationDelayTimers = new Map<string, NodeJS.Timeout>();
+  private creationDelayTimers = new Map<string, number>();
 
   // Track files that were just processed on tab close to prevent duplicate processing
   // Performance optimization: prevents redundant checks from multiple workspace events
@@ -73,7 +73,7 @@ export class EditorLifecycleManager {
   /**
    * Set creation delay timer for a file
    */
-  setCreationDelayTimer(filePath: string, timer: NodeJS.Timeout): void {
+  setCreationDelayTimer(filePath: string, timer: number): void {
     this.creationDelayTimers.set(filePath, timer);
     verboseLog(this.plugin, `Set creation delay timer for: ${filePath}`);
   }
@@ -84,7 +84,7 @@ export class EditorLifecycleManager {
   clearCreationDelayTimer(filePath: string): void {
     const timer = this.creationDelayTimers.get(filePath);
     if (timer) {
-      clearTimeout(timer);
+      window.clearTimeout(timer);
       this.creationDelayTimers.delete(filePath);
       verboseLog(this.plugin, `Cleared creation delay timer for: ${filePath}`);
     }
@@ -102,7 +102,7 @@ export class EditorLifecycleManager {
    */
   clearAllCreationDelayTimers(): void {
     for (const timer of this.creationDelayTimers.values()) {
-      clearTimeout(timer);
+      window.clearTimeout(timer);
     }
     this.creationDelayTimers.clear();
     verboseLog(this.plugin, 'Cleared all creation delay timers');
@@ -256,7 +256,7 @@ export class EditorLifecycleManager {
 
           // Mark as processed to prevent duplicate processing from multiple events
           this.recentlyProcessedCloses.add(filePath);
-          setTimeout(() => {
+          window.setTimeout(() => {
             this.recentlyProcessedCloses.delete(filePath);
           }, 250); // Clear after 250ms to handle slow workspace events
 
@@ -436,7 +436,7 @@ export class EditorLifecycleManager {
       this.plugin,
       `Starting throttle timer (${this.settings.core.checkInterval}ms) for: ${filePath}`
     );
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       verboseLog(
         this.plugin,
         `Throttle timer expired, processing: ${file.path}`

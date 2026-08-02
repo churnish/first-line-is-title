@@ -102,7 +102,7 @@ export class WorkspaceIntegration {
               const activeFile = plugin.app.workspace.getActiveFile();
               if (activeFile && activeFile.extension === 'md') {
                 // Run rename (unless excluded) with no delay and show notices like manual command
-                setTimeout(() => {
+                window.setTimeout(() => {
                   void plugin.commandRegistrar.executeRenameUnlessExcluded();
                 }, 100); // Small delay to ensure save is complete
               }
@@ -244,7 +244,7 @@ export class WorkspaceIntegration {
                   `CREATE: Moving cursor for: ${file.path} (placeCursorAtEnd: ${actions.placeCursorAtEnd})`
                 );
 
-                setTimeout(() => {
+                window.setTimeout(() => {
                   // Re-check if file has a view after delay
                   const leaves = app.workspace.getLeavesOfType('markdown');
                   let fileHasView = false;
@@ -340,7 +340,7 @@ export class WorkspaceIntegration {
                   plugin,
                   `CREATE: Scheduling rename in ${settings.newNoteDelay}ms: ${file.name}`
                 );
-                const timer = setTimeout(() => {
+                const timer = window.setTimeout(() => {
                   void processRename();
                 }, settings.newNoteDelay);
                 plugin.editorLifecycle.setCreationDelayTimer(file.path, timer);

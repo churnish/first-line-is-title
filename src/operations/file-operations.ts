@@ -297,7 +297,7 @@ export class FileOperations {
                   const lineLength = lineContent.length;
 
                   // Use setTimeout to ensure cursor positioning happens after any pending editor updates
-                  setTimeout(() => {
+                  window.setTimeout(() => {
                     if (view.editor) {
                       view.editor.focus();
                       verboseLog(
@@ -350,7 +350,7 @@ export class FileOperations {
               view.editor.replaceRange(finalTitle + '\n', insertPos);
 
               // Let editor process the change before verification
-              await new Promise((resolve) => setTimeout(resolve, 10));
+              await new Promise((resolve) => window.setTimeout(resolve, 10));
 
               // Now verify
               const content = view.editor.getValue();
@@ -377,7 +377,10 @@ export class FileOperations {
                   `[TITLE-INSERT] Verification failed, retry in ${TIMING.VIEW_READINESS_RETRY_DELAY_MS}ms (attempt ${attempt + 1})`
                 );
                 await new Promise((resolve) =>
-                  setTimeout(resolve, TIMING.VIEW_READINESS_RETRY_DELAY_MS)
+                  window.setTimeout(
+                    resolve,
+                    TIMING.VIEW_READINESS_RETRY_DELAY_MS
+                  )
                 );
               } else {
                 verboseLog(
@@ -740,7 +743,7 @@ export class FileOperations {
       this.settings.core.moveCursorToFirstLine &&
       this.settings.core.placeCursorAtLineEnd
     ) {
-      setTimeout(() => {
+      window.setTimeout(() => {
         if (view.editor) {
           view.editor.focus();
           verboseLog(

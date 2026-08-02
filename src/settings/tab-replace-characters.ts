@@ -62,7 +62,7 @@ async function persistSettings(plugin: FirstLineIsTitlePlugin): Promise<void> {
 }
 
 function renderTableHeader(wrapper: HTMLElement): void {
-  const headerRow = wrapper.createEl('div', {
+  const headerRow = wrapper.createDiv({
     cls: 'flit-char-replacement-header',
   });
 
@@ -100,7 +100,7 @@ function renderCharacterRows(
 ): void {
   config.chars.forEach((key) => {
     const charConfig = plugin.settings.replaceCharacters.charReplacements[key];
-    const rowEl = config.wrapper.createEl('div', {
+    const rowEl = config.wrapper.createDiv({
       cls: 'flit-char-replacement-setting',
     });
 
@@ -109,7 +109,7 @@ function renderCharacterRows(
     };
 
     const toggleContainer = rowEl.createDiv({ cls: 'flit-enable-column' });
-    const toggleSetting = new Setting(document.createElement('div'));
+    const toggleSetting = new Setting(createDiv());
     toggleSetting.addToggle((toggle) => {
       toggle
         .setValue(config.isEnabled() ? charConfig.enabled : false)
@@ -123,16 +123,16 @@ function renderCharacterRows(
       toggleContainer.appendChild(toggle.toggleEl);
     });
 
-    const nameContainer = rowEl.createEl('div', {
+    const nameContainer = rowEl.createDiv({
       cls: 'flit-char-name-column',
     });
-    nameContainer.createEl('div', {
+    nameContainer.createDiv({
       text: t(`settings.replaceCharacters.characters.${CHAR_LABEL_KEYS[key]}`),
       cls: 'setting-item-name',
     });
     const noteKey = CHAR_NOTE_KEYS[key];
     if (noteKey) {
-      const descEl = nameContainer.createEl('div', {
+      const descEl = nameContainer.createDiv({
         cls: 'setting-item-description',
       });
       descEl.textContent = t(
@@ -144,7 +144,7 @@ function renderCharacterRows(
       cls: 'flit-char-text-input-container',
     });
 
-    const restoreButton = inputContainer.createEl('div', {
+    const restoreButton = inputContainer.createDiv({
       cls: 'clickable-icon extra-setting-button',
       attr: {
         'aria-label': t('settings.replaceCharacters.restoreDefault'),
@@ -183,7 +183,7 @@ function renderCharacterRows(
     const trimLeftContainer = rowEl.createDiv({
       cls: 'flit-toggle-column center',
     });
-    const trimLeftSetting = new Setting(document.createElement('div'));
+    const trimLeftSetting = new Setting(createDiv());
     trimLeftSetting.addToggle((toggle) => {
       toggle
         .setValue(config.isEnabled() ? charConfig.trimLeft : false)
@@ -199,7 +199,7 @@ function renderCharacterRows(
     const trimRightContainer = rowEl.createDiv({
       cls: 'flit-toggle-column center',
     });
-    const trimRightSetting = new Setting(document.createElement('div'));
+    const trimRightSetting = new Setting(createDiv());
     trimRightSetting.addToggle((toggle) => {
       toggle
         .setValue(config.isEnabled() ? charConfig.trimRight : false)

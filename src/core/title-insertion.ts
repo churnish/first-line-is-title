@@ -119,7 +119,9 @@ export class TitleInsertion {
               this.plugin,
               `File still empty, retrying in ${retryDelay}ms...`
             );
-            await new Promise((resolve) => setTimeout(resolve, retryDelay));
+            await new Promise((resolve) =>
+              window.setTimeout(resolve, retryDelay)
+            );
           }
         } catch (error) {
           console.error(

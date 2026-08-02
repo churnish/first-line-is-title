@@ -239,7 +239,7 @@ function buildPropertyRow(
       keyInput.value = property.key;
       keyInput.tabIndex = 0;
 
-      inputContainer.createEl('span', {
+      inputContainer.createSpan({
         text: t('settings.exclusions.properties.separator'),
         cls: 'flit-colon-separator',
       });
@@ -262,7 +262,7 @@ function buildPropertyRow(
           if (e.key === 'Tab' && !e.shiftKey) {
             e.preventDefault();
             e.stopPropagation();
-            setTimeout(() => {
+            window.setTimeout(() => {
               valueInput.focus();
             }, TIMING.NEXT_TICK_MS);
           }
@@ -276,7 +276,7 @@ function buildPropertyRow(
           if (e.key === 'Tab' && e.shiftKey) {
             e.preventDefault();
             e.stopPropagation();
-            setTimeout(() => {
+            window.setTimeout(() => {
               keyInput.focus();
             }, TIMING.NEXT_TICK_MS);
           }

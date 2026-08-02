@@ -29,7 +29,7 @@ export class TimestampRateLimiter {
 
     // Update timestamp and schedule cleanup
     this.timestamps.set(key, now);
-    setTimeout(() => {
+    window.setTimeout(() => {
       this.timestamps.delete(key);
     }, ttlMs);
 
@@ -53,7 +53,7 @@ export class TimestampRateLimiter {
   mark(key: string, ttlMs: number): void {
     const now = Date.now();
     this.timestamps.set(key, now);
-    setTimeout(() => {
+    window.setTimeout(() => {
       this.timestamps.delete(key);
     }, ttlMs);
   }
