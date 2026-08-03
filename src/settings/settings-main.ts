@@ -21,7 +21,7 @@ import { buildCustomRulesPage } from './tab-custom-rules';
 import { buildMarkupStrippingPage } from './tab-strip-markup';
 import { buildAliasPage } from './tab-alias';
 import { buildCommandsPage } from './tab-commands';
-import { buildAdvancedPage } from './tab-advanced';
+import { buildOtherPage } from './tab-other';
 
 /**
  * Side effects that must run when a `control` writes a given key.
@@ -193,14 +193,20 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
       // convention that a tab's primary section is unlabelled.
       ...buildGeneralDefinitions(this.plugin, this),
       buildExclusionsPage(this.plugin, this),
-      buildCharacterReplacementsPage(this.plugin, this),
-      buildCustomRulesPage(this.plugin, this),
-      buildMarkupStrippingPage(this.plugin, this),
-      buildAliasPage(this.plugin, this),
-      buildCommandsPage(this.plugin, this),
-      buildAdvancedPage(this.plugin, this),
-      // Page-level actions sit below every section.
+      // Page-level actions close out the everyday settings, above Advanced.
       ...buildFooterDefinitions(this.plugin),
+      {
+        type: 'group',
+        heading: t('settings.tabs.advancedGroup'),
+        items: [
+          buildCharacterReplacementsPage(this.plugin, this),
+          buildCustomRulesPage(this.plugin, this),
+          buildMarkupStrippingPage(this.plugin, this),
+          buildAliasPage(this.plugin, this),
+          buildCommandsPage(this.plugin, this),
+          buildOtherPage(this.plugin, this),
+        ],
+      },
     ];
   }
 

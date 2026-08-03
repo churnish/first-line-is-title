@@ -35,17 +35,17 @@ function descriptionWithDefault(
  */
 function buildCardLinkDescription(): DocumentFragment {
   return createFragment((frag) => {
-    frag.appendText(t('settings.advanced.grabCardLink.desc.part1'));
+    frag.appendText(t('settings.other.grabCardLink.desc.part1'));
     frag.createEl('a', {
       href: 'obsidian://show-plugin?id=auto-card-link',
       text: PLUGIN_AUTO_CARD_LINK,
     });
-    frag.appendText(t('settings.advanced.grabCardLink.desc.part2'));
+    frag.appendText(t('settings.other.grabCardLink.desc.part2'));
     frag.createEl('a', {
       href: 'obsidian://show-plugin?id=obsidian-link-embed',
       text: PLUGIN_LINK_EMBED,
     });
-    frag.appendText(t('settings.advanced.grabCardLink.desc.part3'));
+    frag.appendText(t('settings.other.grabCardLink.desc.part3'));
   });
 }
 
@@ -245,33 +245,33 @@ async function resetAllSettings(
   tab.update();
 }
 
-export function buildAdvancedPage(
+export function buildOtherPage(
   plugin: FirstLineIsTitlePlugin,
   tab: PluginSettingTab
 ): SettingDefinitionPage {
   return {
     type: 'page',
-    name: t('settings.tabs.advanced'),
-    desc: t('settings.advanced.desc'),
+    name: t('settings.tabs.other'),
+    desc: t('settings.other.desc'),
     items: [
       {
-        name: t('settings.advanced.titleCase.name'),
-        desc: t('settings.advanced.titleCase.desc'),
+        name: t('settings.other.titleCase.name'),
+        desc: t('settings.other.titleCase.desc'),
         control: {
           type: 'dropdown',
           key: 'core.titleCase',
           options: {
-            preserve: t('settings.advanced.titleCase.preserve'),
-            uppercase: t('settings.advanced.titleCase.uppercase'),
-            lowercase: t('settings.advanced.titleCase.lowercase'),
+            preserve: t('settings.other.titleCase.preserve'),
+            uppercase: t('settings.other.titleCase.uppercase'),
+            lowercase: t('settings.other.titleCase.lowercase'),
           },
         },
       },
       {
-        name: t('settings.advanced.charCount.name'),
+        name: t('settings.other.charCount.name'),
         desc: descriptionWithDefault(
-          'settings.advanced.charCount.desc',
-          'settings.advanced.charCount.default'
+          'settings.other.charCount.desc',
+          'settings.other.charCount.default'
         ),
         control: {
           type: 'slider',
@@ -282,30 +282,30 @@ export function buildAdvancedPage(
         },
       },
       {
-        name: t('settings.advanced.notificationMode.name'),
-        desc: t('settings.advanced.notificationMode.desc'),
+        name: t('settings.other.notificationMode.name'),
+        desc: t('settings.other.notificationMode.desc'),
         control: {
           type: 'dropdown',
           key: 'core.manualNotificationMode',
           options: {
-            Always: t('settings.advanced.notificationMode.always'),
+            Always: t('settings.other.notificationMode.always'),
             'On title change': t(
-              'settings.advanced.notificationMode.onTitleChange'
+              'settings.other.notificationMode.onTitleChange'
             ),
-            Never: t('settings.advanced.notificationMode.never'),
+            Never: t('settings.other.notificationMode.never'),
           },
         },
       },
       {
-        name: t('settings.advanced.preserveModificationDate.name'),
-        desc: t('settings.advanced.preserveModificationDate.desc'),
+        name: t('settings.other.preserveModificationDate.name'),
+        desc: t('settings.other.preserveModificationDate.desc'),
         control: {
           type: 'toggle',
           key: 'core.preserveModificationDate',
         },
       },
       {
-        name: t('settings.advanced.grabCardLink.name'),
+        name: t('settings.other.grabCardLink.name'),
         desc: buildCardLinkDescription(),
         control: {
           type: 'toggle',
@@ -313,10 +313,10 @@ export function buildAdvancedPage(
         },
       },
       {
-        name: t('settings.advanced.newNoteDelay.name'),
+        name: t('settings.other.newNoteDelay.name'),
         desc: descriptionWithDefault(
-          'settings.advanced.newNoteDelay.desc',
-          'settings.advanced.newNoteDelay.default'
+          'settings.other.newNoteDelay.desc',
+          'settings.other.newNoteDelay.default'
         ),
         control: {
           type: 'slider',
@@ -327,26 +327,26 @@ export function buildAdvancedPage(
         },
       },
       {
-        name: t('settings.advanced.contentReadMethod.name'),
+        name: t('settings.other.contentReadMethod.name'),
         desc: descriptionWithDefault(
-          'settings.advanced.contentReadMethod.desc',
-          'settings.advanced.contentReadMethod.default'
+          'settings.other.contentReadMethod.desc',
+          'settings.other.contentReadMethod.default'
         ),
         control: {
           type: 'dropdown',
           key: 'core.fileReadMethod',
           options: {
-            Editor: t('settings.advanced.contentReadMethod.editor'),
-            Cache: t('settings.advanced.contentReadMethod.cache'),
-            File: t('settings.advanced.contentReadMethod.file'),
+            Editor: t('settings.other.contentReadMethod.editor'),
+            Cache: t('settings.other.contentReadMethod.cache'),
+            File: t('settings.other.contentReadMethod.file'),
           },
         },
       },
       {
-        name: t('settings.advanced.checkInterval.name'),
+        name: t('settings.other.checkInterval.name'),
         desc: descriptionWithDefault(
-          'settings.advanced.checkInterval.desc',
-          'settings.advanced.checkInterval.default'
+          'settings.other.checkInterval.desc',
+          'settings.other.checkInterval.default'
         ),
         visible: () =>
           plugin.settings.core.renameNotes === 'automatically' &&
@@ -360,16 +360,16 @@ export function buildAdvancedPage(
         },
       },
       {
-        name: t('settings.advanced.debug.name'),
-        desc: t('settings.advanced.debug.desc'),
+        name: t('settings.other.debug.name'),
+        desc: t('settings.other.debug.desc'),
         control: {
           type: 'toggle',
           key: 'core.verboseLogging',
         },
       },
       {
-        name: t('settings.advanced.debugOutputContent.name'),
-        desc: t('settings.advanced.debugOutputContent.desc'),
+        name: t('settings.other.debugOutputContent.name'),
+        desc: t('settings.other.debugOutputContent.desc'),
         visible: () => plugin.settings.core.verboseLogging,
         control: {
           type: 'toggle',
@@ -378,21 +378,21 @@ export function buildAdvancedPage(
       },
       {
         type: 'group',
-        heading: t('settings.advanced.configuration.title'),
+        heading: t('settings.other.configuration.title'),
         items: [
           {
-            name: t('settings.advanced.manageSettings.name'),
-            desc: t('settings.advanced.manageSettings.desc'),
+            name: t('settings.other.manageSettings.name'),
+            desc: t('settings.other.manageSettings.desc'),
             render: (setting) => {
               setting
                 .addButton((button) =>
                   button
-                    .setButtonText(t('settings.advanced.manageSettings.import'))
+                    .setButtonText(t('settings.other.manageSettings.import'))
                     .onClick(() => importSettingsFromFile(plugin, tab))
                 )
                 .addButton((button) =>
                   button
-                    .setButtonText(t('settings.advanced.manageSettings.export'))
+                    .setButtonText(t('settings.other.manageSettings.export'))
                     .onClick(() => exportSettingsToFile(plugin))
                 );
             },
@@ -400,12 +400,12 @@ export function buildAdvancedPage(
           {
             // `render` rather than `action` so the row carries a labelled
             // button, matching "Rename all notes" and "Send feedback".
-            name: t('settings.advanced.clearSettings.name'),
-            desc: t('settings.advanced.clearSettings.desc'),
+            name: t('settings.other.clearSettings.name'),
+            desc: t('settings.other.clearSettings.desc'),
             render: (setting) => {
               setting.addButton((button) =>
                 button
-                  .setButtonText(t('settings.advanced.clearSettings.button'))
+                  .setButtonText(t('settings.other.clearSettings.button'))
                   // Red tint without the filled-CTA treatment, since this is a
                   // secondary destructive action rather than the page's primary
                   // one.

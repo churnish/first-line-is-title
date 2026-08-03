@@ -55,16 +55,16 @@
       "stopExcludingActiveNote": "Stop excluding active note from renaming.",
       "createLinkWithForbiddenChars": {
         "part1": "Create internal link with forbidden characters handled as set in ",
-        "replaceCharacters": "Replace characters",
+        "replaceCharacters": "Character replacements",
         "part2": "."
       },
       "createLinkWithValidPath": {
         "part1": "Create internal link with forbidden characters handled as set in ",
-        "replaceCharacters": "Replace characters",
+        "replaceCharacters": "Character replacements",
         "part2": ", and with original text in caption."
       },
       "createLinkWithCustomTarget": "Create internal link with selected text in caption. Set link path manually.",
-      "insertFilename": "Insert current file name at cursor position. Convert forbidden character replacements back to their original forms, as set in *Replace characters*.",
+      "insertFilename": "Insert current file name at cursor position. Convert forbidden character replacements back to their original forms, as set in *Character replacements*.",
       "renameNoteEvenExcluded": "Rename note, even if in excluded folder or with excluded tag.",
       "excludeNote": "Exclude note from renaming.",
       "stopExcludingNote": "Stop excluding note from renaming.",
@@ -180,7 +180,8 @@
       "stripMarkup": "Markup stripping",
       "alias": "Alias",
       "commands": "Commands",
-      "advanced": "Advanced"
+      "other": "Other",
+      "advancedGroup": "Advanced"
     },
     "general": {
       "renameNotes": {
@@ -221,7 +222,7 @@
         "name": "Convert replacement characters",
         "desc": {
           "part1": "Convert forbidden character replacements back to their original forms, as set in ",
-          "replaceCharacters": "Replace characters",
+          "replaceCharacters": "Character replacements",
           "part2": "."
         }
       },
@@ -374,7 +375,7 @@
           "part1": "In accordance with the ",
           "charCount": "Character count",
           "part2": " value in ",
-          "advanced": "Advanced",
+          "other": "Other",
           "part3": " settings."
         }
       },
@@ -390,7 +391,7 @@
         "name": "Strip markup",
         "desc": {
           "part1": "Omit markup syntax in alias, as set in ",
-          "stripMarkup": "Strip markup",
+          "stripMarkup": "Markup stripping",
           "part2": "."
         }
       },
@@ -499,13 +500,13 @@
         "applyAfterForbidden": "Apply after stripping or replacing forbidden characters",
         "asSetInReplace": {
           "part1": "As set in ",
-          "replaceCharacters": "Replace characters",
+          "replaceCharacters": "Character replacements",
           "part2": "."
         },
         "applyAfterMarkup": "Apply after markup stripping",
         "asSetInStrip": {
           "part1": "As set in ",
-          "stripMarkup": "Strip markup",
+          "stripMarkup": "Markup stripping",
           "part2": "."
         }
       },
@@ -763,7 +764,7 @@
         "desc": "Enable commands in the context menu for search results."
       }
     },
-    "advanced": {
+    "other": {
       "desc": "Set title formatting, notifications and plugin data.",
       "charCount": {
         "name": "Character count",

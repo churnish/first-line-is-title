@@ -106,7 +106,7 @@ function buildTruncateAliasDescription(): DocumentFragment {
       t('settings.alias.truncateAlias.desc.charCount')
     );
     frag.appendText(t('settings.alias.truncateAlias.desc.part2'));
-    appendEmphasisedTerm(frag, t('settings.alias.truncateAlias.desc.advanced'));
+    appendEmphasisedTerm(frag, t('settings.alias.truncateAlias.desc.other'));
     frag.appendText(t('settings.alias.truncateAlias.desc.part3'));
   });
 }

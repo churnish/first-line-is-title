@@ -28,31 +28,32 @@ import {
 import { PluginSettings } from '../../src/types';
 import { DEFAULT_SETTINGS } from '../../src/constants';
 
+// Settings overrides are nested, so a shallow Partial would demand every sibling
+// key of any branch being overridden.
+type DeepPartial<T> = T extends (infer _U)[]
+  ? T
+  : T extends Record<string, any>
+    ? { [K in keyof T]?: DeepPartial<T[K]> }
+    : T;
+
 // Deep merge for nested settings
 function deepMerge<T extends Record<string, any>>(
   target: T,
-  source: Partial<T>
+  source: DeepPartial<T>
 ): T {
-  const result = { ...target };
-  for (const key in source) {
-    if (
-      source[key] &&
-      typeof source[key] === 'object' &&
-      !Array.isArray(source[key])
-    ) {
-      result[key] = deepMerge(
-        result[key] as Record<string, any>,
-        source[key] as Record<string, any>
-      ) as T[Extract<keyof T, string>];
+  const result: Record<string, any> = { ...target };
+  for (const [key, value] of Object.entries(source)) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      result[key] = deepMerge(result[key] as Record<string, any>, value);
     } else {
-      result[key] = source[key] as T[Extract<keyof T, string>];
+      result[key] = value;
     }
   }
-  return result;
+  return result as T;
 }
 
 // Create mock plugin for AliasManager
-function createMockPlugin(settingsOverrides: Partial<PluginSettings> = {}) {
+function createMockPlugin(settingsOverrides: DeepPartial<PluginSettings> = {}) {
   const app = createMockApp();
   const settings = deepMerge(DEFAULT_SETTINGS, {
     aliases: {
@@ -196,8 +197,7 @@ describe('AliasManager', () => {
         file,
         'First Line',
         'filename',
-        'content',
-        'First Line'
+        'content'
       );
 
       expect(plugin.app.fileManager.processFrontMatter).not.toHaveBeenCalled();
@@ -216,13 +216,7 @@ describe('AliasManager', () => {
         }
       );
 
-      await aliasManager.addAliasToFile(
-        file,
-        title,
-        'filename',
-        content,
-        title
-      );
+      await aliasManager.addAliasToFile(file, title, 'filename', content);
 
       const zwsp = '\u200B';
       expect(capturedFrontmatter.aliases).toEqual([`${zwsp}${title}${zwsp}`]);
@@ -244,13 +238,7 @@ describe('AliasManager', () => {
         }
       );
 
-      await aliasManager.addAliasToFile(
-        file,
-        longTitle,
-        'filename',
-        content,
-        longTitle
-      );
+      await aliasManager.addAliasToFile(file, longTitle, 'filename', content);
 
       const zwsp = '\u200B';
       const expectedTruncated = longTitle.slice(0, 9).trimEnd() + '…';
@@ -268,13 +256,7 @@ describe('AliasManager', () => {
         'removePluginAliasesFromFile'
       );
 
-      await aliasManager.addAliasToFile(
-        file,
-        'Title',
-        'filename',
-        'content',
-        'Title'
-      );
+      await aliasManager.addAliasToFile(file, 'Title', 'filename', 'content');
 
       expect(removeAliasesSpy).toHaveBeenCalledWith(file);
     });
@@ -285,13 +267,7 @@ describe('AliasManager', () => {
         'removePluginAliasesFromFile'
       );
 
-      await aliasManager.addAliasToFile(
-        file,
-        '#',
-        'filename',
-        '# \nContent',
-        '# '
-      );
+      await aliasManager.addAliasToFile(file, '#', 'filename', '# \nContent');
 
       expect(removeAliasesSpy).toHaveBeenCalledWith(file);
     });
@@ -302,13 +278,7 @@ describe('AliasManager', () => {
         'removePluginAliasesFromFile'
       );
 
-      await aliasManager.addAliasToFile(
-        file,
-        '   ',
-        'filename',
-        'content',
-        '   '
-      );
+      await aliasManager.addAliasToFile(file, '   ', 'filename', 'content');
 
       expect(removeAliasesSpy).toHaveBeenCalledWith(file);
     });
@@ -338,13 +308,7 @@ describe('AliasManager', () => {
         }
       );
 
-      await aliasManager.addAliasToFile(
-        file,
-        title,
-        'filename',
-        content,
-        title
-      );
+      await aliasManager.addAliasToFile(file, title, 'filename', content);
 
       const zwsp = '\u200B';
       expect(capturedFrontmatter.aliases[0]).toContain('DONE: Fix this');
@@ -375,13 +339,7 @@ describe('AliasManager', () => {
         }
       );
 
-      await aliasManager.addAliasToFile(
-        file,
-        title,
-        'filename',
-        content,
-        title
-      );
+      await aliasManager.addAliasToFile(file, title, 'filename', content);
 
       expect(capturedFrontmatter.aliases[0]).toContain('REPLACED Task name');
     });
@@ -404,13 +362,7 @@ describe('AliasManager', () => {
         }
       );
 
-      await aliasManager.addAliasToFile(
-        file,
-        title,
-        'filename',
-        content,
-        title
-      );
+      await aliasManager.addAliasToFile(file, title, 'filename', content);
 
       expect(capturedFrontmatter.aliases).toHaveLength(2);
       expect(capturedFrontmatter.aliases).toContain('User Added Alias');
@@ -456,13 +408,7 @@ describe('AliasManager', () => {
         }
       );
 
-      await aliasManager.addAliasToFile(
-        file,
-        title,
-        'filename',
-        content,
-        title
-      );
+      await aliasManager.addAliasToFile(file, title, 'filename', content);
 
       const zwsp = '\u200B';
       expect(capturedFrontmatter.aliases).toEqual([`${zwsp}${title}${zwsp}`]);
@@ -478,18 +424,14 @@ describe('AliasManager', () => {
 
       // Should not throw
       await expect(
-        aliasManager.addAliasToFile(
-          file,
-          'Title',
-          'filename',
-          'Title\nBody',
-          'Title'
-        )
+        aliasManager.addAliasToFile(file, 'Title', 'filename', 'Title\nBody')
       ).resolves.not.toThrow();
     });
 
     it('should log unexpected errors', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
       const error = new Error('Unexpected error');
 
       plugin.app.fileManager.processFrontMatter = vi
@@ -500,8 +442,7 @@ describe('AliasManager', () => {
         file,
         'Title',
         'filename',
-        'Title\nBody',
-        'Title'
+        'Title\nBody'
       );
 
       expect(consoleErrorSpy).toHaveBeenCalled();
@@ -520,8 +461,7 @@ describe('AliasManager', () => {
         file,
         'Title',
         'filename',
-        'Title\nBody',
-        'Title'
+        'Title\nBody'
       );
 
       expect(mockView.save).toHaveBeenCalled();
@@ -537,13 +477,7 @@ describe('AliasManager', () => {
         'removePluginAliasesFromFile'
       );
 
-      await aliasManager.addAliasToFile(
-        file,
-        title,
-        'filename',
-        content,
-        title
-      );
+      await aliasManager.addAliasToFile(file, title, 'filename', content);
 
       expect(removeAliasesSpy).toHaveBeenCalledWith(file);
     });
@@ -602,9 +536,9 @@ describe('AliasManager', () => {
 
       await aliasManager.addAliasToFile(
         file,
-        '<%* template code %>', // originalFirstNonEmptyLine (template syntax)
+        '<% tp.file.cursor() %>', // originalFirstNonEmptyLine (template syntax)
         'filename', // newTitle
-        '<%* template code %>\nBody' // content
+        '<% tp.file.cursor() %>\nBody' // content
       );
 
       expect(removeAliasesSpy).toHaveBeenCalledWith(file);
@@ -624,10 +558,9 @@ describe('AliasManager', () => {
 
       await aliasManager.addAliasToFile(
         file,
-        'Link Title', // titleSourceLine (extracted from link)
-        'filename',
-        '[Link Title](https://example.com)\nBody', // content
-        '[Link Title](https://example.com)' // firstNonEmptyLine
+        'Link Title', // originalFirstNonEmptyLine
+        'filename', // newTitle
+        '[Link Title](https://example.com)\nBody' // content
       );
 
       const zwsp = '\u200B';
@@ -919,8 +852,7 @@ describe('AliasManager', () => {
         file,
         'Title',
         file.basename,
-        'Title\nBody',
-        'Title'
+        'Title\nBody'
       );
 
       expect(capturedFrontmatter.aliases).toBeDefined();
@@ -943,8 +875,7 @@ describe('AliasManager', () => {
         file,
         veryLongTitle,
         'filename',
-        veryLongTitle + '\nBody',
-        veryLongTitle
+        veryLongTitle + '\nBody'
       );
 
       const zwsp = '\u200B';
@@ -967,8 +898,7 @@ describe('AliasManager', () => {
         file,
         title,
         'filename',
-        title + '\nBody',
-        title
+        title + '\nBody'
       );
 
       const zwsp = '\u200B';
@@ -987,8 +917,7 @@ describe('AliasManager', () => {
         file,
         'Title',
         'filename',
-        'Title\nBody',
-        'Title'
+        'Title\nBody'
       );
 
       // Should not call processFrontMatter after detecting file deletion
@@ -1010,9 +939,9 @@ describe('AliasManager', () => {
 
       // Simulate concurrent calls
       await Promise.all([
-        aliasManager.addAliasToFile(file, title, 'filename', content, title),
-        aliasManager.addAliasToFile(file, title, 'filename', content, title),
-        aliasManager.addAliasToFile(file, title, 'filename', content, title),
+        aliasManager.addAliasToFile(file, title, 'filename', content),
+        aliasManager.addAliasToFile(file, title, 'filename', content),
+        aliasManager.addAliasToFile(file, title, 'filename', content),
       ]);
 
       expect(callCount).toBe(3); // All should complete
@@ -1034,8 +963,7 @@ describe('AliasManager', () => {
         file,
         'Title',
         'filename',
-        'Title\nBody',
-        'Title'
+        'Title\nBody'
       );
 
       // Should fall back to 'aliases'

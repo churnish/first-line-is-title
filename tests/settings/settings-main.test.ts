@@ -59,8 +59,8 @@ vi.mock('../../src/settings/tab-alias', () => ({
 vi.mock('../../src/settings/tab-commands', () => ({
   buildCommandsPage: vi.fn(() => ({ type: 'page', name: 'Commands' })),
 }));
-vi.mock('../../src/settings/tab-advanced', () => ({
-  buildAdvancedPage: vi.fn(() => ({ type: 'page', name: 'Advanced' })),
+vi.mock('../../src/settings/tab-other', () => ({
+  buildOtherPage: vi.fn(() => ({ type: 'page', name: 'Advanced' })),
 }));
 
 import { FirstLineIsTitleSettings } from '../../src/settings/settings-main';
@@ -104,20 +104,27 @@ describe('FirstLineIsTitleSettings', () => {
   });
 
   describe('getSettingDefinitions', () => {
-    it('exposes the seven sections as navigable sub-pages', () => {
-      const pages = tab
-        .getSettingDefinitions()
-        .filter((def) => (def as { type?: string }).type === 'page');
-      expect(pages).toHaveLength(7);
-    });
-
-    it('orders the pages as the settings UI presents them', () => {
-      const names = tab
+    const topLevel = () =>
+      tab
         .getSettingDefinitions()
         .filter((def) => (def as { type?: string }).type === 'page')
         .map((def) => (def as { name?: string }).name);
-      expect(names).toEqual([
-        'Exclusions',
+
+    const advancedGroup = () =>
+      tab
+        .getSettingDefinitions()
+        .find((def) => (def as { type?: string }).type === 'group') as
+        | { heading?: string; items?: { name?: string }[] }
+        | undefined;
+
+    it('keeps only Exclusions as a top-level page', () => {
+      expect(topLevel()).toEqual(['Exclusions']);
+    });
+
+    it('nests the remaining six sections under the Advanced group', () => {
+      const group = advancedGroup();
+      expect(group?.heading).toBe('settings.tabs.advancedGroup');
+      expect(group?.items?.map((i) => i.name)).toEqual([
         'Character replacements',
         'Custom rules',
         'Markup stripping',
@@ -127,19 +134,18 @@ describe('FirstLineIsTitleSettings', () => {
       ]);
     });
 
-    it('places the page-level actions below every sub-page', () => {
+    it('places the page-level actions above the Advanced group', () => {
       const defs = tab.getSettingDefinitions();
-      const lastPageIndex = defs.findLastIndex(
-        (def) => (def as { type?: string }).type === 'page'
+      const groupIndex = defs.findIndex(
+        (def) => (def as { type?: string }).type === 'group'
       );
-      const trailing = defs.slice(lastPageIndex + 1);
-      expect(trailing).toHaveLength(2);
-      expect((trailing[0] as { name?: string }).name).toBe(
+      const beforeGroup = defs.slice(groupIndex - 2, groupIndex);
+      expect((beforeGroup[0] as { name?: string }).name).toBe(
         'settings.general.renameAllNotes.name'
       );
       // The feedback call to action is deliberately unnamed so it stays out of
       // the settings search index.
-      expect((trailing[1] as { name?: string }).name).toBe('');
+      expect((beforeGroup[1] as { name?: string }).name).toBe('');
     });
   });
 
