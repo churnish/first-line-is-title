@@ -68,7 +68,13 @@ describe('Modal Error Notifications', () => {
       timeout?: number
     ) {
       noticeInstances.push({ message, timeout });
-      return { message, timeout, setMessage: vi.fn(), hide: vi.fn() } as any;
+      return {
+        message,
+        timeout,
+        setMessage: vi.fn(),
+        hide: vi.fn(),
+        containerEl: document.createElement('div'),
+      } as any;
     } as any);
 
     mockApp = new App();

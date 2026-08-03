@@ -165,7 +165,8 @@ function buildCommandRow(
             try {
               await plugin.saveSettings();
             } catch {
-              new Notice(t('settings.errors.saveFailed'));
+              const notice = new Notice(t('settings.errors.saveFailed'));
+              notice.containerEl.addClass('mod-warning');
             }
           })
       );

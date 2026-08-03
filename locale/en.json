@@ -80,25 +80,25 @@
     }
   },
   "notifications": {
-    "errorNoActiveNote": "Error: no active note.",
+    "errorNoActiveNote": "No active note",
     "renamingNNotes": "Renaming {{count}} notes...",
-    "renamedNotes": "Renamed {{renamed}}/{{total}} notes.",
+    "renamedNotes": "Renamed {{renamed}}/{{total}} notes",
     "renamedNotesWithErrors": "Renamed {{renamed}}/{{total}} notes with {{errors}} errors. Check console for details.",
-    "noNotesFoundWithTag": "No notes found with #{{tag}}.",
-    "noNotesFoundInFolders": "No notes found in selected folders.",
+    "noNotesFoundWithTag": "No notes found with #{{tag}}",
+    "noNotesFoundInFolders": "No notes found in selected folders",
     "disabledRenamingFor": "Disabled renaming for: {{filename}}",
     "failedToDisable": "Failed to disable renaming. Check console for details.",
     "enabledRenamingFor": "Enabled renaming for: {{filename}}",
     "failedToEnable": "Failed to enable renaming. Check console for details.",
-    "automaticRenamingEnabled": "Automatic renaming enabled.",
-    "automaticRenamingDisabled": "Automatic renaming disabled.",
-    "settingsCleared": "Settings have been cleared.",
-    "settingsImported": "Settings have been imported successfully.",
+    "automaticRenamingEnabled": "Automatic renaming enabled",
+    "automaticRenamingDisabled": "Automatic renaming disabled",
+    "settingsCleared": "Settings have been cleared",
+    "settingsImported": "Settings have been imported successfully",
     "invalidImportFile": "Invalid settings file. Please select a valid JSON file.",
-    "firstTimeNotice": "Please open First Line is Title settings to set your preferences. Ensure your files are regularly backed up.",
-    "inactivityNotice": "First Line is Title is still active. Ensure your settings and file backups are up to date.",
-    "disabledRenamingForNNotes": "Disabled renaming for {{count}} notes.",
-    "enabledRenamingForNNotes": "Enabled renaming for {{count}} notes.",
+    "firstTimeNotice": "Please open First Line is Title settings to set your preferences. Please ensure your files are regularly backed up.",
+    "inactivityNotice": "First Line is Title is still active. Please ensure your settings and file backups are up to date.",
+    "disabledRenamingForNNotes": "Disabled renaming for {{count}} notes",
+    "enabledRenamingForNNotes": "Enabled renaming for {{count}} notes",
     "renameEngineNotInitialized": "Rename engine not initialized. Please restart Obsidian.",
     "propertyManagerNotInitialized": "Property manager not initialized. Please restart Obsidian.",
     "renamedTo": "Renamed to: {{filename}}",
@@ -109,8 +109,8 @@
     "noNotesFoundInFolder": "No notes found in: {{folder}}",
     "disabledRenamingInFolder": "Disabled renaming in: {{folder}}",
     "enabledRenamingInFolder": "Enabled renaming in: {{folder}}",
-    "enabledRenamingInNFolders": "Enabled renaming in {{count}} folders.",
-    "disabledRenamingInNFolders": "Disabled renaming in {{count}} folders."
+    "enabledRenamingInNFolders": "Enabled renaming in {{count}} folders",
+    "disabledRenamingInNFolders": "Disabled renaming in {{count}} folders"
   },
   "modals": {
     "caution": "Caution",
@@ -126,10 +126,10 @@
         "after": "."
       }
     },
-    "ensure": "Ensure:",
+    "ensure": "Please ensure:",
     "filesBackedUp": "Your files are backed up in case of errors.",
     "exclusionsConfigured": "Excluded folders, tags and properties are configured correctly in plugin settings.",
-    "ensureFilesBackedUp": "Ensure your files are backed up in case of errors.",
+    "ensureFilesBackedUp": "Please ensure your files are backed up in case of errors.",
     "renameInAllSubfolders": "Rename notes in all subfolders",
     "renameInExcludedFolders": "Rename notes in excluded folders",
     "renameWithExcludedTags": "Rename notes with excluded tags",
@@ -156,7 +156,7 @@
         "after": "."
       }
     },
-    "ensureBackup": "Ensure your files are backed up in case of errors.",
+    "ensureBackup": "Please ensure your files are backed up in case of errors.",
     "propertyIn": " property in ",
     "note": "note",
     "noteFew": "notes",
@@ -195,7 +195,7 @@
         "desc": "Also process notes when they become active in the editor."
       },
       "onlyRenameIfHeading": {
-        "name": "Only rename if first line is heading",
+        "name": "Only rename if heading",
         "desc": "Don't rename notes if the first line is not a heading."
       },
       "moveCursorToFirstLine": {
@@ -211,7 +211,7 @@
         "desc": "Don't move the cursor when creating notes in excluded folders, or from a template with excluded tags or properties."
       },
       "insertTitleOnCreation": {
-        "name": "Insert title in first line on note creation",
+        "name": "Insert title on note creation",
         "desc": {
           "part1": "Place the file name in the first line when creating a new empty note (unless ",
           "untitled": "Untitled",
@@ -278,8 +278,8 @@
         "matchTags": {
           "name": "Match tags",
           "desc": "Set where tags should be matched.",
-          "inPropertiesAndBody": "In Properties and note body",
-          "inPropertiesOnly": "In Properties only",
+          "inPropertiesAndBody": "In properties and note body",
+          "inPropertiesOnly": "In properties only",
           "inBodyOnly": "In note body only"
         },
         "matchChildTags": {
@@ -313,8 +313,8 @@
           "name": "Exclusion mode",
           "desc": "Set how properties should be excluded."
         },
-        "keyPlaceholder": "key",
-        "valuePlaceholder": "value",
+        "keyPlaceholder": "Property name",
+        "valuePlaceholder": "Property value",
         "separator": ":",
         "addButton": "Add property",
         "emptyState": "No properties added."
@@ -330,10 +330,6 @@
       "fileNames": {
         "title": "File names",
         "desc": "Set file names to match.",
-        "enableFileNameExclusions": {
-          "name": "Exclude by file name",
-          "desc": "Don't rename notes if the file name contains a text string specified below."
-        },
         "addButton": "Add file name",
         "emptyState": "No file names added.",
         "headers": {
@@ -346,7 +342,7 @@
       }
     },
     "alias": {
-      "desc": "Copy the first line to a property when renaming notes.",
+      "desc": "Copy the first line to a property.",
       "addAlias": {
         "name": "Add alias",
         "desc": "Always copy the first line to a property when renaming notes."
@@ -425,17 +421,18 @@
     },
     "replaceCharacters": {
       "name": "Replace forbidden characters",
-      "desc": "Enable to replace forbidden characters using the rules below. Disable to strip them entirely.",
+      "desc": "Replace forbidden characters with safe alternatives.",
+      "toggleDesc": "Enable to replace forbidden characters using the rules below. Disable to strip them entirely.",
+      "trimNote": {
+        "part1": "Enable ",
+        "trimLeft": "Trim left",
+        "part2": " to strip spaces before the character in file name. Enable ",
+        "trimRight": "Trim right",
+        "part3": " to remove spaces after the character."
+      },
       "allOSes": {
         "title": "All OSes",
-        "desc": "Replace characters that are forbidden in Obsidian file names on every operating system.",
-        "note": {
-          "part1": "Enable ",
-          "trimLeft": "Trim left",
-          "part2": " to strip spaces before the character in file name. Enable ",
-          "trimRight": "Trim right",
-          "part3": " to remove spaces after the character."
-        }
+        "desc": "Replace characters that are forbidden in Obsidian file names on every operating system."
       },
       "windowsAndroid": {
         "title": "Windows/Android",
@@ -515,7 +512,8 @@
     },
     "stripMarkup": {
       "name": "Strip markup",
-      "desc": "Omit markup syntax in file name when renaming.",
+      "desc": "Omit markup syntax in file name.",
+      "toggleDesc": "Omit markup syntax in file name when renaming.",
       "headings": {
         "name": "Strip heading markup",
         "desc": {
@@ -745,7 +743,7 @@
       }
     },
     "commands": {
-      "desc": "Set which commands and context menu items are available.",
+      "desc": "Set which context menu commands appear.",
       "enable": "Enable",
       "file": {
         "title": "Files",
@@ -765,7 +763,6 @@
       }
     },
     "other": {
-      "desc": "Set title formatting, notifications and plugin data.",
       "charCount": {
         "name": "Character count",
         "desc": "The maximum number of characters to put in file name.",
@@ -780,7 +777,7 @@
       },
       "preserveModificationDate": {
         "name": "Preserve original modification date",
-        "desc": "Don't alter note last modified timestamp when renaming or when modifying Properties."
+        "desc": "Don't alter note last modified timestamp when renaming or when modifying properties."
       },
       "grabCardLink": {
         "name": "Grab title from card link",
@@ -840,8 +837,8 @@
       }
     },
     "errors": {
-      "saveFailed": "Failed to save settings.",
-      "importFailed": "Failed to import settings."
+      "saveFailed": "Failed to save settings",
+      "importFailed": "Failed to import settings"
     }
   }
 }

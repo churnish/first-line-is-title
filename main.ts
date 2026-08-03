@@ -743,10 +743,13 @@ export default class FirstLineIsTitle extends Plugin {
       this.settings.exclusions.excludedTags.push('');
     }
 
-    // Localize default file name exclusion example (only if user hasn't enabled them yet)
+    // Localize default file name exclusion example (only while it's still the
+    // untouched default, so a user's own edit is never overwritten)
     if (
-      !this.settings.core.hasEnabledFileNameExclusions &&
-      this.settings.exclusions.fileNameExclusions.length > 0
+      this.settings.exclusions.fileNameExclusions.length > 0 &&
+      ['To do', 'Задачи'].includes(
+        this.settings.exclusions.fileNameExclusions[0].text
+      )
     ) {
       const locale = getCurrentLocale();
       if (locale === 'ru') {

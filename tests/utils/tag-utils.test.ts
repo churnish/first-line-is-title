@@ -65,7 +65,8 @@ describe('tag-utils', () => {
         exists: false,
         frontmatter: '',
         contentStart: 0,
-        lineStart: 0,
+        from: 0,
+        to: 0,
       });
     });
 
@@ -82,7 +83,8 @@ describe('tag-utils', () => {
         exists: true,
         frontmatter: 'tags: [tag1, tag2, tag3]',
         contentStart: 30,
-        lineStart: 0,
+        from: 0,
+        to: 0,
       });
 
       vi.mocked(parseYaml).mockReturnValue({
@@ -100,7 +102,8 @@ describe('tag-utils', () => {
         exists: true,
         frontmatter: 'tags: important',
         contentStart: 25,
-        lineStart: 0,
+        from: 0,
+        to: 0,
       });
 
       vi.mocked(parseYaml).mockReturnValue({
@@ -118,7 +121,8 @@ describe('tag-utils', () => {
         exists: true,
         frontmatter: 'tags: [invalid yaml',
         contentStart: 25,
-        lineStart: 0,
+        from: 0,
+        to: 0,
       });
 
       vi.mocked(parseYaml).mockImplementation(() => {
@@ -136,7 +140,8 @@ describe('tag-utils', () => {
         exists: true,
         frontmatter: 'title: My Note',
         contentStart: 20,
-        lineStart: 0,
+        from: 0,
+        to: 0,
       });
 
       vi.mocked(parseYaml).mockReturnValue({
@@ -154,7 +159,8 @@ describe('tag-utils', () => {
         exists: true,
         frontmatter: 'tags: [1, 2, 3]',
         contentStart: 20,
-        lineStart: 0,
+        from: 0,
+        to: 0,
       });
 
       vi.mocked(parseYaml).mockReturnValue({
@@ -172,7 +178,8 @@ describe('tag-utils', () => {
         exists: true,
         frontmatter: '',
         contentStart: 10,
-        lineStart: 0,
+        from: 0,
+        to: 0,
       });
 
       vi.mocked(parseYaml).mockReturnValue(null as any);
@@ -188,7 +195,8 @@ describe('tag-utils', () => {
         exists: false,
         frontmatter: '',
         contentStart: 0,
-        lineStart: 0,
+        from: 0,
+        to: 0,
       });
     });
 
@@ -205,7 +213,8 @@ describe('tag-utils', () => {
         exists: true,
         frontmatter: 'title: My Note',
         contentStart: 23,
-        lineStart: 0,
+        from: 0,
+        to: 0,
       });
 
       const result = stripFrontmatter(content);
@@ -219,7 +228,8 @@ describe('tag-utils', () => {
         exists: true,
         frontmatter: 'title: My Note',
         contentStart: 23,
-        lineStart: 0,
+        from: 0,
+        to: 0,
       });
 
       const result = stripFrontmatter(content);
@@ -238,7 +248,8 @@ describe('tag-utils', () => {
         exists: true,
         frontmatter: 'title: My Note',
         contentStart: 23,
-        lineStart: 0,
+        from: 0,
+        to: 0,
       });
 
       const result = stripFrontmatter(content);
@@ -378,7 +389,8 @@ describe('tag-utils', () => {
         exists: true,
         frontmatter: 'tags: [work]',
         contentStart: 20,
-        lineStart: 0,
+        from: 0,
+        to: 0,
       });
 
       vi.mocked(parseYaml).mockReturnValue({

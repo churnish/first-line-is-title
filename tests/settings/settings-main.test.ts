@@ -271,20 +271,6 @@ describe('FirstLineIsTitleSettings', () => {
         false
       );
     });
-
-    it('bulk-enables file-name exclusions on first enable', async () => {
-      plugin.settings.core.hasEnabledFileNameExclusions = false;
-      plugin.settings.exclusions.fileNameExclusions.forEach((entry) => {
-        entry.enabled = false;
-      });
-
-      await tab.setControlValue('exclusions.enableFileNameExclusions', true);
-
-      expect(
-        plugin.settings.exclusions.fileNameExclusions.every((e) => e.enabled)
-      ).toBe(true);
-      expect(plugin.settings.core.hasEnabledFileNameExclusions).toBe(true);
-    });
   });
 
   describe('side-effect cascades', () => {

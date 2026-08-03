@@ -47,7 +47,6 @@ describe('string-processing', () => {
       settings = createTestSettings({
         replaceCharacters: {
           enableForbiddenCharReplacements: true,
-          windowsAndroidEnabled: false,
           osPreset: 'macOS',
           charReplacements: {
             slash: {
@@ -227,20 +226,18 @@ describe('string-processing', () => {
       expect(result).toContain('…');
     });
 
-    it('should handle Windows/Android characters when enabled', () => {
-      settings.replaceCharacters.windowsAndroidEnabled = true;
+    it('should replace Windows/Android characters unconditionally', () => {
       settings.replaceCharacters.charReplacements.asterisk.enabled = true;
       settings.replaceCharacters.charReplacements.asterisk.replacement = '-';
       const result = processForbiddenChars('hello*world', settings);
       expect(result).toBe('hello-world');
     });
 
-    it('should not handle Windows/Android characters when disabled', () => {
-      settings.replaceCharacters.windowsAndroidEnabled = false;
-      settings.replaceCharacters.charReplacements.asterisk.enabled = true;
+    it('should not replace Windows/Android character when its individual toggle is off', () => {
+      settings.replaceCharacters.charReplacements.asterisk.enabled = false;
       settings.replaceCharacters.charReplacements.asterisk.replacement = '-';
       const result = processForbiddenChars('hello*world', settings);
-      expect(result).toBe('hello*world'); // Asterisk not forbidden on macOS/Linux
+      expect(result).toBe('helloworld'); // Strips asterisk instead of replacing
     });
 
     it('should handle empty string input', () => {
@@ -269,7 +266,6 @@ describe('string-processing', () => {
       settings = createTestSettings({
         replaceCharacters: {
           enableForbiddenCharReplacements: true,
-          windowsAndroidEnabled: false,
           osPreset: 'macOS',
           charReplacements: {
             slash: {
@@ -382,7 +378,6 @@ describe('string-processing', () => {
       settings = createTestSettings({
         replaceCharacters: {
           enableForbiddenCharReplacements: true,
-          windowsAndroidEnabled: false,
           osPreset: 'macOS',
           charReplacements: {
             slash: {
@@ -505,15 +500,14 @@ describe('string-processing', () => {
       expect(result).toBe('Title-With-Dashes');
     });
 
-    it('should handle Windows/Android characters when enabled', () => {
-      settings.replaceCharacters.windowsAndroidEnabled = true;
+    it('should reverse Windows/Android characters unconditionally', () => {
       settings.replaceCharacters.charReplacements.asterisk.replacement = 'STAR';
       const result = reverseSafeLinkTarget('TitleSTARBold', settings);
       expect(result).toBe('Title*Bold');
     });
 
-    it('should not reverse Windows/Android characters when disabled', () => {
-      settings.replaceCharacters.windowsAndroidEnabled = false;
+    it('should not reverse Windows/Android character when its individual toggle is off', () => {
+      settings.replaceCharacters.charReplacements.asterisk.enabled = false;
       settings.replaceCharacters.charReplacements.asterisk.replacement = 'STAR';
       const result = reverseSafeLinkTarget('TitleSTARBold', settings);
       expect(result).toBe('TitleSTARBold');

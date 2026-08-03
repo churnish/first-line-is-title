@@ -411,14 +411,14 @@ describe('FileStateManager', () => {
 
   describe('throttle timers', () => {
     it('should set and check throttle timer', () => {
-      const timer = setTimeout(() => {}, 1000);
+      const timer = window.setTimeout(() => {}, 1000);
       manager.setThrottleTimer('test.md', timer);
 
       expect(manager.hasThrottleTimer('test.md')).toBe(true);
     });
 
     it('should clear throttle timer', () => {
-      const timer = setTimeout(() => {}, 1000);
+      const timer = window.setTimeout(() => {}, 1000);
       manager.setThrottleTimer('test.md', timer);
       manager.clearThrottleTimer('test.md');
 
@@ -428,11 +428,11 @@ describe('FileStateManager', () => {
     it('should clear all throttle timers', () => {
       manager.setThrottleTimer(
         'test1.md',
-        setTimeout(() => {}, 1000)
+        window.setTimeout(() => {}, 1000)
       );
       manager.setThrottleTimer(
         'test2.md',
-        setTimeout(() => {}, 1000)
+        window.setTimeout(() => {}, 1000)
       );
 
       manager.clearAllThrottleTimers();
@@ -442,8 +442,8 @@ describe('FileStateManager', () => {
     });
 
     it('should replace existing throttle timer', () => {
-      const timer1 = setTimeout(() => {}, 1000);
-      const timer2 = setTimeout(() => {}, 2000);
+      const timer1 = window.setTimeout(() => {}, 1000);
+      const timer2 = window.setTimeout(() => {}, 2000);
 
       manager.setThrottleTimer('test.md', timer1);
       manager.setThrottleTimer('test.md', timer2);
@@ -454,14 +454,14 @@ describe('FileStateManager', () => {
 
   describe('creation delay timers', () => {
     it('should set and check creation delay', () => {
-      const timer = setTimeout(() => {}, 1000);
+      const timer = window.setTimeout(() => {}, 1000);
       manager.setCreationDelayTimer('test.md', timer);
 
       expect(manager.isFileInCreationDelay('test.md')).toBe(true);
     });
 
     it('should clear creation delay timer', () => {
-      const timer = setTimeout(() => {}, 1000);
+      const timer = window.setTimeout(() => {}, 1000);
       manager.setCreationDelayTimer('test.md', timer);
       manager.clearCreationDelayTimer('test.md');
 
@@ -474,11 +474,11 @@ describe('FileStateManager', () => {
       manager.setLastEditorContent('test.md', 'content');
       manager.setThrottleTimer(
         'test.md',
-        setTimeout(() => {}, 1000)
+        window.setTimeout(() => {}, 1000)
       );
       manager.setCreationDelayTimer(
         'test2.md',
-        setTimeout(() => {}, 1000)
+        window.setTimeout(() => {}, 1000)
       );
 
       manager.dispose();

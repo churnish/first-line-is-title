@@ -55,9 +55,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     hasSetPropertyType: false,
     lastUsageDate: '',
     hasEnabledForbiddenChars: false,
-    hasEnabledWindowsAndroid: false,
     hasEnabledCustomReplacements: false,
-    hasEnabledFileNameExclusions: false,
     hasEnabledAliases: false,
     modalCheckboxStates: {
       folderRename: {
@@ -100,7 +98,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     excludeChildTags: true,
     disableRenamingKey: 'no rename',
     disableRenamingValue: 'true',
-    enableFileNameExclusions: false,
     fileNameExclusions: [
       {
         text: 'To do',
@@ -113,7 +110,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   },
   replaceCharacters: {
     enableForbiddenCharReplacements: false,
-    windowsAndroidEnabled: false,
     osPreset: 'macOS',
     charReplacements: {
       slash: {
@@ -138,7 +134,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         replacement: '？',
         enabled: false,
         trimLeft: false,
-        trimRight: false,
+        trimRight: true,
       },
       lessThan: {
         replacement: '‹',

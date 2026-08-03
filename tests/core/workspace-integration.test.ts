@@ -262,6 +262,8 @@ describe('WorkspaceIntegration', () => {
 
       // Add save command to existing commands object
       mockApp.commands.commands['editor:save-file'] = {
+        id: 'editor:save-file',
+        name: 'Save current file',
         checkCallback: vi.fn(),
       };
 

@@ -235,8 +235,6 @@ export function containsFileNameExclusion(
   filename: string,
   settings: PluginSettings
 ): boolean {
-  if (!settings.exclusions.enableFileNameExclusions) return false;
-
   // Get filename without extension for comparison
   const filenameWithoutExt = filename.replace(/\.md$/, '');
 

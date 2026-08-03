@@ -3,7 +3,6 @@ import { TitleRegionCache } from '../types';
 import { TIMING, LIMITS } from '../constants/timing';
 import {
   verboseLog,
-  detectOS,
   shouldProcessFile,
   canModifyFile,
   containsFileNameExclusion,
@@ -954,14 +953,8 @@ export class RenameEngine {
 
     // Define forbidden char replacement function
     const applyForbiddenCharReplacement = () => {
-      const currentOS = detectOS();
-      const windowsAndroidEnabled =
-        currentOS === 'Windows' ||
-        this.plugin.settings.replaceCharacters.windowsAndroidEnabled;
-
       newTitle = processForbiddenChars(newTitle, this.plugin.settings, {
         maxLength: this.plugin.settings.core.charCount,
-        windowsAndroidEnabled,
       });
 
       // Check if filename is empty or a forbidden name

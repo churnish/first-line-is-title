@@ -41,22 +41,6 @@ export class PluginInitializer {
       );
     }
 
-    // File name exclusions first-enable logic
-    if (
-      this.settings.exclusions.enableFileNameExclusions &&
-      !this.settings.core.hasEnabledFileNameExclusions
-    ) {
-      this.settings.exclusions.fileNameExclusions.forEach((exclusion) => {
-        exclusion.enabled = true;
-      });
-      this.settings.core.hasEnabledFileNameExclusions = true;
-      settingsChanged = true;
-      verboseLog(
-        this.plugin,
-        'Initialized file name exclusions on first enable'
-      );
-    }
-
     // Forbidden chars first-enable logic
     if (
       this.settings.replaceCharacters.enableForbiddenCharReplacements &&

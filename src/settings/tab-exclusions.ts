@@ -7,7 +7,6 @@ import {
   SettingDefinitionRender,
 } from 'obsidian';
 import {
-  updateInteractiveState,
   updateDisabledRowsAccessibility,
   addForbiddenCharProtection,
   FirstLineIsTitlePlugin,
@@ -22,7 +21,8 @@ async function persistSettings(plugin: FirstLineIsTitlePlugin): Promise<void> {
   try {
     await plugin.saveSettings();
   } catch {
-    new Notice(t('settings.errors.saveFailed'));
+    const notice = new Notice(t('settings.errors.saveFailed'));
+    notice.containerEl.addClass('mod-warning');
   }
 }
 
@@ -422,12 +422,6 @@ function buildFileNameExclusionRow(
       });
 
       applyRowEnabledState();
-
-      // Rows stay visible but inert while the master toggle is off, matching
-      // the pre-migration behaviour.
-      const masterEnabled = plugin.settings.exclusions.enableFileNameExclusions;
-      setting.setDisabled(!masterEnabled);
-      updateInteractiveState(host, masterEnabled);
     },
   };
 }
@@ -639,41 +633,11 @@ export function buildExclusionsPage(
 
       {
         type: 'group',
-        heading: t('settings.exclusions.disableProperty.title'),
-        items: [
-          { name: '', desc: buildDisablePropertyIntro() },
-          {
-            name: t('settings.exclusions.properties.keyPlaceholder'),
-            aliases: [t('settings.exclusions.disableProperty.title')],
-            control: {
-              type: 'text',
-              key: 'exclusions.disableRenamingKey',
-              placeholder: t('settings.exclusions.properties.keyPlaceholder'),
-            },
-          },
-          {
-            name: t('settings.exclusions.properties.valuePlaceholder'),
-            aliases: [t('settings.exclusions.disableProperty.title')],
-            control: {
-              type: 'text',
-              key: 'exclusions.disableRenamingValue',
-              placeholder: t('settings.exclusions.properties.valuePlaceholder'),
-            },
-          },
-        ],
-      },
-
-      {
-        name: t('settings.exclusions.fileNames.enableFileNameExclusions.name'),
-        desc: t('settings.exclusions.fileNames.enableFileNameExclusions.desc'),
-        control: {
-          type: 'toggle',
-          key: 'exclusions.enableFileNameExclusions',
-        },
+        heading: t('settings.exclusions.fileNames.title'),
+        items: [{ name: '', desc: t('settings.exclusions.fileNames.desc') }],
       },
       {
         type: 'list',
-        heading: t('settings.exclusions.fileNames.title'),
         emptyState: t('settings.exclusions.fileNames.emptyState'),
         items: exclusions().fileNameExclusions.map((exclusion) =>
           buildFileNameExclusionRow(plugin, tab, exclusion)
@@ -708,6 +672,32 @@ export function buildExclusionsPage(
             })();
           },
         },
+      },
+
+      {
+        type: 'group',
+        heading: t('settings.exclusions.disableProperty.title'),
+        items: [
+          { name: '', desc: buildDisablePropertyIntro() },
+          {
+            name: t('settings.exclusions.properties.keyPlaceholder'),
+            aliases: [t('settings.exclusions.disableProperty.title')],
+            control: {
+              type: 'text',
+              key: 'exclusions.disableRenamingKey',
+              placeholder: t('settings.exclusions.properties.keyPlaceholder'),
+            },
+          },
+          {
+            name: t('settings.exclusions.properties.valuePlaceholder'),
+            aliases: [t('settings.exclusions.disableProperty.title')],
+            control: {
+              type: 'text',
+              key: 'exclusions.disableRenamingValue',
+              placeholder: t('settings.exclusions.properties.valuePlaceholder'),
+            },
+          },
+        ],
       },
     ],
   };

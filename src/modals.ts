@@ -14,7 +14,6 @@ const OBSIDIAN_BACKUP_DOCS_URL = `https://${OBSIDIAN_HELP_DOMAIN}/backup`;
 
 export class RenameAllFilesModal extends Modal {
   plugin: FirstLineIsTitlePlugin;
-  private keydownHandler?: (e: KeyboardEvent) => void;
 
   constructor(app: App, plugin: FirstLineIsTitlePlugin) {
     super(app);
@@ -76,19 +75,16 @@ export class RenameAllFilesModal extends Modal {
     });
     cancelButton.onclick = () => this.close();
 
-    this.keydownHandler = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && document.activeElement?.tagName !== 'A') {
-        e.preventDefault();
-        this.close();
-        void this.renameAllFiles();
-      }
-    };
-    contentEl.addEventListener('keydown', this.keydownHandler);
+    // Renaming every note in the vault is the most destructive thing the plugin
+    // does, so the safe choice takes focus and Enter confirms it. Deferred
+    // because Modal moves focus to the first focusable child after onOpen().
+    window.setTimeout(() => cancelButton.focus(), 0);
   }
 
   async renameAllFiles() {
     if (!this.plugin.renameEngine) {
-      new Notice(t('notifications.renameEngineNotInitialized'));
+      const notice = new Notice(t('notifications.renameEngineNotInitialized'));
+      notice.containerEl.addClass('mod-warning');
       return;
     }
 
@@ -158,7 +154,8 @@ export class RenameAllFilesModal extends Modal {
           .replace('{{total}}', String(filesToRename.length))
           .replace('{{errors}}', String(errors.length));
         verboseLog(this.plugin, `Showing notice: ${errorMsg}`);
-        new Notice(errorMsg, 0);
+        const errorNotice = new Notice(errorMsg, 0);
+        errorNotice.containerEl.addClass('mod-warning');
         console.error('Rename errors:', errors);
       }
     } finally {
@@ -176,7 +173,8 @@ export class RenameAllFilesModal extends Modal {
           .replace('{{renamed}}', String(renamedFileCount))
           .replace('{{total}}', String(filesToRename.length));
         verboseLog(this.plugin, `Showing notice: ${renamedMsg}`);
-        new Notice(renamedMsg, 0);
+        const successNotice = new Notice(renamedMsg, 0);
+        successNotice.containerEl.addClass('mod-success');
       }
       verboseLog(
         this.plugin,
@@ -187,9 +185,6 @@ export class RenameAllFilesModal extends Modal {
 
   onClose() {
     const { contentEl } = this;
-    if (this.keydownHandler) {
-      contentEl.removeEventListener('keydown', this.keydownHandler);
-    }
     contentEl.empty();
   }
 }
@@ -345,7 +340,8 @@ export class RenameFolderModal extends Modal {
     renameExcludedProperties: boolean
   ) {
     if (!this.plugin.renameEngine) {
-      new Notice(t('notifications.renameEngineNotInitialized'));
+      const notice = new Notice(t('notifications.renameEngineNotInitialized'));
+      notice.containerEl.addClass('mod-warning');
       return;
     }
 
@@ -446,7 +442,8 @@ export class RenameFolderModal extends Modal {
           .replace('{{renamed}}', String(renamedFileCount))
           .replace('{{total}}', String(totalFiles))
           .replace('{{errors}}', String(errors.length));
-        new Notice(errorMsg, 0);
+        const errorNotice = new Notice(errorMsg, 0);
+        errorNotice.containerEl.addClass('mod-warning');
         console.error('Rename errors:', errors);
       }
     } finally {
@@ -463,7 +460,8 @@ export class RenameFolderModal extends Modal {
         const renamedMsg = t('notifications.renamedNotes')
           .replace('{{renamed}}', String(renamedFileCount))
           .replace('{{total}}', String(totalFiles));
-        new Notice(renamedMsg, 0);
+        const successNotice = new Notice(renamedMsg, 0);
+        successNotice.containerEl.addClass('mod-success');
       }
     }
   }
@@ -627,7 +625,8 @@ export class RenameMultipleFoldersModal extends Modal {
     renameExcludedProperties: boolean
   ) {
     if (!this.plugin.renameEngine) {
-      new Notice(t('notifications.renameEngineNotInitialized'));
+      const notice = new Notice(t('notifications.renameEngineNotInitialized'));
+      notice.containerEl.addClass('mod-warning');
       return;
     }
 
@@ -741,7 +740,8 @@ export class RenameMultipleFoldersModal extends Modal {
           .replace('{{renamed}}', String(renamedFileCount))
           .replace('{{total}}', String(totalFiles))
           .replace('{{errors}}', String(errors.length));
-        new Notice(errorMsg, 0);
+        const errorNotice = new Notice(errorMsg, 0);
+        errorNotice.containerEl.addClass('mod-warning');
         console.error('Rename errors:', errors);
       }
     } finally {
@@ -758,7 +758,8 @@ export class RenameMultipleFoldersModal extends Modal {
         const renamedMsg = t('notifications.renamedNotes')
           .replace('{{renamed}}', String(renamedFileCount))
           .replace('{{total}}', String(totalFiles));
-        new Notice(renamedMsg, 0);
+        const successNotice = new Notice(renamedMsg, 0);
+        successNotice.containerEl.addClass('mod-success');
       }
     }
   }
@@ -945,7 +946,8 @@ export class ProcessTagModal extends Modal {
     renameExcludedProperties: boolean
   ) {
     if (!this.plugin.renameEngine) {
-      new Notice(t('notifications.renameEngineNotInitialized'));
+      const notice = new Notice(t('notifications.renameEngineNotInitialized'));
+      notice.containerEl.addClass('mod-warning');
       return;
     }
 
@@ -1058,7 +1060,8 @@ export class ProcessTagModal extends Modal {
           .replace('{{renamed}}', String(renamedCount))
           .replace('{{total}}', String(filesToProcess.length))
           .replace('{{errors}}', String(errors.length));
-        new Notice(errorMsg, 0);
+        const errorNotice = new Notice(errorMsg, 0);
+        errorNotice.containerEl.addClass('mod-warning');
         console.error('Rename errors:', errors);
       }
     } finally {
@@ -1075,7 +1078,8 @@ export class ProcessTagModal extends Modal {
         const renamedMsg = t('notifications.renamedNotes')
           .replace('{{renamed}}', String(renamedCount))
           .replace('{{total}}', String(filesToProcess.length));
-        new Notice(renamedMsg, 0);
+        const successNotice = new Notice(renamedMsg, 0);
+        successNotice.containerEl.addClass('mod-success');
       }
     }
   }
@@ -1210,7 +1214,8 @@ export class RenameModal extends Modal {
     renameExcludedProperties: boolean
   ) {
     if (!this.plugin.renameEngine) {
-      new Notice(t('notifications.renameEngineNotInitialized'));
+      const notice = new Notice(t('notifications.renameEngineNotInitialized'));
+      notice.containerEl.addClass('mod-warning');
       return;
     }
 
@@ -1259,7 +1264,8 @@ export class RenameModal extends Modal {
           .replace('{{renamed}}', String(renamedFileCount))
           .replace('{{total}}', String(filesToProcess.length))
           .replace('{{errors}}', String(errors.length));
-        new Notice(errorMsg, 0);
+        const errorNotice = new Notice(errorMsg, 0);
+        errorNotice.containerEl.addClass('mod-warning');
         console.error('Rename errors:', errors);
       }
     } finally {
@@ -1276,7 +1282,8 @@ export class RenameModal extends Modal {
         const renamedMsg = t('notifications.renamedNotes')
           .replace('{{renamed}}', String(renamedFileCount))
           .replace('{{total}}', String(filesToProcess.length));
-        new Notice(renamedMsg, 0);
+        const successNotice = new Notice(renamedMsg, 0);
+        successNotice.containerEl.addClass('mod-success');
       }
     }
   }
@@ -1379,7 +1386,10 @@ export class DisableEnableModal extends Modal {
     // Ensure property type is set to checkbox before adding properties
     if (this.action === 'disable') {
       if (!this.plugin.propertyManager) {
-        new Notice(t('notifications.propertyManagerNotInitialized'));
+        const notice = new Notice(
+          t('notifications.propertyManagerNotInitialized')
+        );
+        notice.containerEl.addClass('mod-warning');
         return;
       }
       await this.plugin.propertyManager.ensurePropertyTypeIsCheckbox();
@@ -1434,7 +1444,8 @@ export class DisableEnableModal extends Modal {
         .replace('{{renamed}}', String(processedCount))
         .replace('{{total}}', String(filesToProcess.length))
         .replace('{{errors}}', String(errors.length));
-      new Notice(errorMsg, 0);
+      const errorNotice = new Notice(errorMsg, 0);
+      errorNotice.containerEl.addClass('mod-warning');
       console.error('Process errors:', errors);
     } else {
       const notificationKey =

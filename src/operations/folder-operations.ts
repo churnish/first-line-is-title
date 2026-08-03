@@ -87,24 +87,26 @@ export class FolderOperations {
         this,
         `Showing notice: Renamed ${processedCount}/${files.length} notes with ${errorCount} errors. Check console for details.`
       );
-      new Notice(
+      const errorNotice = new Notice(
         t('notifications.renamedNotesWithErrors')
           .replace('{{renamed}}', String(processedCount))
           .replace('{{total}}', String(files.length))
           .replace('{{errors}}', String(errorCount)),
         0
       );
+      errorNotice.containerEl.addClass('mod-warning');
     } else {
       verboseLog(
         this,
         `Showing notice: Successfully processed ${processedCount} files.`
       );
-      new Notice(
+      const successNotice = new Notice(
         t('notifications.renamedNotes')
           .replace('{{renamed}}', String(processedCount))
           .replace('{{total}}', String(files.length)),
         0
       );
+      successNotice.containerEl.addClass('mod-success');
     }
   }
 

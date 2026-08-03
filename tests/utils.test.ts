@@ -377,7 +377,6 @@ describe('utils', () => {
 
   describe('containsFileNameExclusion', () => {
     beforeEach(() => {
-      settings.exclusions.enableFileNameExclusions = true;
       settings.exclusions.fileNameExclusions = [
         {
           text: 'draft',
@@ -389,8 +388,8 @@ describe('utils', () => {
       ];
     });
 
-    it('should return false when file name exclusions are disabled', () => {
-      settings.exclusions.enableFileNameExclusions = false;
+    it('should return false when the individual exclusion is disabled', () => {
+      settings.exclusions.fileNameExclusions[0].enabled = false;
 
       expect(containsFileNameExclusion('draft note.md', settings)).toBe(false);
     });

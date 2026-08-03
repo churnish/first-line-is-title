@@ -278,7 +278,8 @@ export class MenuDefinitions {
               );
             } catch (error) {
               console.error('Failed to disable renaming:', error);
-              new Notice(t('notifications.failedToDisable'));
+              const notice = new Notice(t('notifications.failedToDisable'));
+              notice.containerEl.addClass('mod-warning');
             }
           },
         },
@@ -326,7 +327,8 @@ export class MenuDefinitions {
               );
             } catch (error) {
               console.error('Failed to enable renaming:', error);
-              new Notice(t('notifications.failedToEnable'));
+              const notice = new Notice(t('notifications.failedToEnable'));
+              notice.containerEl.addClass('mod-warning');
             }
           },
         },

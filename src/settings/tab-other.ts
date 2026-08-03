@@ -87,7 +87,10 @@ function importSettingsFromFile(
     const reader = new FileReader();
     reader.onerror = () => {
       console.error('FileReader error:', reader.error);
-      new Notice(t('settings.errors.importFailed') ?? 'Failed to read file');
+      const notice = new Notice(
+        t('settings.errors.importFailed') ?? 'Failed to read file'
+      );
+      notice.containerEl.addClass('mod-warning');
       input.remove();
     };
     reader.readAsText(selectedFile, 'UTF-8');
@@ -99,15 +102,17 @@ function importSettingsFromFile(
           try {
             importedJson = JSON.parse(content) as Record<string, unknown>;
           } catch {
-            new Notice(t('notifications.invalidImportFile'));
+            const notice = new Notice(t('notifications.invalidImportFile'));
+            notice.containerEl.addClass('mod-warning');
             console.error(t('notifications.invalidImportFile'));
             input.remove();
             return;
           }
         } else {
-          new Notice(
+          const notice = new Notice(
             t('settings.errors.importFailed') ?? 'Invalid file format'
           );
+          notice.containerEl.addClass('mod-warning');
           input.remove();
           return;
         }
@@ -139,12 +144,14 @@ function importSettingsFromFile(
           } catch {
             // Rollback to previous settings on save failure
             plugin.settings = previousSettings;
-            new Notice(t('settings.errors.saveFailed'));
+            const notice = new Notice(t('settings.errors.saveFailed'));
+            notice.containerEl.addClass('mod-warning');
             input.remove();
             return;
           }
 
-          new Notice(t('notifications.settingsImported'));
+          const notice = new Notice(t('notifications.settingsImported'));
+          notice.containerEl.addClass('mod-success');
 
           // Refresh UI - wrap in try-finally to ensure input cleanup
           try {
@@ -231,7 +238,8 @@ async function resetAllSettings(
   } catch {
     // Rollback to previous settings on save failure
     plugin.settings = previousSettings;
-    new Notice(t('settings.errors.saveFailed'));
+    const notice = new Notice(t('settings.errors.saveFailed'));
+    notice.containerEl.addClass('mod-warning');
     return;
   }
 
@@ -252,7 +260,6 @@ export function buildOtherPage(
   return {
     type: 'page',
     name: t('settings.tabs.other'),
-    desc: t('settings.other.desc'),
     items: [
       {
         name: t('settings.other.titleCase.name'),

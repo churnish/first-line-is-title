@@ -17,7 +17,7 @@ export function filterNonEmpty(items: string[]): string[] {
 export function processForbiddenChars(
   text: string,
   settings: PluginSettings,
-  options?: { maxLength?: number; windowsAndroidEnabled?: boolean }
+  options?: { maxLength?: number }
 ): string {
   const charMap: { [key: string]: string } = {
     '/': settings.replaceCharacters.charReplacements.slash.replacement,
@@ -37,18 +37,11 @@ export function processForbiddenChars(
     '.': settings.replaceCharacters.charReplacements.dot.replacement,
   };
 
-  // Get forbidden chars - universal chars are always forbidden
-  const universalForbiddenChars = UNIVERSAL_FORBIDDEN_CHARS;
-  const windowsAndroidChars = WINDOWS_ANDROID_CHARS;
-  const allForbiddenChars = [...universalForbiddenChars];
-
-  // Add Windows/Android chars if option is enabled
-  const useWindowsAndroid =
-    options?.windowsAndroidEnabled ??
-    settings.replaceCharacters.windowsAndroidEnabled;
-  if (useWindowsAndroid) {
-    allForbiddenChars.push(...windowsAndroidChars);
-  }
+  // Forbidden chars - universal and Windows/Android chars are always forbidden
+  const allForbiddenChars = [
+    ...UNIVERSAL_FORBIDDEN_CHARS,
+    ...WINDOWS_ANDROID_CHARS,
+  ];
   const forbiddenChars = [...new Set(allForbiddenChars)].join('');
 
   let result = '';
@@ -137,14 +130,9 @@ export function processForbiddenChars(
             break;
         }
 
-        // For Windows/Android chars, also check if that toggle is enabled
-        const isWindowsAndroidChar = WINDOWS_ANDROID_CHARS.includes(char);
-        const canReplace = isWindowsAndroidChar
-          ? useWindowsAndroid &&
-            settingKey &&
-            settings.replaceCharacters.charReplacements[settingKey].enabled
-          : settingKey &&
-            settings.replaceCharacters.charReplacements[settingKey].enabled;
+        const canReplace =
+          settingKey &&
+          settings.replaceCharacters.charReplacements[settingKey].enabled;
 
         if (canReplace && settingKey) {
           shouldReplace = true;
@@ -210,8 +198,7 @@ export function reverseSafeLinkTarget(
 
   // Reverse forbidden character replacements if enabled
   if (settings.replaceCharacters.enableForbiddenCharReplacements) {
-    // Universal forbidden characters (all OSes)
-    const universalMappings = {
+    const mappings = {
       '/': settings.replaceCharacters.charReplacements.slash,
       ':': settings.replaceCharacters.charReplacements.colon,
       '|': settings.replaceCharacters.charReplacements.pipe,
@@ -220,36 +207,18 @@ export function reverseSafeLinkTarget(
       '[': settings.replaceCharacters.charReplacements.leftBracket,
       ']': settings.replaceCharacters.charReplacements.rightBracket,
       '^': settings.replaceCharacters.charReplacements.caret,
+      '*': settings.replaceCharacters.charReplacements.asterisk,
+      '?': settings.replaceCharacters.charReplacements.question,
+      '<': settings.replaceCharacters.charReplacements.lessThan,
+      '>': settings.replaceCharacters.charReplacements.greaterThan,
+      '"': settings.replaceCharacters.charReplacements.quote,
     };
 
-    for (const [forbiddenChar, replacementConfig] of Object.entries(
-      universalMappings
-    )) {
+    for (const [forbiddenChar, replacementConfig] of Object.entries(mappings)) {
       if (replacementConfig.enabled && replacementConfig.replacement) {
         result = result
           .split(replacementConfig.replacement)
           .join(forbiddenChar);
-      }
-    }
-
-    // Windows/Android additional characters
-    if (settings.replaceCharacters.windowsAndroidEnabled) {
-      const windowsAndroidMappings = {
-        '*': settings.replaceCharacters.charReplacements.asterisk,
-        '?': settings.replaceCharacters.charReplacements.question,
-        '<': settings.replaceCharacters.charReplacements.lessThan,
-        '>': settings.replaceCharacters.charReplacements.greaterThan,
-        '"': settings.replaceCharacters.charReplacements.quote,
-      };
-
-      for (const [forbiddenChar, replacementConfig] of Object.entries(
-        windowsAndroidMappings
-      )) {
-        if (replacementConfig.enabled && replacementConfig.replacement) {
-          result = result
-            .split(replacementConfig.replacement)
-            .join(forbiddenChar);
-        }
       }
     }
   }

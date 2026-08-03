@@ -5,8 +5,20 @@
 
 import { vi } from 'vitest';
 
+// Type-only, so it is erased before the runtime alias points 'obsidian' back at
+// this file. Lets the mocks be published under obsidian's own types: tests hand
+// them to plugin code that is declared against the real API, so tsc checks our
+// signatures instead of drowning in mock-vs-real shape mismatches.
+import type {
+  App as ObsidianApp,
+  Editor as ObsidianEditor,
+  MarkdownView as ObsidianMarkdownView,
+  TFile as ObsidianTFile,
+  TFolder as ObsidianTFolder,
+} from 'obsidian';
+
 // Mock TFile class
-export class TFile {
+class MockTFile {
   path: string;
   basename: string;
   extension: string;
@@ -30,8 +42,13 @@ export class TFile {
   }
 }
 
+export const TFile = MockTFile as unknown as new (
+  path?: string
+) => ObsidianTFile;
+export type TFile = ObsidianTFile;
+
 // Mock TFolder class
-export class TFolder {
+class MockTFolder {
   path: string;
   name: string;
   children: (TFile | TFolder)[];
@@ -50,6 +67,11 @@ export class TFolder {
     return this.path === '/';
   }
 }
+
+export const TFolder = MockTFolder as unknown as new (
+  path?: string
+) => ObsidianTFolder;
+export type TFolder = ObsidianTFolder;
 
 // Mock Vault class
 export class Vault {
@@ -170,7 +192,7 @@ export class Workspace {
 }
 
 // Mock App class
-export class App {
+class MockApp {
   vault: Vault;
   metadataCache: MetadataCache;
   workspace: Workspace;
@@ -203,8 +225,11 @@ export class App {
   saveLocalStorage = vi.fn();
 }
 
+export const App = MockApp as unknown as new () => ObsidianApp;
+export type App = ObsidianApp;
+
 // Mock Editor class
-export class Editor {
+class MockEditor {
   getValue = vi.fn().mockReturnValue('');
   setValue = vi.fn();
   getLine = vi.fn((line: number) => '');
@@ -232,8 +257,11 @@ export class Editor {
   offsetToPos = vi.fn().mockReturnValue({ line: 0, ch: 0 });
 }
 
+export const Editor = MockEditor as unknown as new () => ObsidianEditor;
+export type Editor = ObsidianEditor;
+
 // Mock MarkdownView class
-export class MarkdownView {
+class MockMarkdownView {
   app: App;
   file: TFile | null;
   editor: Editor;
@@ -255,6 +283,11 @@ export class MarkdownView {
   onload = vi.fn();
   onunload = vi.fn();
 }
+
+export const MarkdownView = MockMarkdownView as unknown as new (
+  app?: ObsidianApp
+) => ObsidianMarkdownView;
+export type MarkdownView = ObsidianMarkdownView;
 
 // Mock Plugin class
 export class Plugin {
@@ -450,18 +483,26 @@ function createMockComponent() {
       disabled = d;
       return component;
     }),
-    onChange: vi.fn().mockReturnValue(component),
-    setPlaceholder: vi.fn().mockReturnValue(component),
-    setButtonText: vi.fn().mockReturnValue(component),
-    onClick: vi.fn().mockReturnValue(component),
-    setTooltip: vi.fn().mockReturnValue(component),
-    setIcon: vi.fn().mockReturnValue(component),
-    addOption: vi.fn().mockReturnValue(component),
-    addOptions: vi.fn().mockReturnValue(component),
-    setLimits: vi.fn().mockReturnValue(component),
-    setDynamicTooltip: vi.fn().mockReturnValue(component),
-    showTooltip: vi.fn().mockReturnValue(component),
   };
+
+  // Assigned after the literal: mockReturnValue is evaluated eagerly, so naming
+  // `component` inside the initializer reads it before it is bound.
+  for (const method of [
+    'onChange',
+    'setPlaceholder',
+    'setButtonText',
+    'onClick',
+    'setTooltip',
+    'setIcon',
+    'addOption',
+    'addOptions',
+    'setLimits',
+    'setDynamicTooltip',
+    'showTooltip',
+  ]) {
+    component[method] = vi.fn().mockReturnValue(component);
+  }
+
   return component;
 }
 

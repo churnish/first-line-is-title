@@ -130,7 +130,9 @@ export function buildMarkupStrippingPage(
   const items: SettingDefinitionItem[] = [
     {
       name: t('settings.stripMarkup.name'),
-      desc: t('settings.stripMarkup.desc'),
+      // Deliberately not the section desc: the section summarises what the
+      // page is for, the toggle explains what each position does.
+      desc: t('settings.stripMarkup.toggleDesc'),
       control: {
         type: 'toggle',
         key: 'markupStripping.enableStripMarkup',

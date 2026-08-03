@@ -26,6 +26,12 @@ global.HTMLElement = dom.window.HTMLElement as any;
 global.Element = dom.window.Element as any;
 global.Node = dom.window.Node as any;
 
+// Obsidian's runtime patches HTMLElement.prototype with DOM helpers like addClass;
+// jsdom doesn't have this, so tests that call it on real elements (e.g. Notice.containerEl) need it polyfilled.
+global.HTMLElement.prototype.addClass = function (...classNames: string[]) {
+  this.classList.add(...classNames);
+};
+
 // Mock console methods to reduce noise in tests
 global.console = {
   ...console,

@@ -2,7 +2,7 @@
  * Test utilities and helper functions
  */
 
-import { vi } from 'vitest';
+import { vi, type MockedFunction } from 'vitest';
 import { TFile, TFolder, App } from './mockObsidian';
 import { PluginSettings } from '../src/types';
 import { DEFAULT_SETTINGS } from '../src/constants';
@@ -100,8 +100,8 @@ export function waitFor(ms: number): Promise<void> {
  */
 export function createSpy<
   T extends (...args: any[]) => any,
->(): jest.MockedFunction<T> {
-  return vi.fn() as jest.MockedFunction<T>;
+>(): MockedFunction<T> {
+  return vi.fn() as MockedFunction<T>;
 }
 
 /**

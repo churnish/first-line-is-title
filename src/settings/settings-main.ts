@@ -7,7 +7,7 @@ import {
 } from 'obsidian';
 import { FirstLineIsTitlePlugin } from './settings-base';
 import { t } from '../i18n';
-import { deduplicateExclusions, detectOS } from '../utils';
+import { deduplicateExclusions } from '../utils';
 import { getPath, setPath } from './settings-paths';
 import {
   PRIMARY_CHAR_KEYS,
@@ -40,33 +40,10 @@ const CASCADES: Record<string, (plugin: FirstLineIsTitlePlugin) => void> = {
     }
     if (settings.core.hasEnabledForbiddenChars) return;
 
-    for (const key of PRIMARY_CHAR_KEYS) {
+    for (const key of [...PRIMARY_CHAR_KEYS, ...WINDOWS_ANDROID_CHAR_KEYS]) {
       settings.replaceCharacters.charReplacements[key].enabled = true;
     }
     settings.core.hasEnabledForbiddenChars = true;
-
-    // Windows users get the Windows/Android set switched on in the same step
-    if (detectOS() === 'Windows' && !settings.core.hasEnabledWindowsAndroid) {
-      settings.replaceCharacters.windowsAndroidEnabled = true;
-      for (const key of WINDOWS_ANDROID_CHAR_KEYS) {
-        settings.replaceCharacters.charReplacements[key].enabled = true;
-      }
-      settings.core.hasEnabledWindowsAndroid = true;
-    }
-  },
-
-  'replaceCharacters.windowsAndroidEnabled': (plugin) => {
-    const { settings } = plugin;
-    if (
-      !settings.replaceCharacters.windowsAndroidEnabled ||
-      settings.core.hasEnabledWindowsAndroid
-    ) {
-      return;
-    }
-    for (const key of WINDOWS_ANDROID_CHAR_KEYS) {
-      settings.replaceCharacters.charReplacements[key].enabled = true;
-    }
-    settings.core.hasEnabledWindowsAndroid = true;
   },
 
   'customRules.enableCustomReplacements': (plugin) => {
@@ -87,20 +64,6 @@ const CASCADES: Record<string, (plugin: FirstLineIsTitlePlugin) => void> = {
     if (settings.markupStripping.enableStripMarkup) return;
     settings.markupStripping.stripMarkupInAlias = false;
     settings.markupStripping.applyCustomRulesAfterMarkupStripping = false;
-  },
-
-  'exclusions.enableFileNameExclusions': (plugin) => {
-    const { settings } = plugin;
-    if (
-      !settings.exclusions.enableFileNameExclusions ||
-      settings.core.hasEnabledFileNameExclusions
-    ) {
-      return;
-    }
-    for (const exclusion of settings.exclusions.fileNameExclusions) {
-      exclusion.enabled = true;
-    }
-    settings.core.hasEnabledFileNameExclusions = true;
   },
 
   'aliases.enableAliases': (plugin) => {
@@ -142,10 +105,8 @@ const CASCADES: Record<string, (plugin: FirstLineIsTitlePlugin) => void> = {
  */
 const VALUE_MUTATING_KEYS = new Set([
   'replaceCharacters.enableForbiddenCharReplacements',
-  'replaceCharacters.windowsAndroidEnabled',
   'customRules.enableCustomReplacements',
   'markupStripping.enableStripMarkup',
-  'exclusions.enableFileNameExclusions',
   'aliases.enableAliases',
 ]);
 
@@ -177,7 +138,8 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
     try {
       await this.plugin.saveSettings();
     } catch {
-      new Notice(t('settings.errors.saveFailed'));
+      const notice = new Notice(t('settings.errors.saveFailed'));
+      notice.containerEl.addClass('mod-warning');
     }
 
     if (VALUE_MUTATING_KEYS.has(key)) {
@@ -215,7 +177,8 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
     // them once the modal closes.
     if (deduplicateExclusions(this.plugin.settings)) {
       this.plugin.saveSettings().catch(() => {
-        new Notice(t('settings.errors.saveFailed'));
+        const notice = new Notice(t('settings.errors.saveFailed'));
+        notice.containerEl.addClass('mod-warning');
       });
     }
     super.hide();

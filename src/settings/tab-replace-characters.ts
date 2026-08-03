@@ -57,7 +57,8 @@ async function persistSettings(plugin: FirstLineIsTitlePlugin): Promise<void> {
   try {
     await plugin.saveSettings();
   } catch {
-    new Notice(t('settings.errors.saveFailed'));
+    const notice = new Notice(t('settings.errors.saveFailed'));
+    notice.containerEl.addClass('mod-warning');
   }
 }
 
@@ -217,7 +218,11 @@ function renderCharacterRows(
 }
 
 /** Builds the "All OSes" trim-left/trim-right explanatory note. */
-function appendAllOsesNote(parent: HTMLElement | DocumentFragment): void {
+/**
+ * Explains the Trim left/right columns. Both character tables have them, so
+ * this belongs with the master toggle rather than inside either table's group.
+ */
+function appendTrimNote(parent: HTMLElement | DocumentFragment): void {
   const locale = getCurrentLocale();
   const appendEmphasis = (localeKey: string) => {
     if (locale === 'ru') {
@@ -227,11 +232,11 @@ function appendAllOsesNote(parent: HTMLElement | DocumentFragment): void {
     }
   };
 
-  parent.appendText(t('settings.replaceCharacters.allOSes.note.part1'));
-  appendEmphasis('settings.replaceCharacters.allOSes.note.trimLeft');
-  parent.appendText(t('settings.replaceCharacters.allOSes.note.part2'));
-  appendEmphasis('settings.replaceCharacters.allOSes.note.trimRight');
-  parent.appendText(t('settings.replaceCharacters.allOSes.note.part3'));
+  parent.appendText(t('settings.replaceCharacters.trimNote.part1'));
+  appendEmphasis('settings.replaceCharacters.trimNote.trimLeft');
+  parent.appendText(t('settings.replaceCharacters.trimNote.part2'));
+  appendEmphasis('settings.replaceCharacters.trimNote.trimRight');
+  parent.appendText(t('settings.replaceCharacters.trimNote.part3'));
 }
 
 /**
@@ -283,53 +288,53 @@ export function buildCharacterReplacementsPage(
     items: [
       {
         name: t('settings.replaceCharacters.name'),
-        desc: t('settings.replaceCharacters.desc'),
+        // Deliberately not the section desc: the section summarises what the
+        // page is for, the toggle explains what each position does.
+        desc: createFragment((frag) => {
+          frag.appendText(t('settings.replaceCharacters.toggleDesc'));
+          const note = frag.createDiv({ cls: 'flit-margin-top-15' });
+          appendTrimNote(note);
+        }),
         control: {
           type: 'toggle',
           key: 'replaceCharacters.enableForbiddenCharReplacements',
         },
       },
       {
-        name: t('settings.replaceCharacters.allOSes.title'),
-        desc: createFragment((frag) => {
-          frag.appendText(t('settings.replaceCharacters.allOSes.desc'));
-          const note = frag.createDiv({ cls: 'flit-margin-top-15' });
-          appendAllOsesNote(note);
-        }),
-        render: (setting) => {
-          mountTable(
-            setting,
-            PRIMARY_CHAR_KEYS,
-            () => plugin.settings.core.hasEnabledForbiddenChars,
-            false
-          );
-        },
+        type: 'group',
+        heading: t('settings.replaceCharacters.allOSes.title'),
+        items: [
+          {
+            name: '',
+            desc: t('settings.replaceCharacters.allOSes.desc'),
+            render: (setting) => {
+              mountTable(
+                setting,
+                PRIMARY_CHAR_KEYS,
+                () => plugin.settings.core.hasEnabledForbiddenChars,
+                false
+              );
+            },
+          },
+        ],
       },
       {
-        name: t('settings.replaceCharacters.windowsAndroid.title'),
-        desc: t('settings.replaceCharacters.windowsAndroid.desc'),
-        control: {
-          type: 'toggle',
-          key: 'replaceCharacters.windowsAndroidEnabled',
-          disabled: () =>
-            !plugin.settings.replaceCharacters.enableForbiddenCharReplacements,
-        },
-      },
-      {
-        // The toggle row directly above already carries the section label.
-        name: '',
-        searchable: false,
-        visible: () => plugin.settings.replaceCharacters.windowsAndroidEnabled,
-        render: (setting) => {
-          mountTable(
-            setting,
-            WINDOWS_ANDROID_CHAR_KEYS,
-            () =>
-              plugin.settings.core.hasEnabledForbiddenChars &&
-              plugin.settings.core.hasEnabledWindowsAndroid,
-            true
-          );
-        },
+        type: 'group',
+        heading: t('settings.replaceCharacters.windowsAndroid.title'),
+        items: [
+          {
+            name: '',
+            desc: t('settings.replaceCharacters.windowsAndroid.desc'),
+            render: (setting) => {
+              mountTable(
+                setting,
+                WINDOWS_ANDROID_CHAR_KEYS,
+                () => plugin.settings.core.hasEnabledForbiddenChars,
+                true
+              );
+            },
+          },
+        ],
       },
     ],
   };

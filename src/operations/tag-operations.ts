@@ -153,24 +153,26 @@ export class TagOperations {
         this,
         `Showing notice: Renamed ${processedCount}/${matchingFiles.length} notes with ${errorCount} errors. Check console for details.`
       );
-      new Notice(
+      const errorNotice = new Notice(
         t('notifications.renamedNotesWithErrors')
           .replace('{{renamed}}', String(processedCount))
           .replace('{{total}}', String(matchingFiles.length))
           .replace('{{errors}}', String(errorCount)),
         0
       );
+      errorNotice.containerEl.addClass('mod-warning');
     } else {
       verboseLog(
         this,
         `Showing notice: Successfully processed ${processedCount} files with tag ${tagToFind}.`
       );
-      new Notice(
+      const successNotice = new Notice(
         t('notifications.renamedNotes')
           .replace('{{renamed}}', String(processedCount))
           .replace('{{total}}', String(matchingFiles.length)),
         0
       );
+      successNotice.containerEl.addClass('mod-success');
     }
   }
 

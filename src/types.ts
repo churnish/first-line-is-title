@@ -98,9 +98,7 @@ export interface CoreSettings {
   hasSetPropertyType: boolean;
   lastUsageDate: string;
   hasEnabledForbiddenChars: boolean;
-  hasEnabledWindowsAndroid: boolean;
   hasEnabledCustomReplacements: boolean;
-  hasEnabledFileNameExclusions: boolean;
   hasEnabledAliases: boolean;
   modalCheckboxStates: {
     folderRename: {
@@ -147,7 +145,6 @@ export interface ExclusionSettings {
   excludeChildTags: boolean;
   disableRenamingKey: string;
   disableRenamingValue: string;
-  enableFileNameExclusions: boolean;
   fileNameExclusions: FileNameExclusion[];
 }
 
@@ -156,7 +153,6 @@ export interface ExclusionSettings {
  */
 export interface ReplaceCharactersSettings {
   enableForbiddenCharReplacements: boolean;
-  windowsAndroidEnabled: boolean;
   osPreset: OSPreset;
   charReplacements: CharReplacements;
 }
