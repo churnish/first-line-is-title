@@ -18,6 +18,19 @@
     "version": "node version-bump.mjs",
     "postversion": "git push origin main --follow-tags --force-with-lease"
   },
+  "knip": {
+    "entry": ["main.ts"],
+    "project": ["src/**/*.ts", "tests/**/*.ts"],
+    "ignoreDependencies": [
+      "@eslint/compat",
+      "@typescript-eslint/eslint-plugin",
+      "prettier"
+    ],
+    "ignoreBinaries": ["eslint", "knip", "vitest"],
+    "exclude": ["exports"],
+    "ignore": ["src/utils/timestamp-rate-limiter.ts"],
+    "ignoreExportsUsedInFile": true
+  },
   "keywords": [],
   "author": "churnish",
   "license": "GPL-3.0-or-later",
