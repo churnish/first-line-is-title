@@ -2,14 +2,13 @@ English • [Русский](https://github.com/churnish/first-line-is-title/blo
 
 # First Line is Title
 
-Automatically set the first line as note title, just like in Apple Notes! Forget about manual file name entry or nondescript timestamps.
+Automatically set the first line as note title, just like in Apple Notes. Forget about manual file name entry or nondescript timestamps.
 
 ![](https://github.com/user-attachments/assets/eed638e0-f695-4fdd-a0a6-2ace66585d58)
 
-> [!TIP]
-> The plugin is best used with the tab title bar and/or inline title enabled in Obsidian settings → Appearance → Interface.
+> **TIP:** The plugin is best used with the tab title bar enabled in Obsidian settings → Interface.
 
-## Key features
+## Features
 
 - Rename notes automatically or manually.
 - Move cursor to first line on note creation.
@@ -21,7 +20,7 @@ Automatically set the first line as note title, just like in Apple Notes! Forget
 - Commands to batch rename all notes in folder, all notes with tag, all search results, or entire vault.
 - Automatically insert file name in first line on note creation.
 - Exclude select notes, folders, tags, properties or file names from renaming, or only enable renaming in some.
-- Command to convert selection containing forbidden characters into valid internal link, with original text preserved in link caption.
+- Command to convert selection containing forbidden characters into valid internal link, with original text preserved as alias.
 
 ## File integrity
 
@@ -64,22 +63,23 @@ Automatically set the first line as note title, just like in Apple Notes! Forget
 
 ## Installation
 
-Until _First Line is Title_ is [made available](https://github.com/obsidianmd/obsidian-releases/pull/10689) in the plugin directory, to install it:
+Until **First Line is Title** appears in the plugin directory, to install it:
 
 1. Download and enable the [BRAT](https://churnish.github.io/http-protocol-redirector?r=obsidian://show-plugin?id=obsidian42-brat) plugin.
 2. [Install via BRAT](https://churnish.github.io/http-protocol-redirector?r=obsidian://brat?plugin=churnish/first-line-is-title).
 3. Select **Add plugin**.
 
 <details><summary>Install manually</summary>
+<br>
+  
+**Note:** To get updates for **First Line is Title**, you will have to check for and install them manually.
 
-Note: To get updates for _First Line is Title_, you will have to check for and install them manually.
-
-1. Download `first-line-is-title.zip` in the `Assets` of the [latest release](https://github.com/churnish/first-line-is-title/releases).
+1. Download `first-line-is-title.zip` from the `Assets` of the [latest release](https://github.com/churnish/first-line-is-title/releases).
 2. Open the vault folder in the system file manager.
 3. Open your Obsidian configuration folder (`.obsidian` by default, hidden on most OSes).
 4. Unzip `first-line-is-title.zip` and place it in the `plugins` folder.
 5. Reload plugins or app.
-6. Enable _First Line is Title_ in Obsidian settings → Community plugins → Installed plugins.
+6. Enable **First Line is Title** in Obsidian settings → Community plugins → Installed plugins.
 
 </details>
 
@@ -87,4 +87,4 @@ Note: To get updates for _First Line is Title_, you will have to check for and i
 
 - Found a bug or have a feature request? [Open an issue](https://github.com/churnish/first-line-is-title/issues).
 - Have a question? [Start a discussion](https://github.com/churnish/first-line-is-title/discussions).
-- PRs welcome.
+- Contributors welcome.
