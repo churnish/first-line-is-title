@@ -28,7 +28,6 @@
     "@eslint/json": "^0.14.0",
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^8.52.0",
-    "@typescript-eslint/parser": "^8.52.0",
     "@vitest/coverage-v8": "^4.0.0",
     "esbuild": "^0.27.3",
     "eslint": "^9.39.3",

@@ -1,8 +1,4 @@
-import {
-  PluginSettingTab,
-  SettingDefinitionItem,
-  SettingDefinitionPage,
-} from 'obsidian';
+import { SettingDefinitionItem, SettingDefinitionPage } from 'obsidian';
 import { FirstLineIsTitlePlugin } from './settings-base';
 import { t, getCurrentLocale } from '../i18n';
 
@@ -121,8 +117,7 @@ function buildTemplaterDescription(): DocumentFragment {
 }
 
 export function buildMarkupStrippingPage(
-  plugin: FirstLineIsTitlePlugin,
-  tab: PluginSettingTab
+  plugin: FirstLineIsTitlePlugin
 ): SettingDefinitionPage {
   const stripMarkupEnabled = (): boolean =>
     plugin.settings.markupStripping.enableStripMarkup;

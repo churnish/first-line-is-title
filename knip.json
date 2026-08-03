@@ -4,12 +4,8 @@
   "project": ["src/**/*.ts", "tests/**/*.ts"],
   "ignoreDependencies": [
     "@eslint/compat",
-    "@eslint/js",
-    "@eslint/json",
     "@typescript-eslint/eslint-plugin",
-    "obsidian",
-    "prettier",
-    "typescript-eslint"
+    "prettier"
   ],
   "ignoreBinaries": ["eslint", "knip", "vitest"],
   "exclude": ["exports"],

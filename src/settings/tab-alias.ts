@@ -1,6 +1,5 @@
 import {
   Platform,
-  PluginSettingTab,
   SettingDefinitionItem,
   SettingDefinitionPage,
   Notice,
@@ -112,8 +111,7 @@ function buildTruncateAliasDescription(): DocumentFragment {
 }
 
 export function buildAliasPage(
-  plugin: FirstLineIsTitlePlugin,
-  tab: PluginSettingTab
+  plugin: FirstLineIsTitlePlugin
 ): SettingDefinitionPage {
   // Everything below the master toggle is meaningless while aliases are off,
   // so it is hidden rather than shown greyed out.

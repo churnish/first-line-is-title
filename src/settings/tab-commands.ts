@@ -1,6 +1,5 @@
 import {
   Notice,
-  PluginSettingTab,
   SettingDefinitionGroup,
   SettingDefinitionPage,
   SettingDefinitionRender,
@@ -206,8 +205,7 @@ function buildCommandSection(
 }
 
 export function buildCommandsPage(
-  plugin: FirstLineIsTitlePlugin,
-  tab: PluginSettingTab
+  plugin: FirstLineIsTitlePlugin
 ): SettingDefinitionPage {
   return {
     type: 'page',

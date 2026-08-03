@@ -1,6 +1,5 @@
 import {
   Notice,
-  PluginSettingTab,
   Setting,
   SettingDefinitionPage,
   setIcon,
@@ -248,8 +247,7 @@ function appendTrimNote(parent: HTMLElement | DocumentFragment): void {
  * table CSS keeps applying without capturing Obsidian's own row chrome.
  */
 export function buildCharacterReplacementsPage(
-  plugin: FirstLineIsTitlePlugin,
-  tab: PluginSettingTab
+  plugin: FirstLineIsTitlePlugin
 ): SettingDefinitionPage {
   const mountTable = (
     setting: Setting,

@@ -257,11 +257,10 @@ br + .flit-table-container {
 }
 
 /* ==========================================================================
-   Custom Replacement and Safeword Tables
+   Custom Replacement Table
    ========================================================================== */
 
-.flit-custom-replacement-header,
-.flit-safeword-header {
+.flit-custom-replacement-header {
   display: flex;
   align-items: center;
   padding: 9px 16px 8px 16px;
@@ -274,19 +273,15 @@ br + .flit-table-container {
 }
 
 .flit-custom-replacement-header .flit-toggle-column:first-of-type,
-.flit-safeword-header .flit-toggle-column:first-of-type,
-.flit-custom-replacement-header .flit-toggle-column:last-of-type,
-.flit-safeword-header .flit-toggle-column:last-of-type {
+.flit-custom-replacement-header .flit-toggle-column:last-of-type {
   margin-right: 0;
 }
 
-.flit-custom-replacement-header.hidden,
-.flit-safeword-header.hidden {
+.flit-custom-replacement-header.hidden {
   display: none;
 }
 
-.flit-custom-replacement-setting,
-.flit-safeword-setting {
+.flit-custom-replacement-setting {
   display: flex;
   align-items: center;
   padding: 8px 16px;
@@ -297,19 +292,15 @@ br + .flit-table-container {
 }
 
 .flit-custom-replacement-setting .flit-toggle-column:first-of-type,
-.flit-safeword-setting .flit-toggle-column:first-of-type,
-.flit-custom-replacement-setting .flit-toggle-column:last-of-type,
-.flit-safeword-setting .flit-toggle-column:last-of-type {
+.flit-custom-replacement-setting .flit-toggle-column:last-of-type {
   margin-right: 0;
 }
 
-.flit-custom-replacement-setting:last-of-type,
-.flit-safeword-setting:last-of-type {
+.flit-custom-replacement-setting:last-of-type {
   border-bottom: none;
 }
 
-.flit-custom-replacement-setting.hidden,
-.flit-safeword-setting.hidden {
+.flit-custom-replacement-setting.hidden {
   display: none;
 }
 
@@ -332,12 +323,6 @@ br + .flit-table-container {
   flex-shrink: 0;
   text-align: left;
   overflow: hidden;
-}
-
-.flit-text-column.flit-safeword-input {
-  width: 290px;
-  min-width: 290px;
-  max-width: 290px;
 }
 
 .flit-text-column input {
@@ -389,8 +374,7 @@ br + .flit-table-container {
   pointer-events: none !important;
 }
 
-.flit-add-replacement-button.hidden,
-.flit-add-safeword-button.hidden {
+.flit-add-replacement-button.hidden {
   display: none;
 }
 
@@ -407,7 +391,6 @@ br + .flit-table-container {
 
 /* Add margin to input elements in tables to prevent outline clipping */
 .flit-settings-page .flit-custom-replacement-setting input[type='text'],
-.flit-settings-page .flit-safeword-setting input[type='text'],
 .flit-settings-page .flit-text-column input[type='text'] {
   margin: 2px;
   width: calc(100% - 4px);
@@ -415,8 +398,7 @@ br + .flit-table-container {
 }
 
 /* Adjust row alignment to accommodate input margins */
-.flit-settings-page .flit-custom-replacement-setting,
-.flit-settings-page .flit-safeword-setting {
+.flit-settings-page .flit-custom-replacement-setting {
   align-items: stretch;
 }
 
@@ -429,17 +411,14 @@ br + .flit-table-container {
 
 /* Apply disabled styling to section elements when master toggle OFF */
 .flit-master-disabled .flit-custom-replacement-header,
-.flit-master-disabled .flit-safeword-header,
-.flit-master-disabled .flit-add-replacement-button,
-.flit-master-disabled .flit-add-safeword-button {
+.flit-master-disabled .flit-add-replacement-button {
   opacity: 0.5;
 }
 
 /* Gray out individual row content (but not the row container itself) */
 .flit-master-disabled
   .flit-custom-replacement-setting
-  > *:not(.flit-actions-column),
-.flit-master-disabled .flit-safeword-setting > *:not(.flit-actions-column) {
+  > *:not(.flit-actions-column) {
   opacity: 0.5;
 }
 
@@ -656,8 +635,7 @@ hr.flit-divider {
 
 .flit-table-container + hr,
 .flit-table-wrapper + hr,
-.flit-add-replacement-button + hr,
-.flit-add-safeword-button + hr {
+.flit-add-replacement-button + hr {
   display: none !important;
 }
 
@@ -670,8 +648,7 @@ hr.flit-divider {
 
 /* Use parent specificity for add buttons */
 .flit-settings-page .flit-add-folder-button,
-.flit-settings-page .flit-add-replacement-button,
-.flit-settings-page .flit-add-safeword-button {
+.flit-settings-page .flit-add-replacement-button {
   border-top: none;
   border-bottom: none;
   margin-top: 10px;
@@ -687,8 +664,7 @@ hr.flit-divider {
 .flit-settings-page .flit-table-wrapper + .setting-item,
 .flit-settings-page
   .flit-custom-replacement-setting:last-of-type
-  + .setting-item,
-.flit-settings-page .flit-safeword-setting:last-of-type + .setting-item {
+  + .setting-item {
   border-top: none;
 }
 
@@ -697,9 +673,6 @@ hr.flit-divider {
 .flit-settings-page .flit-table-wrapper ~ *:not(.setting-item-heading),
 .flit-settings-page
   .flit-custom-replacement-setting:last-of-type
-  ~ *:not(.setting-item-heading),
-.flit-settings-page
-  .flit-safeword-setting:last-of-type
   ~ *:not(.setting-item-heading) {
   border-top: none;
   border-bottom: none;
@@ -716,8 +689,8 @@ hr.flit-divider {
 .flit-settings-page p,
 .flit-settings-page
   .setting-item:not(.flit-custom-replacement-setting):not(
-    .flit-safeword-setting
-  ):not(.flit-char-replacement-setting),
+    .flit-char-replacement-setting
+  ),
 .flit-char-replacement-section-header,
 .flit-section-title {
   width: 100%;
@@ -863,9 +836,7 @@ hr.flit-divider {
 .flit-master-disabled .flit-char-replacement-header,
 .flit-master-disabled .flit-char-replacement-setting,
 .flit-master-disabled .flit-custom-replacement-header,
-.flit-master-disabled .flit-safeword-header,
 .flit-master-disabled .flit-custom-replacement-setting,
-.flit-master-disabled .flit-safeword-setting,
 .flit-master-disabled br,
 .flit-master-disabled p.setting-item-description,
 .flit-master-disabled div.setting-item-description,
@@ -887,8 +858,7 @@ hr.flit-divider {
 
 /* Prevent opacity stacking for disabled rows in disabled sections */
 .flit-master-disabled .flit-char-replacement-setting.flit-row-disabled,
-.flit-master-disabled .flit-custom-replacement-setting.flit-row-disabled,
-.flit-master-disabled .flit-safeword-setting.flit-row-disabled {
+.flit-master-disabled .flit-custom-replacement-setting.flit-row-disabled {
   opacity: 0.5 !important;
 }
 
@@ -1055,8 +1025,8 @@ hr.flit-divider {
 /* Ensure dropdown menus can extend past container boundaries - EXCLUDE tables */
 .flit-settings-page
   .setting-item:not(.flit-custom-replacement-setting):not(
-    .flit-safeword-setting
-  ):not(.flit-char-replacement-setting) {
+    .flit-char-replacement-setting
+  ) {
   overflow: visible !important;
   position: relative;
 }
@@ -1122,7 +1092,6 @@ hr.flit-divider {
 .flit-table-container .setting-item-control,
 .flit-table-wrapper .setting-item-control,
 .flit-custom-replacement-setting .setting-item-control,
-.flit-safeword-setting .setting-item-control,
 .flit-char-replacement-setting .setting-item-control {
   position: static;
   overflow: hidden;
@@ -1132,7 +1101,6 @@ hr.flit-divider {
 .flit-table-container select,
 .flit-table-wrapper select,
 .flit-custom-replacement-setting select,
-.flit-safeword-setting select,
 .flit-char-replacement-setting select {
   position: relative;
   z-index: 2000 !important;
