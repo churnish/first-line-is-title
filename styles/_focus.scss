@@ -1,0 +1,7 @@
+// Link/button focus-visible accessibility styling.
+
+.flit-settings-page .setting-item-description a:focus,
+.flit-settings-page a:focus {
+  color: var(--link-color-hover, var(--text-accent-hover));
+  text-decoration: underline;
+}

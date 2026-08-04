@@ -1,0 +1,20 @@
+// Setting-item-heading spacing overrides.
+
+.flit-settings-page .setting-item-heading {
+  margin-top: 0.75em;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+
+.flit-settings-page .flit-heading-with-desc.setting-item-heading {
+  padding-bottom: 0;
+}
+
+.flit-settings-page .flit-first-section-heading.setting-item-heading {
+  margin-top: var(--size-4-6);
+}
+
+/* Add margin between heading info and toggle control (vanilla Obsidian default) */
+.flit-settings-page .setting-item-heading > .setting-item-info {
+  margin-inline-end: var(--size-4-4);
+}

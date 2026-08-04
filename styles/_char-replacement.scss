@@ -1,0 +1,116 @@
+// Per-character replacement rows: name/text/toggle columns, section header.
+
+.flit-char-settings-container {
+  display: block;
+}
+
+.flit-char-settings-container.hidden {
+  display: none;
+}
+
+.flit-char-replacement-section-header {
+  margin-bottom: 10px;
+}
+
+.flit-char-replacement-section-header.windows-android,
+.flit-char-replacement-section-header.command-palette,
+.flit-char-replacement-section-header.ribbon,
+.flit-char-replacement-section-header.context-menu {
+  margin-top: 12px;
+  margin-bottom: 5px;
+  padding-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flit-section-title {
+  margin: 0;
+  font-size: 1.33em;
+  font-weight: 600;
+}
+
+/* Use parent selector for specificity instead of !important */
+.flit-settings-page .flit-section-title {
+  border-bottom: none;
+}
+
+.flit-char-replacement-header,
+.flit-char-replacement-setting {
+  display: flex;
+  align-items: flex-start;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  gap: 8px;
+  width: fit-content;
+  min-width: 750px;
+}
+
+.flit-char-replacement-header {
+  font-weight: bold;
+  font-size: 0.9em;
+  padding-top: 9px;
+}
+
+.flit-char-replacement-header.hidden {
+  display: none;
+}
+
+.flit-char-replacement-setting:last-of-type {
+  border-bottom: none;
+}
+
+.flit-char-replacement-setting.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.flit-char-replacement-setting.hidden {
+  display: none;
+}
+
+/* Character name column */
+.flit-char-name-column {
+  width: 308px;
+  min-width: 308px;
+  max-width: 308px;
+  flex-shrink: 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+
+.flit-char-name-column .setting-item-name {
+  margin-bottom: 2px;
+}
+
+.flit-char-name-column .setting-item-description {
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+/* Character text input - fixed width to maintain table layout */
+.flit-char-text-input-container {
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Use double class selector for specificity instead of !important */
+.flit-settings-page .flit-char-text-input-container .flit-char-text-input {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+  flex: none;
+  flex-grow: 0;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

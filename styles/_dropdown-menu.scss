@@ -1,0 +1,98 @@
+// Dropdown/select overflow and z-index fixes so menus escape clipped containers.
+
+.flit-sub-settings .setting-item-control {
+  overflow: visible !important;
+}
+
+.flit-sub-settings,
+.flit-settings-page .flit-sub-settings,
+.flit-settings-page .flit-sub-settings .setting-item {
+  overflow: visible !important;
+}
+
+/* Fix dropdown menu clipping in settings - ONLY for non-table elements */
+.flit-settings-page
+  .setting-item-control:not(.flit-table-container *):not(
+    .flit-table-wrapper *
+  ) {
+  overflow: visible !important;
+}
+
+/* Ensure dropdown elements have proper overflow handling - exclude table containers */
+.flit-settings-page
+  .dropdown:not(.flit-table-container *):not(.flit-table-wrapper *),
+.flit-settings-page
+  select:not(.flit-table-container *):not(.flit-table-wrapper *) {
+  position: relative !important;
+  z-index: 1000 !important;
+}
+
+/* Fix specific Obsidian dropdown clipping - exclude table containers */
+.flit-settings-page
+  .setting-item-control:not(.flit-table-container *):not(.flit-table-wrapper *)
+  .dropdown,
+.flit-settings-page
+  .setting-item-control:not(.flit-table-container *):not(.flit-table-wrapper *)
+  select,
+.flit-settings-page
+  .setting-item-control:not(.flit-table-container *):not(.flit-table-wrapper *)
+  .clickable-icon {
+  overflow: visible !important;
+  position: relative;
+  z-index: 100 !important;
+}
+
+/* Ensure dropdown menus can extend past container boundaries - EXCLUDE tables */
+.flit-settings-page
+  .setting-item:not(.flit-custom-replacement-setting):not(
+    .flit-char-replacement-setting
+  ) {
+  overflow: visible !important;
+  position: relative;
+}
+
+/* Fix main settings container overflow */
+.flit-settings-page .vertical-tab-content {
+  overflow-x: visible !important;
+}
+
+/* Comprehensive dropdown clipping fix */
+.mod-settings .flit-settings-page,
+.mod-settings .flit-sub-settings {
+  overflow-x: visible !important;
+}
+
+.flit-settings-page .mod-settings .vertical-tab-content {
+  overflow-x: visible !important;
+}
+
+/* Ensure dropdowns have proper z-index */
+.flit-sub-settings select {
+  position: relative;
+  z-index: 1000;
+}
+
+/* Bullet point styling */
+.flit-settings-page .setting-item-description ul li {
+  list-style-type: disc;
+}
+
+/* Prevent toggle focus outline clipping on right edge */
+.flit-settings-page .setting-item-control {
+  padding-right: 4px;
+}
+
+/* Property disable container - wrap to vertical layout earlier */
+@media (max-width: 950px) {
+  .setting-item:has(.flit-property-disable-container) {
+    flex-wrap: wrap !important;
+  }
+
+  .setting-item:has(.flit-property-disable-container) .setting-item-info {
+    flex-basis: 100%;
+  }
+
+  .setting-item:has(.flit-property-disable-container) .setting-item-control {
+    justify-content: flex-start;
+  }
+}

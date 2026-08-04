@@ -1,0 +1,32 @@
+// FLIT — SCSS entry point.
+// All partials loaded in dependency order.
+
+// CSS architecture notes:
+// - Most styles are scoped under .flit-settings-page for specificity
+// - !important is used ONLY where necessary to override Obsidian base/theme styles
+// - Each !important usage is documented with a comment explaining why it's needed
+// - State classes (.flit-row-disabled, .flit-master-disabled) control visibility
+
+// Modals and tables
+@use 'modals';
+@use 'char-replacement';
+@use 'tables';
+
+// State
+@use 'disabled-state';
+
+// Settings layout
+@use 'exclusions';
+@use 'settings-tabs';
+@use 'dividers';
+@use 'section-headers';
+@use 'properties';
+@use 'notices';
+@use 'setting-icons';
+@use 'sub-settings';
+
+// Fixes and overrides
+@use 'dropdown-menu';
+@use 'focus';
+@use 'utilities';
+@use 'setting-headings';

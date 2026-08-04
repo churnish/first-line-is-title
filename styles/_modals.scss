@@ -1,0 +1,43 @@
+// Modal dialog layout and spacing.
+
+.flit-modal-heading-left {
+  text-align: left;
+}
+
+.flit-modal-heading-left .modal-title {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 1.5em;
+  font-weight: 600;
+}
+
+.flit-link-input-full {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.flit-modal-button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.flit-modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.flit-checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flit-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

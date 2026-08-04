@@ -1,0 +1,29 @@
+// Section headers and master toggle rows.
+
+.flit-section-header {
+  border-top: none;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.flit-section-header .setting-item-name {
+  font-weight: bold;
+}
+
+/* Remove border stacking after Processing order toggle */
+.flit-settings-page .flit-processing-order-toggle + .setting-item {
+  border-top: none;
+}
+
+/* Master toggle without border */
+.flit-settings-page .flit-master-toggle.flit-no-border {
+  border-bottom: none;
+}
+
+.flit-master-toggle .setting-item-name {
+  font-weight: bold;
+}
+
+.flit-settings-page .flit-master-toggle {
+  border-top: none;
+  background: none;
+}

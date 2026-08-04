@@ -1,0 +1,57 @@
+// Exclusion list rows and their below-list add-row chrome.
+
+.flit-exclusion-item-setting {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.flit-exclusion-item-setting .setting-item-info {
+  display: none !important;
+}
+
+.flit-exclusion-item-setting .setting-item-control {
+  flex: 1 !important;
+  max-width: none !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+
+.flit-exclusion-item-setting .setting-item-control input {
+  flex: 1 !important;
+  min-width: 0 !important;
+  margin: 2px !important;
+}
+
+.flit-exclusion-item-setting .setting-item-control .clickable-icon {
+  flex-shrink: 0 !important;
+  width: 32px !important;
+  height: 32px !important;
+}
+
+/* Below-the-list "Add" row: an empty-name Setting holding only a button.
+   Unscoped (no .flit-settings-page ancestor) because it is a plain
+   declarative row, not mounted into a legacy host. Being a standalone run
+   with no heading, the framework wraps it in the same card-styled
+   .setting-items box a list uses; strip that box's chrome so the row reads
+   as a plain floating button, matching the pre-migration look. */
+.setting-items:has(> .flit-add-item-row) {
+  background: transparent;
+  border-radius: 0;
+}
+
+/* The framework's standard 24px inter-group margin reads as too much gap
+   between a list's last row and its own "Add" affordance. */
+.setting-group:has(> .setting-items > .flit-add-item-row) {
+  margin-top: 4px;
+}
+
+.flit-add-item-row .setting-item-info {
+  display: none;
+}
+
+.flit-add-item-row {
+  border-top: none;
+  padding-top: 0;
+}

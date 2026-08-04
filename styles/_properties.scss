@@ -1,0 +1,78 @@
+// Property key/value input layout and hidden-property visibility classes.
+
+.flit-property-container {
+  flex: 1 !important;
+  min-width: 0 !important;
+  width: auto !important;
+}
+
+.flit-property-key-input,
+.flit-property-value-input {
+  flex: 1 !important;
+  min-width: 60px !important;
+}
+
+/* Ensure all X buttons are the same size */
+.flit-button-container .clickable-icon {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  font-size: 16px !important;
+}
+
+/* Fix Property disable renaming restore button on mobile */
+.flit-property-control-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+
+.flit-restore-button-container {
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.flit-property-hidden {
+  display: none !important;
+}
+
+.flit-container-hidden {
+  display: none !important;
+}
+
+/* Fix multi-select wrapping ONLY when plugin has visible properties */
+.metadata-container:not(.cm-editor .metadata-container)
+  .metadata-property.flit-property-visible {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+.metadata-container:not(.cm-editor .metadata-container)
+  .metadata-property.flit-property-visible
+  .metadata-property-key {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.metadata-container:not(.cm-editor .metadata-container)
+  .metadata-property.flit-property-visible
+  .metadata-property-value {
+  flex-shrink: 1;
+  min-width: 0;
+  flex-grow: 1;
+}
+
+.metadata-container:not(.cm-editor .metadata-container)
+  .metadata-property.flit-property-visible
+  .multi-select-container,
+.metadata-container:not(.cm-editor .metadata-container)
+  .metadata-property.flit-property-visible
+  .metadata-input-longtext {
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 100%;
+}

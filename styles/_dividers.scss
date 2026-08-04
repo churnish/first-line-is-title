@@ -1,0 +1,85 @@
+// Border/divider cleanup around tables and settings groups.
+
+.flit-divider,
+hr.flit-divider {
+  display: none !important;
+}
+
+.flit-table-container + hr,
+.flit-table-wrapper + hr,
+.flit-add-replacement-button + hr {
+  display: none !important;
+}
+
+/* Use parent specificity for table/wrapper borders */
+.flit-settings-page .flit-table-container,
+.flit-settings-page .flit-table-wrapper {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+/* Use parent specificity for add buttons */
+.flit-settings-page .flit-add-folder-button,
+.flit-settings-page .flit-add-replacement-button {
+  border-top: none;
+  border-bottom: none;
+  margin-top: 10px;
+  background: none;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+  overflow: visible;
+}
+
+/* Hide borders after tables - use parent specificity */
+.flit-settings-page .flit-table-container + .setting-item,
+.flit-settings-page .flit-table-wrapper + .setting-item,
+.flit-settings-page
+  .flit-custom-replacement-setting:last-of-type
+  + .setting-item {
+  border-top: none;
+}
+
+/* Remove borders from elements following tables (except headings) */
+.flit-settings-page .flit-table-container ~ *:not(.setting-item-heading),
+.flit-settings-page .flit-table-wrapper ~ *:not(.setting-item-heading),
+.flit-settings-page
+  .flit-custom-replacement-setting:last-of-type
+  ~ *:not(.setting-item-heading) {
+  border-top: none;
+  border-bottom: none;
+}
+
+.flit-settings-page hr,
+.flit-settings-page .setting-item:first-of-type {
+  border-top: none;
+}
+
+/* Keep non-table elements fixed to viewport width */
+.flit-settings-page h2,
+.flit-settings-page h3,
+.flit-settings-page p,
+.flit-settings-page
+  .setting-item:not(.flit-custom-replacement-setting):not(
+    .flit-char-replacement-setting
+  ),
+.flit-char-replacement-section-header,
+.flit-section-title {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  word-wrap: break-word;
+}
+
+/* Table containers need horizontal scroll - REQUIRES !important for overflow control */
+.flit-settings-page .flit-table-container {
+  overflow-x: auto !important;
+}
+
+/* Prevent non-table elements from causing horizontal overflow */
+.flit-settings-page > *:not(.flit-table-container) {
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
