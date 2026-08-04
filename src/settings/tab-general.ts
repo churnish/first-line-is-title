@@ -36,21 +36,17 @@ export function buildGeneralDefinitions(
 ): SettingDefinitionItem[] {
   return [
     {
-      name: t('settings.general.renameNotes.name'),
-      desc: t('settings.general.renameNotes.desc'),
+      name: t('settings.general.renameAutomatically.name'),
+      desc: t('settings.general.renameAutomatically.desc'),
       control: {
-        type: 'dropdown',
-        key: 'core.renameNotes',
-        options: {
-          automatically: t('settings.general.renameNotes.automatically'),
-          manually: t('settings.general.renameNotes.manually'),
-        },
+        type: 'toggle',
+        key: 'core.renameAutomatically',
       },
     },
     {
       name: t('settings.general.renameOnFocus.name'),
       desc: t('settings.general.renameOnFocus.desc'),
-      visible: () => plugin.settings.core.renameNotes === 'automatically',
+      visible: () => plugin.settings.core.renameAutomatically,
       control: {
         type: 'toggle',
         key: 'core.renameOnFocus',
@@ -62,6 +58,14 @@ export function buildGeneralDefinitions(
       control: {
         type: 'toggle',
         key: 'core.onlyRenameIfHeading',
+      },
+    },
+    {
+      name: t('settings.general.renameOnSave.name'),
+      desc: t('settings.general.renameOnSave.desc'),
+      control: {
+        type: 'toggle',
+        key: 'core.renameOnSave',
       },
     },
     {
@@ -115,14 +119,6 @@ export function buildGeneralDefinitions(
       control: {
         type: 'toggle',
         key: 'markupStripping.addHeadingToTitle',
-      },
-    },
-    {
-      name: t('settings.general.renameOnSave.name'),
-      desc: t('settings.general.renameOnSave.desc'),
-      control: {
-        type: 'toggle',
-        key: 'core.renameOnSave',
       },
     },
   ];

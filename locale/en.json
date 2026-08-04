@@ -42,15 +42,6 @@
       "renameActiveNoteEvenExcluded": "Rename active note, even if in excluded folder or with excluded tag or property.",
       "renameActiveNoteUnlessExcluded": "Rename active note except if in excluded folder or with excluded tag or property.",
       "renameAllNotesExceptExcluded": "Rename all notes in vault except if in excluded folder or with excluded tag or property.",
-      "toggleRenameSetting": {
-        "part1": "Toggle the ",
-        "renameNotes": "Rename notes",
-        "part2": " setting between ",
-        "automatically": "Automatically",
-        "part3": " and ",
-        "manually": "Manually",
-        "part4": "."
-      },
       "excludeActiveNote": "Exclude active note from renaming.",
       "stopExcludingActiveNote": "Stop excluding active note from renaming.",
       "createLinkWithForbiddenChars": {
@@ -184,11 +175,9 @@
       "advancedGroup": "Advanced"
     },
     "general": {
-      "renameNotes": {
-        "name": "Rename notes",
-        "desc": "Set how notes should be processed.",
-        "automatically": "Automatically if open & modified",
-        "manually": "Manually with command only"
+      "renameAutomatically": {
+        "name": "Rename automatically",
+        "desc": "Rename notes automatically when they're open and edited. When off, only rename via command."
       },
       "renameOnFocus": {
         "name": "Rename on focus",
@@ -221,14 +210,14 @@
       "convertReplacementCharactersInTitle": {
         "name": "Convert replacement characters",
         "desc": {
-          "part1": "Convert forbidden character replacements back to their original forms, as set in ",
+          "part1": "When inserting title on note creation, convert forbidden character replacements back to their original forms, as set in ",
           "replaceCharacters": "Character replacements",
           "part2": "."
         }
       },
       "formatAsHeading": {
         "name": "Format as heading",
-        "desc": "Make the first line a heading."
+        "desc": "When inserting title on note creation, make it a heading."
       },
       "renameOnSave": {
         "name": "Rename on save",
@@ -328,9 +317,9 @@
         "default": "Default: no rename:true"
       },
       "fileNames": {
-        "title": "File names",
+        "title": "File name matches",
         "desc": "Set file names to match.",
-        "addButton": "Add file name",
+        "addButton": "Add match",
         "emptyState": "No file names added.",
         "headers": {
           "enable": "Enable",
@@ -511,9 +500,7 @@
       "emptyRule": "Empty rule"
     },
     "stripMarkup": {
-      "name": "Strip markup",
       "desc": "Omit markup syntax in file name.",
-      "toggleDesc": "Omit markup syntax in file name when renaming.",
       "headings": {
         "name": "Strip heading markup",
         "desc": {
@@ -581,7 +568,7 @@
         }
       },
       "markdownLinks": {
-        "name": "Strip markdown link markup",
+        "name": "Strip Markdown link markup",
         "desc": {
           "part1": "For example, turn ",
           "example1": "[Hello](https://example.org)",
@@ -763,6 +750,7 @@
       }
     },
     "other": {
+      "desc": "Fine-tune, troubleshoot, manage settings.",
       "charCount": {
         "name": "Character count",
         "desc": "The maximum number of characters to put in file name.",

@@ -59,22 +59,13 @@ const CASCADES: Record<string, (plugin: FirstLineIsTitlePlugin) => void> = {
     settings.core.hasEnabledCustomReplacements = true;
   },
 
-  'markupStripping.enableStripMarkup': (plugin) => {
-    const { settings } = plugin;
-    if (settings.markupStripping.enableStripMarkup) return;
-    settings.markupStripping.stripMarkupInAlias = false;
-    settings.markupStripping.applyCustomRulesAfterMarkupStripping = false;
-  },
-
   'aliases.enableAliases': (plugin) => {
     const { settings } = plugin;
     if (!settings.aliases.enableAliases || settings.core.hasEnabledAliases) {
       return;
     }
     settings.aliases.keepEmptyAliasProperty = true;
-    if (settings.markupStripping.enableStripMarkup) {
-      settings.markupStripping.stripMarkupInAlias = true;
-    }
+    settings.markupStripping.stripMarkupInAlias = true;
     if (settings.customRules.enableCustomReplacements) {
       settings.markupStripping.applyCustomRulesInAlias = true;
     }
@@ -106,7 +97,6 @@ const CASCADES: Record<string, (plugin: FirstLineIsTitlePlugin) => void> = {
 const VALUE_MUTATING_KEYS = new Set([
   'replaceCharacters.enableForbiddenCharReplacements',
   'customRules.enableCustomReplacements',
-  'markupStripping.enableStripMarkup',
   'aliases.enableAliases',
 ]);
 
@@ -161,11 +151,11 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
         type: 'group',
         heading: t('settings.tabs.advancedGroup'),
         items: [
+          buildAliasPage(this.plugin),
           buildCharacterReplacementsPage(this.plugin),
+          buildCommandsPage(this.plugin),
           buildCustomRulesPage(this.plugin, this),
           buildMarkupStrippingPage(this.plugin),
-          buildAliasPage(this.plugin),
-          buildCommandsPage(this.plugin),
           buildOtherPage(this.plugin, this),
         ],
       },

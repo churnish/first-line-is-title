@@ -467,6 +467,32 @@ br + .flit-table-container {
   height: 32px !important;
 }
 
+/* Below-the-list "Add" row: an empty-name Setting holding only a button.
+   Unscoped (no .flit-settings-page ancestor) because it is a plain
+   declarative row, not mounted into a legacy host. Being a standalone run
+   with no heading, the framework wraps it in the same card-styled
+   .setting-items box a list uses; strip that box's chrome so the row reads
+   as a plain floating button, matching the pre-migration look. */
+.setting-items:has(> .flit-add-item-row) {
+  background: transparent;
+  border-radius: 0;
+}
+
+/* The framework's standard 24px inter-group margin reads as too much gap
+   between a list's last row and its own "Add" affordance. */
+.setting-group:has(> .setting-items > .flit-add-item-row) {
+  margin-top: 4px;
+}
+
+.flit-add-item-row .setting-item-info {
+  display: none;
+}
+
+.flit-add-item-row {
+  border-top: none;
+  padding-top: 0;
+}
+
 /* ==========================================================================
    Settings Tabs
    ========================================================================== */
@@ -914,8 +940,8 @@ hr.flit-divider {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--icon-s, 16px);
-  height: var(--icon-s, 16px);
+  width: 1lh;
+  height: 1lh;
   margin-right: 8px;
   color: var(--text-muted);
   flex-shrink: 0;
@@ -923,8 +949,8 @@ hr.flit-divider {
 }
 
 .flit-setting-item-icon svg {
-  width: var(--icon-s, 16px);
-  height: var(--icon-s, 16px);
+  width: 1lh;
+  height: 1lh;
 }
 
 /* ==========================================================================

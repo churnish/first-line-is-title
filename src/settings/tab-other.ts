@@ -260,6 +260,7 @@ export function buildOtherPage(
   return {
     type: 'page',
     name: t('settings.tabs.other'),
+    desc: t('settings.other.desc'),
     items: [
       {
         name: t('settings.other.titleCase.name'),
@@ -356,7 +357,7 @@ export function buildOtherPage(
           'settings.other.checkInterval.default'
         ),
         visible: () =>
-          plugin.settings.core.renameNotes === 'automatically' &&
+          plugin.settings.core.renameAutomatically &&
           plugin.settings.core.fileReadMethod === 'Editor',
         control: {
           type: 'slider',

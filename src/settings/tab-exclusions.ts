@@ -210,20 +210,38 @@ function buildStringExclusionRow(
   };
 }
 
-/**
- * Builds one excluded-property row. Handlers close over the property object
- * rather than its index so they cannot write to the wrong entry after a
- * deletion.
- */
-function buildPropertyRow(
-  plugin: FirstLineIsTitlePlugin,
-  property: ExcludedProperty
+interface KeyValueRowOptions {
+  plugin: FirstLineIsTitlePlugin;
+  name: string;
+  searchable: boolean;
+  aliases?: string[];
+  getKey: () => string;
+  setKey: (value: string) => void;
+  getValue: () => string;
+  setValue: (value: string) => void;
+  debugLabel: string;
+}
+
+/** Renders a single key:value pair as two side-by-side text inputs. */
+function buildKeyValueRow(
+  options: KeyValueRowOptions
 ): SettingDefinitionRender {
-  const properties = () => plugin.settings.exclusions.excludedProperties;
+  const {
+    plugin,
+    name,
+    searchable,
+    aliases,
+    getKey,
+    setKey,
+    getValue,
+    setValue,
+    debugLabel,
+  } = options;
 
   return {
-    name: property.key || t('settings.exclusions.properties.keyPlaceholder'),
-    searchable: false,
+    name,
+    searchable,
+    aliases,
     render: (setting) => {
       setting.settingEl.addClass('flit-exclusion-item-setting');
 
@@ -236,7 +254,7 @@ function buildPropertyRow(
         cls: 'flit-property-key-input',
       });
       keyInput.placeholder = t('settings.exclusions.properties.keyPlaceholder');
-      keyInput.value = property.key;
+      keyInput.value = getKey();
       keyInput.tabIndex = 0;
 
       inputContainer.createSpan({
@@ -251,7 +269,7 @@ function buildPropertyRow(
       valueInput.placeholder = t(
         'settings.exclusions.properties.valuePlaceholder'
       );
-      valueInput.value = property.value;
+      valueInput.value = getValue();
       valueInput.tabIndex = 0;
 
       // Tab moves between the key and value halves of the same pair rather
@@ -286,21 +304,76 @@ function buildPropertyRow(
 
       keyInput.addEventListener('input', (e: Event) => {
         void (async () => {
-          property.key = (e.target as HTMLInputElement).value;
-          plugin.debugLog('excludedProperties', properties());
+          setKey((e.target as HTMLInputElement).value);
+          plugin.debugLog(debugLabel, getKey());
           await persistSettings(plugin);
         })();
       });
 
       valueInput.addEventListener('input', (e: Event) => {
         void (async () => {
-          property.value = (e.target as HTMLInputElement).value;
-          plugin.debugLog('excludedProperties', properties());
+          setValue((e.target as HTMLInputElement).value);
+          plugin.debugLog(debugLabel, getValue());
           await persistSettings(plugin);
         })();
       });
     },
   };
+}
+
+/**
+ * Builds one excluded-property row. Handlers close over the property object
+ * rather than its index so they cannot write to the wrong entry after a
+ * deletion.
+ */
+function buildPropertyRow(
+  plugin: FirstLineIsTitlePlugin,
+  property: ExcludedProperty
+): SettingDefinitionRender {
+  return buildKeyValueRow({
+    plugin,
+    name: property.key || t('settings.exclusions.properties.keyPlaceholder'),
+    searchable: false,
+    getKey: () => property.key,
+    setKey: (value) => {
+      property.key = value;
+    },
+    getValue: () => property.value,
+    setValue: (value) => {
+      property.value = value;
+    },
+    debugLabel: 'excludedProperties',
+  });
+}
+
+/**
+ * Builds the "property to disable renaming" row: a single scalar key:value
+ * pair rendered the same way as an excluded-property row, not the two
+ * separate full-width rows a generic `control` binding would produce.
+ */
+function buildDisablePropertyRow(
+  plugin: FirstLineIsTitlePlugin
+): SettingDefinitionRender {
+  const exclusions = () => plugin.settings.exclusions;
+
+  return buildKeyValueRow({
+    plugin,
+    name: t('settings.exclusions.disableProperty.title'),
+    searchable: true,
+    aliases: [
+      t('settings.exclusions.properties.keyPlaceholder'),
+      t('settings.exclusions.properties.valuePlaceholder'),
+    ],
+    getKey: () => exclusions().disableRenamingKey,
+    setKey: (value) => {
+      exclusions().disableRenamingKey = value;
+    },
+    getValue: () => exclusions().disableRenamingValue,
+    setValue: (value) => {
+      exclusions().disableRenamingValue = value;
+    },
+    debugLabel: 'disableRenaming',
+  });
 }
 
 /**
@@ -426,39 +499,58 @@ function buildFileNameExclusionRow(
   };
 }
 
+/**
+ * Restores the pre-migration below-the-list "Add" button (a full setting row)
+ * in place of the native list's header `+` affordance.
+ */
+function buildAddItemRow(
+  label: string,
+  onAdd: () => void
+): SettingDefinitionRender {
+  return {
+    name: '',
+    searchable: false,
+    render: (setting) => {
+      setting.settingEl.addClass('flit-add-item-row');
+      setting.addButton((button) => {
+        button.setButtonText(label).onClick(onAdd);
+      });
+    },
+  };
+}
+
 /** Folder and tag lists share every affordance except their suggester. */
 function buildStringExclusionList(
   options: StringExclusionListOptions,
   tab: PluginSettingTab,
   addButtonText: string,
   emptyState: string
-): SettingDefinitionItem {
+): SettingDefinitionItem[] {
   const { plugin, getItems } = options;
 
-  return {
-    type: 'list',
-    emptyState,
-    items: getItems().map((_, index) =>
-      buildStringExclusionRow(options, index)
-    ),
-    onDelete: (index) => {
-      void (async () => {
-        getItems().splice(index, 1);
-        await persistSettings(plugin);
-        tab.update();
-      })();
-    },
-    addItem: {
-      name: addButtonText,
-      action: () => {
+  return [
+    {
+      type: 'list',
+      emptyState,
+      items: getItems().map((_, index) =>
+        buildStringExclusionRow(options, index)
+      ),
+      onDelete: (index) => {
         void (async () => {
-          getItems().push('');
+          getItems().splice(index, 1);
           await persistSettings(plugin);
           tab.update();
         })();
       },
     },
-  };
+    buildAddItemRow(addButtonText, () => {
+      void (async () => {
+        getItems().push('');
+        await persistSettings(plugin);
+        tab.update();
+      })();
+    }),
+  ];
 }
 
 /**
@@ -517,7 +609,7 @@ export function buildExclusionsPage(
           },
         ],
       },
-      buildStringExclusionList(
+      ...buildStringExclusionList(
         {
           plugin,
           getItems: () => exclusions().excludedFolders,
@@ -575,7 +667,7 @@ export function buildExclusionsPage(
           },
         ],
       },
-      buildStringExclusionList(
+      ...buildStringExclusionList(
         {
           plugin,
           getItems: () => exclusions().excludedTags,
@@ -619,17 +711,14 @@ export function buildExclusionsPage(
             tab.update();
           })();
         },
-        addItem: {
-          name: t('settings.exclusions.properties.addButton'),
-          action: () => {
-            void (async () => {
-              exclusions().excludedProperties.push({ key: '', value: '' });
-              await persistSettings(plugin);
-              tab.update();
-            })();
-          },
-        },
       },
+      buildAddItemRow(t('settings.exclusions.properties.addButton'), () => {
+        void (async () => {
+          exclusions().excludedProperties.push({ key: '', value: '' });
+          await persistSettings(plugin);
+          tab.update();
+        })();
+      }),
 
       {
         type: 'group',
@@ -656,47 +745,27 @@ export function buildExclusionsPage(
             await persistSettings(plugin);
           })();
         },
-        addItem: {
-          name: t('settings.exclusions.fileNames.addButton'),
-          action: () => {
-            void (async () => {
-              exclusions().fileNameExclusions.push({
-                text: '',
-                onlyAtStart: false,
-                onlyWholeLine: false,
-                enabled: true,
-                caseSensitive: false,
-              });
-              await persistSettings(plugin);
-              tab.update();
-            })();
-          },
-        },
       },
+      buildAddItemRow(t('settings.exclusions.fileNames.addButton'), () => {
+        void (async () => {
+          exclusions().fileNameExclusions.push({
+            text: '',
+            onlyAtStart: false,
+            onlyWholeLine: false,
+            enabled: true,
+            caseSensitive: false,
+          });
+          await persistSettings(plugin);
+          tab.update();
+        })();
+      }),
 
       {
         type: 'group',
         heading: t('settings.exclusions.disableProperty.title'),
         items: [
           { name: '', desc: buildDisablePropertyIntro() },
-          {
-            name: t('settings.exclusions.properties.keyPlaceholder'),
-            aliases: [t('settings.exclusions.disableProperty.title')],
-            control: {
-              type: 'text',
-              key: 'exclusions.disableRenamingKey',
-              placeholder: t('settings.exclusions.properties.keyPlaceholder'),
-            },
-          },
-          {
-            name: t('settings.exclusions.properties.valuePlaceholder'),
-            aliases: [t('settings.exclusions.disableProperty.title')],
-            control: {
-              type: 'text',
-              key: 'exclusions.disableRenamingValue',
-              placeholder: t('settings.exclusions.properties.valuePlaceholder'),
-            },
-          },
+          buildDisablePropertyRow(plugin),
         ],
       },
     ],

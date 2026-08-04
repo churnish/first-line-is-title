@@ -125,11 +125,11 @@ describe('FirstLineIsTitleSettings', () => {
       const group = advancedGroup();
       expect(group?.heading).toBe('settings.tabs.advancedGroup');
       expect(group?.items?.map((i) => i.name)).toEqual([
+        'Alias',
         'Character replacements',
+        'Commands',
         'Custom rules',
         'Markup stripping',
-        'Alias',
-        'Commands',
         'Advanced',
       ]);
     });
@@ -174,7 +174,7 @@ describe('FirstLineIsTitleSettings', () => {
     });
 
     it('still saves exactly once when a cascade mutates several settings', async () => {
-      await tab.setControlValue('markupStripping.enableStripMarkup', false);
+      await tab.setControlValue('customRules.enableCustomReplacements', false);
       expect(plugin.saveSettings).toHaveBeenCalledTimes(1);
     });
   });
@@ -199,18 +199,8 @@ describe('FirstLineIsTitleSettings', () => {
       );
     });
 
-    it('clears both alias-side flags when markup stripping goes off', async () => {
-      plugin.settings.markupStripping.stripMarkupInAlias = true;
-      plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping = true;
-      await tab.setControlValue('markupStripping.enableStripMarkup', false);
-      expect(plugin.settings.markupStripping.stripMarkupInAlias).toBe(false);
-      expect(
-        plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping
-      ).toBe(false);
-    });
-
     it('re-renders via update() so force-written siblings never show a stale value', async () => {
-      await tab.setControlValue('markupStripping.enableStripMarkup', false);
+      await tab.setControlValue('customRules.enableCustomReplacements', false);
       expect(update).toHaveBeenCalledTimes(1);
       expect(refreshDomState).not.toHaveBeenCalled();
     });
@@ -247,7 +237,6 @@ describe('FirstLineIsTitleSettings', () => {
     it('seeds alias defaults the first time aliases are switched on', async () => {
       plugin.settings.core.hasEnabledAliases = false;
       plugin.settings.aliases.keepEmptyAliasProperty = false;
-      plugin.settings.markupStripping.enableStripMarkup = true;
       plugin.settings.markupStripping.stripMarkupInAlias = false;
 
       await tab.setControlValue('aliases.enableAliases', true);
@@ -257,16 +246,13 @@ describe('FirstLineIsTitleSettings', () => {
       expect(plugin.settings.core.hasEnabledAliases).toBe(true);
     });
 
-    it('does not seed alias dependants whose own feature is disabled', async () => {
+    it('does not seed applyCustomRulesInAlias when custom rules are disabled', async () => {
       plugin.settings.core.hasEnabledAliases = false;
-      plugin.settings.markupStripping.enableStripMarkup = false;
       plugin.settings.customRules.enableCustomReplacements = false;
-      plugin.settings.markupStripping.stripMarkupInAlias = false;
       plugin.settings.markupStripping.applyCustomRulesInAlias = false;
 
       await tab.setControlValue('aliases.enableAliases', true);
 
-      expect(plugin.settings.markupStripping.stripMarkupInAlias).toBe(false);
       expect(plugin.settings.markupStripping.applyCustomRulesInAlias).toBe(
         false
       );
