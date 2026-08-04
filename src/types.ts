@@ -46,7 +46,7 @@ export type PropertyHidingOption = 'never' | 'always' | 'when_empty';
  */
 export interface CoreSettings {
   // Rename behavior
-  renameNotes: 'automatically' | 'manually';
+  renameAutomatically: boolean;
   titleCase: 'preserve' | 'uppercase' | 'lowercase';
   renameOnFocus: boolean;
   renameOnSave: boolean;
@@ -170,7 +170,6 @@ export interface CustomRulesSettings {
  * Markup stripping and content processing settings
  */
 export interface MarkupStrippingSettings {
-  enableStripMarkup: boolean;
   stripMarkupSettings: {
     headings: boolean;
     bold: boolean;

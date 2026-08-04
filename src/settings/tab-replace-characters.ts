@@ -1,9 +1,4 @@
-import {
-  Notice,
-  Setting,
-  SettingDefinitionPage,
-  setIcon,
-} from 'obsidian';
+import { Notice, Setting, SettingDefinitionPage, setIcon } from 'obsidian';
 import {
   updateInteractiveState,
   addForbiddenCharProtection,
@@ -277,6 +272,15 @@ export function buildCharacterReplacementsPage(
       plugin.settings.replaceCharacters.enableForbiddenCharReplacements;
     updateInteractiveState(host, masterEnabled);
     tableContainer.classList.toggle('flit-master-disabled', !masterEnabled);
+
+    // The group heading and this row's own description live outside `host`
+    // (siblings in the declarative row/group chrome), so the master toggle
+    // must grey them out explicitly rather than relying on host's descendants.
+    setting.descEl.classList.toggle('flit-master-disabled', !masterEnabled);
+    const groupHeading = setting.settingEl
+      .closest('.setting-group')
+      ?.querySelector<HTMLElement>(':scope > .setting-item-heading');
+    groupHeading?.classList.toggle('flit-master-disabled', !masterEnabled);
   };
 
   return {

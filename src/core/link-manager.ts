@@ -12,7 +12,7 @@ export class LinkManager {
   }
 
   addSafeInternalLink(): void {
-    // Try to get active editor from any view type (markdown, canvas, etc.)
+    // Try to get active editor from any view type (Markdown, canvas, etc.)
     const activeEditor = this.plugin.app.workspace.activeEditor?.editor;
     if (!activeEditor) {
       new Notice(t('notifications.errorNoActiveNote'));
@@ -105,7 +105,7 @@ export class LinkManager {
   }
 
   addSafeInternalLinkWithCaption(): void {
-    // Try to get active editor from any view type (markdown, canvas, etc.)
+    // Try to get active editor from any view type (Markdown, canvas, etc.)
     const activeEditor = this.plugin.app.workspace.activeEditor?.editor;
     if (!activeEditor) {
       new Notice(t('notifications.errorNoActiveNote'));
@@ -218,7 +218,7 @@ export class LinkManager {
   }
 
   addInternalLinkWithCaptionAndCustomTarget(): void {
-    // Try to get active editor from any view type (markdown, canvas, etc.)
+    // Try to get active editor from any view type (Markdown, canvas, etc.)
     const activeEditor = this.plugin.app.workspace.activeEditor?.editor;
     if (!activeEditor) {
       new Notice(t('notifications.errorNoActiveNote'));

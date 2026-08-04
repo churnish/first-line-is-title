@@ -143,7 +143,7 @@ it('should handle errors', async () => {
 
 ```typescript
 const settings = createTestSettings({
-  core: { renameNotes: 'manually' },
+  core: { renameAutomatically: false },
 });
 ```
 
@@ -233,7 +233,7 @@ app.metadataCache.getFileCache = vi.fn().mockReturnValue({...});
 // Wrong - mutates shared object
 let settings = createTestSettings();
 it('test 1', () => {
-  settings.core.renameNotes = 'manually';
+  settings.core.renameAutomatically = false;
 });
 it('test 2', () => {
   /* settings is mutated */

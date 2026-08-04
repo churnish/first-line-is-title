@@ -101,7 +101,7 @@ describe('EventHandlerManager', () => {
       plugin.settings = {
         core: {
           enableContextMenus: true,
-          renameNotes: 'always',
+          renameAutomatically: true,
         },
         aliases: {
           enableAliases: true,

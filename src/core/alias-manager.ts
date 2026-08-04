@@ -355,21 +355,17 @@ export class AliasManager {
       // Use try/finally to guarantee settings restoration even if extractTitle throws.
       const originalCharReplacementSetting =
         this.settings.replaceCharacters.enableForbiddenCharReplacements;
-      const originalStripMarkupSetting =
-        this.settings.markupStripping.enableStripMarkup;
 
       let aliasToAdd: string;
       try {
         this.settings.replaceCharacters.enableForbiddenCharReplacements = false;
-        if (!this.settings.markupStripping.stripMarkupInAlias) {
-          this.settings.markupStripping.enableStripMarkup = false;
-        }
-        aliasToAdd = extractTitle(aliasProcessedLine, this.settings);
+        aliasToAdd = extractTitle(aliasProcessedLine, this.settings, {
+          skipMarkupStripping:
+            !this.settings.markupStripping.stripMarkupInAlias,
+        });
       } finally {
         this.settings.replaceCharacters.enableForbiddenCharReplacements =
           originalCharReplacementSetting;
-        this.settings.markupStripping.enableStripMarkup =
-          originalStripMarkupSetting;
       }
       // Re-check alias-matches-filename after custom rules are applied.
       // The caller (updateAliasIfNeeded) checks this at line 182, but custom replacement
@@ -892,7 +888,7 @@ export class AliasManager {
       return false; // Editor provided = not a popover
     }
 
-    // Get the active markdown view
+    // Get the active Markdown view
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 
     // If there's no active view, or the active view's editor doesn't match

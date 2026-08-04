@@ -67,7 +67,7 @@ export class PropertyVisibility {
       }
 
       // Detect context: sidebar vs in-note
-      // Sidebar properties are typically in workspace-leaf-content but NOT in markdown views
+      // Sidebar properties are typically in workspace-leaf-content but NOT in Markdown views
       const isInSidebar =
         property.closest('.workspace-leaf-content') &&
         !property.closest('.workspace-leaf-content[data-type="markdown"]') &&

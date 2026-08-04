@@ -450,7 +450,7 @@ export default class FirstLineIsTitle extends Plugin {
     if (
       this.settings.core.lastUsageDate &&
       this.isInactive(this.settings.core.lastUsageDate, today) &&
-      this.settings.core.renameNotes === 'automatically'
+      this.settings.core.renameAutomatically
     ) {
       this.showInactivityNotice();
     }
@@ -732,6 +732,16 @@ export default class FirstLineIsTitle extends Plugin {
   async loadSettings(): Promise<void> {
     const loadedData = ((await this.loadData()) ||
       {}) as Partial<PluginSettings>;
+
+    // Migrate pre-3.12 `renameNotes: 'automatically' | 'manually'` to the
+    // `renameAutomatically: boolean` toggle it was replaced with.
+    const rawCore = loadedData.core as
+      | (Record<string, unknown> & Partial<PluginSettings['core']>)
+      | undefined;
+    if (rawCore && typeof rawCore.renameNotes === 'string') {
+      rawCore.renameAutomatically = rawCore.renameNotes === 'automatically';
+      delete rawCore.renameNotes;
+    }
 
     // Use deep merge to preserve nested properties
     this.settings = deepMerge(DEFAULT_SETTINGS, loadedData);

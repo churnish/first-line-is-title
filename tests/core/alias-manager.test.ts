@@ -545,7 +545,7 @@ describe('AliasManager', () => {
     });
 
     it('should handle card link where firstNonEmptyLine differs from titleSourceLine', async () => {
-      // First line is markdown link, titleSourceLine is extracted link text
+      // First line is Markdown link, titleSourceLine is extracted link text
 
       let capturedFrontmatter: any;
       plugin.app.fileManager.processFrontMatter = vi.fn(

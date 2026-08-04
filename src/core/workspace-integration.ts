@@ -276,10 +276,7 @@ export class WorkspaceIntegration {
               // Rename file if automatic mode - respects newNoteDelay setting
               const processRename = async () => {
                 try {
-                  if (
-                    settings.renameNotes === 'automatically' &&
-                    plugin.isFullyLoaded
-                  ) {
+                  if (settings.renameAutomatically && plugin.isFullyLoaded) {
                     verboseLog(
                       plugin,
                       `CREATE: Processing rename after delay: ${file.name}`

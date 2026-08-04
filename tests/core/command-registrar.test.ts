@@ -244,7 +244,7 @@ describe('CommandRegistrar', () => {
       expect(mockPlugin.renameEngine.processFile).not.toHaveBeenCalled();
     });
 
-    it('should call processFile with exclusion overrides for markdown files', async () => {
+    it('should call processFile with exclusion overrides for Markdown files', async () => {
       const { CommandRegistrar } =
         await import('../../src/core/command-registrar');
       const registrar = new CommandRegistrar(mockPlugin);
@@ -270,7 +270,7 @@ describe('CommandRegistrar', () => {
       );
     });
 
-    it('should ignore non-markdown files', async () => {
+    it('should ignore non-Markdown files', async () => {
       const { CommandRegistrar } =
         await import('../../src/core/command-registrar');
       const registrar = new CommandRegistrar(mockPlugin);
@@ -334,11 +334,11 @@ describe('CommandRegistrar', () => {
         await import('../../src/core/command-registrar');
       const registrar = new CommandRegistrar(mockPlugin);
 
-      mockPlugin.settings.core.renameNotes = 'automatically';
+      mockPlugin.settings.core.renameAutomatically = true;
 
       await registrar.executeToggleAutomaticRenaming();
 
-      expect(mockPlugin.settings.core.renameNotes).toBe('manually');
+      expect(mockPlugin.settings.core.renameAutomatically).toBe(false);
       expect(mockPlugin.saveSettings).toHaveBeenCalled();
     });
 
@@ -347,11 +347,11 @@ describe('CommandRegistrar', () => {
         await import('../../src/core/command-registrar');
       const registrar = new CommandRegistrar(mockPlugin);
 
-      mockPlugin.settings.core.renameNotes = 'manually';
+      mockPlugin.settings.core.renameAutomatically = false;
 
       await registrar.executeToggleAutomaticRenaming();
 
-      expect(mockPlugin.settings.core.renameNotes).toBe('automatically');
+      expect(mockPlugin.settings.core.renameAutomatically).toBe(true);
       expect(mockPlugin.saveSettings).toHaveBeenCalled();
     });
   });
@@ -508,7 +508,7 @@ describe('CommandRegistrar', () => {
       expect(command[0].icon).toBe('clipboard-type');
     });
 
-    it('should return true when checking with markdown file', async () => {
+    it('should return true when checking with Markdown file', async () => {
       const { CommandRegistrar } =
         await import('../../src/core/command-registrar');
       const registrar = new CommandRegistrar(mockPlugin);
@@ -531,7 +531,7 @@ describe('CommandRegistrar', () => {
       expect(checkResult).toBe(true);
     });
 
-    it('should return false when checking with non-markdown file', async () => {
+    it('should return false when checking with non-Markdown file', async () => {
       const { CommandRegistrar } =
         await import('../../src/core/command-registrar');
       const registrar = new CommandRegistrar(mockPlugin);

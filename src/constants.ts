@@ -3,7 +3,7 @@ import { PluginSettings, TagMatchingMode } from './types';
 export const DEFAULT_SETTINGS: PluginSettings = {
   core: {
     // Rename behavior
-    renameNotes: 'automatically',
+    renameAutomatically: true,
     titleCase: 'preserve',
     renameOnFocus: false,
     renameOnSave: false,
@@ -219,7 +219,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     applyCustomRulesAfterForbiddenChars: false,
   },
   markupStripping: {
-    enableStripMarkup: true,
     stripMarkupSettings: {
       headings: true,
       bold: true,

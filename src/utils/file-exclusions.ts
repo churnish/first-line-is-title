@@ -270,7 +270,7 @@ export function isFileExcluded(
       let inlineTagsInContent: string[] = [];
 
       // Use metadata cache for accurate tag detection (avoids false positives from code blocks, YAML comments, etc.)
-      // Note: fileCache.tags only contains inline tags from markdown body, never from frontmatter
+      // Note: fileCache.tags only contains inline tags from Markdown body, never from frontmatter
       if (fileCache && fileCache.tags) {
         inlineTagsInContent = fileCache.tags.map((tagCache) =>
           normalizeTag(tagCache.tag)

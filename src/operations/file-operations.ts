@@ -730,7 +730,7 @@ export class FileOperations {
   /**
    * Position cursor at end of title line after insertion (if settings allow)
    * Helper to consolidate cursor positioning logic in insertTitleOnCreation
-   * @param view The markdown view where title was inserted
+   * @param view The Markdown view where title was inserted
    * @param titleLine Line number where title was inserted
    * @param titleLength Length of the inserted title
    */

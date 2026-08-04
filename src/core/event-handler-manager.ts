@@ -109,7 +109,7 @@ export class EventHandlerManager {
 
         let hasVisibleItems = false;
 
-        // Handle multiple markdown files
+        // Handle multiple Markdown files
         if (markdownFiles.length > 0) {
           if (
             this.plugin.settings.core.commandVisibility.filePutFirstLineInTitle
@@ -362,10 +362,10 @@ export class EventHandlerManager {
           );
         }
 
-        if (this.plugin.settings.core.renameNotes !== 'automatically') {
+        if (!this.plugin.settings.core.renameAutomatically) {
           if (this.plugin.settings.core.verboseLogging) {
             console.debug(
-              `Skipping editor-change: renameNotes=${this.plugin.settings.core.renameNotes}`
+              `Skipping editor-change: renameAutomatically=${this.plugin.settings.core.renameAutomatically}`
             );
           }
           return;
@@ -381,7 +381,7 @@ export class EventHandlerManager {
         if (info.file.extension !== 'md') {
           if (this.plugin.settings.core.verboseLogging) {
             console.debug(
-              `Skipping editor-change: not markdown (${info.file.extension})`
+              `Skipping editor-change: not Markdown (${info.file.extension})`
             );
           }
           return;
@@ -481,7 +481,7 @@ export class EventHandlerManager {
           this.plugin.settings.core.fileReadMethod === 'File'
         ) {
           if (
-            this.plugin.settings.core.renameNotes === 'automatically' &&
+            this.plugin.settings.core.renameAutomatically &&
             this.plugin.isFullyLoaded
           ) {
             verboseLog(
@@ -497,7 +497,7 @@ export class EventHandlerManager {
         // "modified externally" notifications from processFrontMatter writes.
         if (
           this.plugin.settings.aliases.enableAliases &&
-          this.plugin.settings.core.renameNotes === 'automatically'
+          this.plugin.settings.core.renameAutomatically
         ) {
           // Skip if file has pending metadata update from processFrontMatter
           const hasPending = this.plugin.pendingMetadataUpdates.has(file);
@@ -591,7 +591,7 @@ export class EventHandlerManager {
     this.plugin.registerEvent(
       this.plugin.app.metadataCache.on('changed', async (file) => {
         if (!this.plugin.settings.aliases.enableAliases) return;
-        if (this.plugin.settings.core.renameNotes !== 'automatically') return;
+        if (!this.plugin.settings.core.renameAutomatically) return;
         if (file.extension !== 'md') return;
 
         // Skip if file operation in progress (rename, etc.)

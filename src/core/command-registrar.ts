@@ -187,16 +187,12 @@ export class CommandRegistrar {
       name: t('commands.toggleAutomaticRenaming'),
       icon: 'file-cog',
       callback: async () => {
-        const newValue =
-          this.settings.core.renameNotes === 'automatically'
-            ? 'manually'
-            : 'automatically';
-        this.settings.core.renameNotes = newValue;
+        const newValue = !this.settings.core.renameAutomatically;
+        this.settings.core.renameAutomatically = newValue;
         await this.plugin.saveSettings();
-        const notificationKey =
-          newValue === 'automatically'
-            ? 'notifications.automaticRenamingEnabled'
-            : 'notifications.automaticRenamingDisabled';
+        const notificationKey = newValue
+          ? 'notifications.automaticRenamingEnabled'
+          : 'notifications.automaticRenamingDisabled';
         new Notice(t(notificationKey));
       },
     });
@@ -269,16 +265,12 @@ export class CommandRegistrar {
    * Execute toggle automatic renaming command (public method for ribbon/external use)
    */
   async executeToggleAutomaticRenaming(): Promise<void> {
-    const newValue =
-      this.settings.core.renameNotes === 'automatically'
-        ? 'manually'
-        : 'automatically';
-    this.settings.core.renameNotes = newValue;
+    const newValue = !this.settings.core.renameAutomatically;
+    this.settings.core.renameAutomatically = newValue;
     await this.plugin.saveSettings();
-    const notificationKey =
-      newValue === 'automatically'
-        ? 'notifications.automaticRenamingEnabled'
-        : 'notifications.automaticRenamingDisabled';
+    const notificationKey = newValue
+      ? 'notifications.automaticRenamingEnabled'
+      : 'notifications.automaticRenamingDisabled';
     new Notice(t(notificationKey));
   }
 

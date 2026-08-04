@@ -34,7 +34,7 @@ export class FolderOperations {
     if (files.length === 0) {
       verboseLog(
         this,
-        `Showing notice: No markdown files found in this folder.`
+        `Showing notice: No Markdown files found in this folder.`
       );
       new Notice(
         t('notifications.noNotesFoundInFolder').replace(
@@ -318,7 +318,7 @@ export class FolderOperations {
       if (allFiles.length === 0) {
         verboseLog(
           this,
-          `Showing notice: No markdown files found in selected folders.`
+          `Showing notice: No Markdown files found in selected folders.`
         );
         new Notice(t('notifications.noNotesFoundInFolders'));
         return;

@@ -275,7 +275,12 @@ export function containsFileNameExclusion(
   return false;
 }
 
-export function extractTitle(line: string, settings: PluginSettings): string {
+export function extractTitle(
+  line: string,
+  settings: PluginSettings,
+  options?: { skipMarkupStripping?: boolean }
+): string {
+  const skipMarkupStripping = options?.skipMarkupStripping ?? false;
   const originalLine = line;
 
   // Check if original line is a valid list (0-3 spaces indent, not 4+ which is code block)
@@ -292,7 +297,7 @@ export function extractTitle(line: string, settings: PluginSettings): string {
 
   // Check if line is only a list marker (before trim removes trailing space)
   // Uses space character class (not \s) to exclude tabs, which are code blocks per CommonMark
-  if (settings.markupStripping.enableStripMarkup) {
+  if (!skipMarkupStripping) {
     if (
       settings.markupStripping.stripMarkupSettings.taskLists &&
       /^ {0,3}(?:[-+*]|\d+\.) \[.\] $/.test(line)
@@ -316,10 +321,7 @@ export function extractTitle(line: string, settings: PluginSettings): string {
   line = line.trim();
 
   // Remove template placeholder if enabled
-  if (
-    settings.markupStripping.enableStripMarkup &&
-    settings.markupStripping.stripTemplaterSyntax
-  ) {
+  if (!skipMarkupStripping && settings.markupStripping.stripTemplaterSyntax) {
     line = line.replace(/<%\s*tp\.file\.cursor\(\)\s*%>/, '').trim();
     if (line === '<%*') {
       return t('untitled');
@@ -360,7 +362,7 @@ export function extractTitle(line: string, settings: PluginSettings): string {
     }
   }
 
-  if (settings.markupStripping.enableStripMarkup) {
+  if (!skipMarkupStripping) {
     // Helper function to check if any placeholder overlaps with match range
     const checkEscaped = (match: string, offset: number): boolean => {
       if (backslashReplacementEnabled) return false;
@@ -559,7 +561,7 @@ export function extractTitle(line: string, settings: PluginSettings): string {
 
   // Handle embedded wikilink images (remove ! before [[]])
   if (
-    settings.markupStripping.enableStripMarkup &&
+    !skipMarkupStripping &&
     settings.markupStripping.stripMarkupSettings.wikilinks
   ) {
     const embedLinkRegex = /!\[\[(.*?)\]\]/g;
@@ -568,7 +570,7 @@ export function extractTitle(line: string, settings: PluginSettings): string {
 
   // Handle regular embedded image links
   if (
-    settings.markupStripping.enableStripMarkup &&
+    !skipMarkupStripping &&
     settings.markupStripping.stripMarkupSettings.markdownLinks
   ) {
     const regularEmbedRegex = /!\[(.*?)\]\((.*?)\)/g;
@@ -581,7 +583,7 @@ export function extractTitle(line: string, settings: PluginSettings): string {
   // Handle headers - only if the original line was a valid heading and strip heading markup is enabled
   if (
     isHeading &&
-    settings.markupStripping.enableStripMarkup &&
+    !skipMarkupStripping &&
     settings.markupStripping.stripMarkupSettings.headings
   ) {
     const headerArr: string[] = [
@@ -602,7 +604,7 @@ export function extractTitle(line: string, settings: PluginSettings): string {
 
   // Handle wikilinks (only if strip wikilink markup is enabled)
   if (
-    settings.markupStripping.enableStripMarkup &&
+    !skipMarkupStripping &&
     settings.markupStripping.stripMarkupSettings.wikilinks
   ) {
     while (line.includes('[[') && line.includes(']]')) {
@@ -631,9 +633,9 @@ export function extractTitle(line: string, settings: PluginSettings): string {
     return t('untitled');
   }
 
-  // Handle regular Markdown links (only if strip markdown link markup is enabled)
+  // Handle regular Markdown links (only if strip Markdown link markup is enabled)
   if (
-    settings.markupStripping.enableStripMarkup &&
+    !skipMarkupStripping &&
     settings.markupStripping.stripMarkupSettings.markdownLinks
   ) {
     const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
@@ -672,7 +674,7 @@ export function extractTitle(line: string, settings: PluginSettings): string {
 
 /**
  * Finds the title source line from content lines
- * Handles special cases like card links, code blocks, markdown tables, HRs, math blocks
+ * Handles special cases like card links, code blocks, Markdown tables, HRs, math blocks
  *
  * @param contentLines Array of content lines (without frontmatter)
  * @param settings Plugin settings
@@ -699,7 +701,6 @@ export function findTitleSourceLine(
 
     // Check for table - use "Table" as title if stripTableMarkup is enabled
     if (
-      settings.markupStripping.enableStripMarkup &&
       settings.markupStripping.stripTableMarkup &&
       trimmedLine.includes('|')
     ) {
@@ -731,7 +732,6 @@ export function findTitleSourceLine(
 
     // Check for math block delimiter - skip $$ lines to find content after
     if (
-      settings.markupStripping.enableStripMarkup &&
       settings.markupStripping.stripMathBlockMarkup &&
       trimmedLine.startsWith('$$')
     ) {
@@ -743,7 +743,6 @@ export function findTitleSourceLine(
 
     // Check for HR - skip if enabled
     if (
-      settings.markupStripping.enableStripMarkup &&
       settings.markupStripping.stripHorizontalRuleMarkup &&
       hrPattern.test(line)
     ) {
@@ -757,7 +756,6 @@ export function findTitleSourceLine(
     if (trimmedLine.startsWith('```')) {
       // Handle mermaid diagrams
       if (
-        settings.markupStripping.enableStripMarkup &&
         settings.markupStripping.detectDiagrams &&
         trimmedLine === '```mermaid'
       ) {
@@ -770,7 +768,7 @@ export function findTitleSourceLine(
         return t('diagram');
       }
 
-      // Handle card links (independent of enableStripMarkup)
+      // Handle card links
       const cardLinkMatch = trimmedLine.match(/^```(embed|cardlink)$/);
       if (settings.markupStripping.grabTitleFromCardLink && cardLinkMatch) {
         const maxLinesToCheck = 20;
@@ -809,13 +807,11 @@ export function findTitleSourceLine(
         return t('untitled');
       }
 
-      // Regular code fence - skip only if strip markup enabled
-      if (settings.markupStripping.enableStripMarkup) {
-        if (plugin) {
-          verboseLog(plugin, `Code fence detected, skipping line`);
-        }
-        continue;
+      // Regular code fence - always skip past it to find real content
+      if (plugin) {
+        verboseLog(plugin, `Code fence detected, skipping line`);
       }
+      continue;
     }
 
     // This is a valid content line

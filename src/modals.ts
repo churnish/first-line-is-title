@@ -26,7 +26,7 @@ export class RenameAllFilesModal extends Modal {
 
     this.setTitle(t('modals.caution'));
 
-    // Count all markdown files
+    // Count all Markdown files
     const allFiles = this.app.vault.getMarkdownFiles();
     const count = allFiles.length;
 

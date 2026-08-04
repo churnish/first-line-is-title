@@ -46,7 +46,7 @@ export class TitleInsertion {
       );
 
       // Check if file already has content (skip if not empty)
-      // Policy: Allow bare markdown heading syntax (e.g., "# " or "## ")
+      // Policy: Allow bare Markdown heading syntax (e.g., "# " or "## ")
       const fmInfo = getFrontMatterInfo(content);
       const contentBelowYaml = content.substring(fmInfo.contentStart).trim();
       const isBareHeading = /^#{1,6}\s*$/.test(contentBelowYaml);
@@ -74,7 +74,7 @@ export class TitleInsertion {
       // Check if we're in canvas view to decide cursor behavior
       const activeView =
         this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
-      const inCanvas = !activeView; // If no markdown view, likely in canvas or other view
+      const inCanvas = !activeView; // If no Markdown view, likely in canvas or other view
 
       // Create content with title and cursor positioning
       let newContent = cleanTitle;

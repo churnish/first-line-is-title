@@ -387,7 +387,7 @@ export class RenameEngine {
     file = currentFile;
 
     if (file.extension !== 'md') {
-      verboseLog(this.plugin, `Skipping non-markdown file: ${file.path}`);
+      verboseLog(this.plugin, `Skipping non-Markdown file: ${file.path}`);
       return { success: false, reason: 'not-markdown' };
     }
 
@@ -742,7 +742,7 @@ export class RenameEngine {
     }
 
     // Determine titleSourceLine using shared utility function
-    // This handles special cases like card links, code blocks, and markdown tables
+    // This handles special cases like card links, code blocks, and Markdown tables
     const titleSourceLine = findTitleSourceLine(
       lines,
       this.plugin.settings,
@@ -771,7 +771,7 @@ export class RenameEngine {
     const wikiLinkRegex = new RegExp(
       `\\[\\[(${escapedName}|${escapedPath})(#[^\\]|]*?)?(\\|.*?)?\\]\\]`
     );
-    // Match markdown links including empty link text: [text](url) or [](url)
+    // Match Markdown links including empty link text: [text](url) or [](url)
     // Regex is ReDoS-safe: uses negated character classes [^\]] and [^)] which don't backtrack
     const markdownLinkRegex = /\[([^\]]*)\]\(([^)]+)\)/g;
 
@@ -807,7 +807,7 @@ export class RenameEngine {
         isSelfReferencing = true;
         verboseLog(
           this.plugin,
-          `Found self-referencing markdown link (fragment) in ${file.path} before custom replacements`
+          `Found self-referencing Markdown link (fragment) in ${file.path} before custom replacements`
         );
         break;
       }
@@ -824,7 +824,7 @@ export class RenameEngine {
         isSelfReferencing = true;
         verboseLog(
           this.plugin,
-          `Found self-referencing markdown link (percent-encoded) in ${file.path} before custom replacements`
+          `Found self-referencing Markdown link (percent-encoded) in ${file.path} before custom replacements`
         );
         break;
       }

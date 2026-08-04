@@ -259,7 +259,7 @@ describe('content-reader', () => {
       expect(result).toBeNull();
     });
 
-    it('should return null when no markdown leaves exist', () => {
+    it('should return null when no Markdown leaves exist', () => {
       app.workspace.getLeavesOfType = vi.fn().mockReturnValue([]);
 
       const result = findEditor(app, file);
