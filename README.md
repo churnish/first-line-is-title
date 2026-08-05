@@ -1,6 +1,6 @@
-English • [Русский](https://github.com/churnish/first-line-is-title/blob/main/README_RU.md)
-
 # First Line is Title
+
+English • [Русский](https://github.com/churnish/first-line-is-title/blob/main/README_RU.md)
 
 Automatically set the first line as note title, just like in Apple Notes. Forget about manual file name entry or nondescript timestamps.
 
