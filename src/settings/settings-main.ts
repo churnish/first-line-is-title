@@ -107,7 +107,7 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
     // PluginSettingTab expects Plugin, but we use minimal interface for flexibility
     super(app, plugin as unknown as Plugin);
     this.plugin = plugin;
-    this.icon = 'file-type';
+    this.icon = 'file-type-corner';
   }
 
   getControlValue(key: string): unknown {

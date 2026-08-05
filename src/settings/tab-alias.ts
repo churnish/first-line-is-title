@@ -8,9 +8,6 @@ import { FirstLineIsTitlePlugin, mountLegacyHost } from './settings-base';
 import { t, getCurrentLocale } from '../i18n';
 
 // Plugin names (proper nouns, not subject to sentence case)
-const PLUGIN_QUICK_SWITCHER_PLUS = 'Quick Switcher++';
-const PLUGIN_NOTEBOOK_NAVIGATOR = 'Notebook Navigator';
-const PLUGIN_FRONT_MATTER_TITLE = 'Front Matter Title';
 const PLUGIN_HOVER_EDITOR = 'Hover Editor';
 
 /** Russian typography uses guillemets where English bolds a UI label. */
@@ -37,57 +34,18 @@ function buildLabelReferenceDescription(
   });
 }
 
-/** Description for the alias property name row: prose plus a bullet list. */
+/** Description for the alias property name row: prose plus bare newline-separated notes. */
 function buildAliasPropertyKeyDescription(): DocumentFragment {
   return createFragment((frag) => {
     frag.appendText(t('settings.alias.aliasPropertyName.desc'));
 
     const notes = frag.createDiv({
-      cls: 'flit-margin-top-6 flit-margin-bottom-0',
-    });
-    const list = notes.createEl('ul', {
-      cls: 'flit-margin-0 flit-padding-left-20',
+      cls: 'flit-margin-bottom-0',
     });
 
-    list.createEl('li', {
-      text: t('settings.alias.aliasPropertyName.quickSwitcher'),
-    });
-    list.createEl('li', {
-      text: t('settings.alias.aliasPropertyName.multipleProperties'),
-    });
-
-    const noteTitleItem = list.createEl('li');
-    noteTitleItem.appendText(
-      t('settings.alias.aliasPropertyName.noteTitle.part1')
-    );
-    noteTitleItem.createEl('a', {
-      text: PLUGIN_QUICK_SWITCHER_PLUS,
-      href: 'obsidian://show-plugin?id=darlal-switcher-plus',
-    });
-    noteTitleItem.appendText(
-      t('settings.alias.aliasPropertyName.noteTitle.part2')
-    );
-    noteTitleItem.createEl('a', {
-      text: 'Omnisearch',
-      href: 'obsidian://show-plugin?id=omnisearch',
-    });
-    noteTitleItem.appendText(
-      t('settings.alias.aliasPropertyName.noteTitle.part3')
-    );
-    noteTitleItem.createEl('a', {
-      text: PLUGIN_NOTEBOOK_NAVIGATOR,
-      href: 'obsidian://show-plugin?id=notebook-navigator',
-    });
-    noteTitleItem.appendText(
-      t('settings.alias.aliasPropertyName.noteTitle.part4')
-    );
-    noteTitleItem.createEl('a', {
-      text: PLUGIN_FRONT_MATTER_TITLE,
-      href: 'obsidian://show-plugin?id=obsidian-front-matter-title-plugin',
-    });
-    noteTitleItem.appendText(
-      t('settings.alias.aliasPropertyName.noteTitle.part5')
-    );
+    notes.appendText(t('settings.alias.aliasPropertyName.quickSwitcher'));
+    notes.createEl('br');
+    notes.appendText(t('settings.alias.aliasPropertyName.multipleProperties'));
 
     frag.createEl('br');
     frag.createEl('small').createEl('strong', {

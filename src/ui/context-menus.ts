@@ -226,7 +226,7 @@ export class ContextMenuManager {
     ) {
       const menuItem = menuEl.createDiv({ cls: 'menu-item' });
       const iconEl = menuItem.createDiv({ cls: 'menu-item-icon' });
-      setIcon(iconEl, 'square-check');
+      setIcon(iconEl, 'file-pen');
       menuItem.createDiv({
         cls: 'menu-item-title',
         text: menuText.enable,
@@ -267,7 +267,7 @@ export class ContextMenuManager {
       menu.addItem((item) => {
         item
           .setTitle(tp('commands.putFirstLineInTitleNFolders', folders.length))
-          .setIcon('folder-pen')
+          .setIcon('file-type')
           .onClick(() => {
             new RenameMultipleFoldersModal(
               this.plugin.app,
@@ -293,7 +293,7 @@ export class ContextMenuManager {
       menu.addItem((item) => {
         item
           .setTitle(tp('commands.enableRenamingNFolders', folders.length))
-          .setIcon('square-check')
+          .setIcon('file-pen')
           .onClick(async () => {
             await this.plugin.processMultipleFolders(folders, 'enable');
           });

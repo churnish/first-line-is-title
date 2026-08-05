@@ -89,7 +89,7 @@ export class MenuDefinitions {
             );
             return menuText.enable;
           },
-          icon: 'square-check',
+          icon: 'file-pen',
           visible: (context) => {
             if (!this.plugin.settings.core.enableTagCommands) return false;
             const tagContext = context as TagContext;
@@ -121,7 +121,7 @@ export class MenuDefinitions {
         {
           id: 'folder-put-first-line-in-title',
           title: t('commands.putFirstLineInTitle'),
-          icon: 'folder-pen',
+          icon: 'file-type',
           visible: (_context) => {
             return (
               this.plugin.settings.core.enableFolderCommands &&
@@ -174,7 +174,7 @@ export class MenuDefinitions {
             );
             return menuText.enable;
           },
-          icon: 'square-check',
+          icon: 'file-pen',
           visible: (context) => {
             if (!this.plugin.settings.core.enableFolderCommands) return false;
             const folderContext = context as FolderContext;
@@ -286,7 +286,7 @@ export class MenuDefinitions {
         {
           id: 'file-enable-renaming',
           title: t('commands.enableRenamingForNote'),
-          icon: 'square-check',
+          icon: 'file-pen',
           visible: (context) => {
             if (!this.plugin.settings.core.enableFileCommands) return false;
             if (!this.plugin.settings.core.commandVisibility.fileStopExcluding)

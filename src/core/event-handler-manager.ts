@@ -166,7 +166,7 @@ export class EventHandlerManager {
                 .setTitle(
                   tp('commands.enableRenamingNNotes', markdownFiles.length)
                 )
-                .setIcon('square-check')
+                .setIcon('file-pen')
                 .onClick(() => {
                   new DisableEnableModal(
                     this.plugin.app,
@@ -334,7 +334,7 @@ export class EventHandlerManager {
             menu.addItem((item) => {
               item
                 .setTitle(tp('commands.enableRenamingNNotes', files.length))
-                .setIcon('square-check')
+                .setIcon('file-pen')
                 .onClick(() => {
                   new DisableEnableModal(
                     this.plugin.app,
