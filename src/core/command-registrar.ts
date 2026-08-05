@@ -49,7 +49,7 @@ export class CommandRegistrar {
     this.plugin.addCommand({
       id: 'rename-current-file',
       name: t('commands.putFirstLineInTitle'),
-      icon: 'file-type',
+      icon: 'file-type-corner',
       checkCallback: (checking: boolean) => {
         const activeEditor = this.app.workspace.activeEditor;
         if (!activeEditor?.file || activeEditor.file.extension !== 'md') {
@@ -318,7 +318,7 @@ export class CommandRegistrar {
     this.plugin.addCommand({
       id: 'enable-renaming-for-note',
       name: t('commands.enableRenamingForNote'),
-      icon: 'square-check',
+      icon: 'file-pen',
       checkCallback: (checking: boolean) => {
         const activeFile = this.app.workspace.getActiveFile();
         if (!activeFile || activeFile.extension !== 'md') {

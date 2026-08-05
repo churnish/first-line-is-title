@@ -6,9 +6,10 @@ import {
   SettingDefinitionRender,
 } from 'obsidian';
 import {
-  updateInteractiveState,
   updateDisabledRowsAccessibility,
   addForbiddenCharProtection,
+  appendLines,
+  buildDescRow,
   FirstLineIsTitlePlugin,
   mountLegacyHost,
 } from './settings-base';
@@ -39,47 +40,38 @@ function appendEmphasis(
   }
 }
 
-/** Master-toggle description: intro line plus the behavioural bullet list. */
-function buildMasterDescription(): DocumentFragment {
-  return createFragment((frag) => {
-    frag.appendText(t('settings.customRules.desc'));
-
-    const ul = frag.createEl('ul', {
-      cls: 'flit-margin-0 flit-padding-left-20',
-    });
-    ul.createEl('li', {
-      text: t('settings.customRules.rulesAppliedSequentially'),
-    });
-    ul.createEl('li', {
-      text: t('settings.customRules.whitespacePreserved'),
-    });
-
-    const leaveBlankItem = ul.createEl('li');
-    leaveBlankItem.appendText(t('settings.customRules.leaveBlank.part1'));
-    appendEmphasis(
-      leaveBlankItem,
-      'settings.customRules.leaveBlank.replaceWith'
-    );
-    leaveBlankItem.appendText(t('settings.customRules.leaveBlank.part2'));
-
-    const untitledItem = ul.createEl('li');
-    untitledItem.appendText(t('settings.customRules.untitledWarning.part1'));
-    appendEmphasis(
-      untitledItem,
-      'settings.customRules.untitledWarning.replaceWith'
-    );
-    untitledItem.appendText(t('settings.customRules.untitledWarning.part2'));
-    appendEmphasis(
-      untitledItem,
-      'settings.customRules.untitledWarning.textToReplace'
-    );
-    untitledItem.appendText(t('settings.customRules.untitledWarning.part3'));
-    appendEmphasis(
-      untitledItem,
-      'settings.customRules.untitledWarning.untitled'
-    );
-    untitledItem.appendText(t('settings.customRules.untitledWarning.part4'));
-  });
+/**
+ * Behavioural notes for the master toggle, as bare newline-separated lines
+ * (no bullet markup) — its own row below the toggle, matching the trim-note
+ * pattern in `tab-replace-characters.ts`.
+ */
+function appendMasterNote(parent: HTMLElement | DocumentFragment): void {
+  appendLines(parent, [
+    (target) =>
+      target.appendText(t('settings.customRules.rulesAppliedSequentially')),
+    (target) =>
+      target.appendText(t('settings.customRules.whitespacePreserved')),
+    (target) => {
+      target.appendText(t('settings.customRules.leaveBlank.part1'));
+      appendEmphasis(target, 'settings.customRules.leaveBlank.replaceWith');
+      target.appendText(t('settings.customRules.leaveBlank.part2'));
+    },
+    (target) => {
+      target.appendText(t('settings.customRules.untitledWarning.part1'));
+      appendEmphasis(
+        target,
+        'settings.customRules.untitledWarning.replaceWith'
+      );
+      target.appendText(t('settings.customRules.untitledWarning.part2'));
+      appendEmphasis(
+        target,
+        'settings.customRules.untitledWarning.textToReplace'
+      );
+      target.appendText(t('settings.customRules.untitledWarning.part3'));
+      appendEmphasis(target, 'settings.customRules.untitledWarning.untitled');
+      target.appendText(t('settings.customRules.untitledWarning.part4'));
+    },
+  ]);
 }
 
 function buildApplyAfterForbiddenDescription(): DocumentFragment {
@@ -234,11 +226,6 @@ function buildRuleRow(
       });
 
       applyRowEnabledState();
-
-      const masterEnabled =
-        plugin.settings.customRules.enableCustomReplacements;
-      setting.setDisabled(!masterEnabled);
-      updateInteractiveState(host, masterEnabled);
     },
   };
 }
@@ -264,15 +251,22 @@ export function buildCustomRulesPage(
     items: [
       {
         name: t('settings.customRules.name'),
-        desc: buildMasterDescription(),
+        desc: t('settings.customRules.desc'),
         control: {
           type: 'toggle',
           key: 'customRules.enableCustomReplacements',
         },
       },
+      buildDescRow(
+        createFragment((frag) => appendMasterNote(frag)),
+        {
+          visible: () => plugin.settings.customRules.enableCustomReplacements,
+        }
+      ),
       {
         type: 'list',
         heading: t('settings.tabs.customRules'),
+        visible: () => plugin.settings.customRules.enableCustomReplacements,
         emptyState: t('settings.customRules.emptyState', 'No custom rules.'),
         items: rules().map((rule) => buildRuleRow(plugin, tab, rule)),
         onDelete: (index) => {
@@ -309,6 +303,7 @@ export function buildCustomRulesPage(
       {
         type: 'group',
         heading: t('settings.customRules.processingOrder.title'),
+        visible: () => plugin.settings.customRules.enableCustomReplacements,
         items: [
           {
             name: t('settings.customRules.processingOrder.applyAfterForbidden'),
@@ -316,8 +311,6 @@ export function buildCustomRulesPage(
             control: {
               type: 'toggle',
               key: 'customRules.applyCustomRulesAfterForbiddenChars',
-              disabled: () =>
-                !plugin.settings.customRules.enableCustomReplacements,
             },
           },
           {
@@ -326,9 +319,6 @@ export function buildCustomRulesPage(
             control: {
               type: 'toggle',
               key: 'markupStripping.applyCustomRulesAfterMarkupStripping',
-              disabled: () =>
-                !plugin.settings.customRules.enableCustomReplacements ||
-                !plugin.settings.markupStripping.enableStripMarkup,
             },
           },
         ],

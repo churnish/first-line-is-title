@@ -181,7 +181,7 @@
       },
       "renameOnFocus": {
         "name": "Rename on focus",
-        "desc": "Also process notes when they become active in the editor."
+        "desc": "Rename notes when they become active in the editor."
       },
       "onlyRenameIfHeading": {
         "name": "Only rename if heading",
@@ -225,7 +225,7 @@
       },
       "renameAllNotes": {
         "name": "Rename all notes",
-        "desc": "Process all notes in the vault. Can also be run from the command palette.",
+        "desc": "Process all notes in the vault. Can also be run from the command palette or the ribbon.",
         "button": "Rename"
       },
       "sendFeedback": {
@@ -235,11 +235,10 @@
       }
     },
     "exclusions": {
-      "desc": "Set how notes should be excluded from processing.",
+      "desc": "Set how notes should be excluded from renaming.",
       "note": "Note: rules can't override other rules. For example, a note in excluded folder but with included tag will not be processed.",
       "folders": {
         "title": "Folders",
-        "desc": "Set folders to match.",
         "renamedWarning": "Renamed, moved or deleted folders are not reflected below. Update manually if paths change.",
         "matchSubfolders": {
           "name": "Match subfolders",
@@ -257,7 +256,6 @@
       },
       "tags": {
         "title": "Tags",
-        "desc": "Set tags to match.",
         "excludeAllNote": {
           "part1": "",
           "excludeAllExcept": "Exclude all except...",
@@ -285,7 +283,6 @@
       },
       "properties": {
         "title": "Properties",
-        "desc": "Set properties to match.",
         "leaveBlank": {
           "part1": "Leave ",
           "value": "value",
@@ -310,7 +307,6 @@
       },
       "disableProperty": {
         "title": "Property to disable renaming",
-        "desc": "Set the property to exclude notes from processing.",
         "alwaysRespected": "Always respected — cannot get overridden by any command.",
         "caseInsensitive": "Case-insensitive.",
         "updateWarning": "Changing this will not automatically update properties that have been previously added to notes. Update manually after changing.",
@@ -318,7 +314,6 @@
       },
       "fileNames": {
         "title": "File name matches",
-        "desc": "Set file names to match.",
         "addButton": "Add match",
         "emptyState": "No file names added.",
         "headers": {
@@ -331,23 +326,16 @@
       }
     },
     "alias": {
-      "desc": "Copy the first line to a property.",
+      "desc": "Copy the first line to a property when renaming.",
       "addAlias": {
         "name": "Add alias",
-        "desc": "Always copy the first line to a property when renaming notes."
+        "desc": "Copy the first line to a property when renaming."
       },
       "aliasPropertyName": {
         "name": "Alias property name",
         "desc": "Set the property key in which to insert the alias.",
         "quickSwitcher": "Use 'aliases' to make the alias searchable in the Quick switcher and link suggester.",
         "multipleProperties": "To populate multiple properties, separate by comma (e.g., 'aliases, title').",
-        "noteTitle": {
-          "part1": "This property can be set as title in plugins like ",
-          "part2": ", ",
-          "part3": ", ",
-          "part4": " and ",
-          "part5": "."
-        },
         "default": "Default: aliases"
       },
       "onlyAddIfDiffers": {
@@ -410,8 +398,8 @@
     },
     "replaceCharacters": {
       "name": "Replace forbidden characters",
-      "desc": "Replace forbidden characters with safe alternatives.",
-      "toggleDesc": "Enable to replace forbidden characters using the rules below. Disable to strip them entirely.",
+      "desc": "Replace forbidden file name characters with safe alternatives.",
+      "toggleDesc": "Replace characters forbidden in Obsidian file names with safe alternatives. When off, strip them entirely.",
       "trimNote": {
         "part1": "Enable ",
         "trimLeft": "Trim left",
@@ -750,7 +738,7 @@
       }
     },
     "other": {
-      "desc": "Fine-tune, troubleshoot, manage settings.",
+      "desc": "Fine-tune, troubleshoot, and manage settings.",
       "charCount": {
         "name": "Character count",
         "desc": "The maximum number of characters to put in file name.",

@@ -9,8 +9,10 @@ import {
 import {
   updateDisabledRowsAccessibility,
   addForbiddenCharProtection,
+  appendLines,
   FirstLineIsTitlePlugin,
   mountLegacyHost,
+  buildDescRow,
 } from './settings-base';
 import { ExcludedProperty, FileNameExclusion } from '../types';
 import { FolderSuggest, TagSuggest } from '../suggests';
@@ -41,104 +43,86 @@ function appendEmphasis(
   }
 }
 
-function createBulletList(frag: DocumentFragment): HTMLElement {
-  return frag.createEl('ul', { cls: 'flit-margin-0 flit-padding-left-20' });
-}
-
-/** Page-level summary plus the "rules can't override rules" caveat. */
+/** The "rules can't override rules" caveat. */
 function buildPageIntro(): DocumentFragment {
   return createFragment((frag) => {
-    frag.createEl('strong', { text: t('settings.exclusions.desc') });
-    frag.createEl('p', { text: t('settings.exclusions.note') });
+    frag.appendText(t('settings.exclusions.note'));
   });
 }
 
 function buildFoldersIntro(): DocumentFragment {
   return createFragment((frag) => {
-    frag.appendText(t('settings.exclusions.folders.desc'));
-    createBulletList(frag).createEl('li', {
-      text: t('settings.exclusions.folders.renamedWarning'),
-    });
+    frag.appendText(t('settings.exclusions.folders.renamedWarning'));
   });
 }
 
 function buildTagsIntro(): DocumentFragment {
   return createFragment((frag) => {
-    frag.appendText(t('settings.exclusions.tags.desc'));
-    const ul = createBulletList(frag);
-
-    const excludeAllItem = ul.createEl('li');
-    excludeAllItem.appendText(
-      t('settings.exclusions.tags.excludeAllNote.part1')
-    );
-    appendEmphasis(
-      excludeAllItem,
-      'settings.exclusions.tags.excludeAllNote.excludeAllExcept'
-    );
-    excludeAllItem.appendText(
-      t('settings.exclusions.tags.excludeAllNote.part2')
-    );
-
-    ul.createEl('li', {
-      text: t('settings.exclusions.tags.tagWranglerWarning'),
-    });
+    appendLines(frag, [
+      (target) => {
+        target.appendText(t('settings.exclusions.tags.excludeAllNote.part1'));
+        appendEmphasis(
+          target,
+          'settings.exclusions.tags.excludeAllNote.excludeAllExcept'
+        );
+        target.appendText(t('settings.exclusions.tags.excludeAllNote.part2'));
+      },
+      (target) =>
+        target.appendText(t('settings.exclusions.tags.tagWranglerWarning')),
+    ]);
   });
 }
 
+/** Case-sensitivity note sorts last, after the other behavioural notes. */
 function buildPropertiesIntro(): DocumentFragment {
   return createFragment((frag) => {
-    frag.appendText(t('settings.exclusions.properties.desc'));
-    const ul = createBulletList(frag);
-
-    const leaveBlankItem = ul.createEl('li');
-    leaveBlankItem.appendText(
-      t('settings.exclusions.properties.leaveBlank.part1')
-    );
-    appendEmphasis(
-      leaveBlankItem,
-      'settings.exclusions.properties.leaveBlank.value'
-    );
-    leaveBlankItem.appendText(
-      t('settings.exclusions.properties.leaveBlank.part2')
-    );
-
-    ul.createEl('li', {
-      text: t('settings.exclusions.properties.caseInsensitive'),
-    });
-
-    const excludeAllItem = ul.createEl('li');
-    excludeAllItem.appendText(
-      t('settings.exclusions.properties.excludeAllNote.part1')
-    );
-    appendEmphasis(
-      excludeAllItem,
-      'settings.exclusions.properties.excludeAllNote.excludeAllExcept'
-    );
-    excludeAllItem.appendText(
-      t('settings.exclusions.properties.excludeAllNote.part2')
-    );
-
-    ul.createEl('li', {
-      text: t('settings.exclusions.properties.renamedWarning'),
-    });
+    appendLines(frag, [
+      (target) => {
+        target.appendText(t('settings.exclusions.properties.leaveBlank.part1'));
+        appendEmphasis(
+          target,
+          'settings.exclusions.properties.leaveBlank.value'
+        );
+        target.appendText(t('settings.exclusions.properties.leaveBlank.part2'));
+      },
+      (target) => {
+        target.appendText(
+          t('settings.exclusions.properties.excludeAllNote.part1')
+        );
+        appendEmphasis(
+          target,
+          'settings.exclusions.properties.excludeAllNote.excludeAllExcept'
+        );
+        target.appendText(
+          t('settings.exclusions.properties.excludeAllNote.part2')
+        );
+      },
+      (target) =>
+        target.appendText(t('settings.exclusions.properties.renamedWarning')),
+      (target) =>
+        target.appendText(t('settings.exclusions.properties.caseInsensitive')),
+    ]);
   });
 }
 
+/** Case-sensitivity note sorts last, after the other behavioural notes. */
 function buildDisablePropertyIntro(): DocumentFragment {
   return createFragment((frag) => {
-    frag.appendText(t('settings.exclusions.disableProperty.desc'));
-    const ul = createBulletList(frag);
-
-    ul.createEl('li', {
-      text: t('settings.exclusions.disableProperty.alwaysRespected'),
-    });
-    ul.createEl('li', {
-      text: t('settings.exclusions.disableProperty.caseInsensitive'),
-    });
-    ul.createEl('li', {
-      text: t('settings.exclusions.disableProperty.updateWarning'),
-    });
-
+    appendLines(frag, [
+      (target) =>
+        target.appendText(
+          t('settings.exclusions.disableProperty.alwaysRespected')
+        ),
+      (target) =>
+        target.appendText(
+          t('settings.exclusions.disableProperty.updateWarning')
+        ),
+      (target) =>
+        target.appendText(
+          t('settings.exclusions.disableProperty.caseInsensitive')
+        ),
+    ]);
+    frag.createEl('br');
     frag.createEl('small').createEl('strong', {
       text: t('settings.exclusions.disableProperty.default'),
     });
@@ -580,16 +564,13 @@ export function buildExclusionsPage(
     name: t('settings.tabs.exclusions'),
     desc: t('settings.exclusions.desc'),
     items: [
-      {
-        name: '',
-        desc: buildPageIntro(),
-      },
+      buildDescRow(buildPageIntro()),
 
       {
         type: 'group',
         heading: t('settings.exclusions.folders.title'),
         items: [
-          { name: '', desc: buildFoldersIntro() },
+          buildDescRow(buildFoldersIntro()),
           {
             name: t('settings.exclusions.folders.matchSubfolders.name'),
             desc: t('settings.exclusions.folders.matchSubfolders.desc'),
@@ -628,7 +609,7 @@ export function buildExclusionsPage(
         type: 'group',
         heading: t('settings.exclusions.tags.title'),
         items: [
-          { name: '', desc: buildTagsIntro() },
+          buildDescRow(buildTagsIntro()),
           {
             name: t('settings.exclusions.tags.matchTags.name'),
             desc: t('settings.exclusions.tags.matchTags.desc'),
@@ -686,7 +667,7 @@ export function buildExclusionsPage(
         type: 'group',
         heading: t('settings.exclusions.properties.title'),
         items: [
-          { name: '', desc: buildPropertiesIntro() },
+          buildDescRow(buildPropertiesIntro()),
           {
             name: t('settings.exclusions.properties.exclusionMode.name'),
             desc: t('settings.exclusions.properties.exclusionMode.desc'),
@@ -723,7 +704,6 @@ export function buildExclusionsPage(
       {
         type: 'group',
         heading: t('settings.exclusions.fileNames.title'),
-        items: [{ name: '', desc: t('settings.exclusions.fileNames.desc') }],
       },
       {
         type: 'list',
@@ -764,7 +744,7 @@ export function buildExclusionsPage(
         type: 'group',
         heading: t('settings.exclusions.disableProperty.title'),
         items: [
-          { name: '', desc: buildDisablePropertyIntro() },
+          buildDescRow(buildDisablePropertyIntro()),
           buildDisablePropertyRow(plugin),
         ],
       },

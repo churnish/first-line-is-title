@@ -1,7 +1,7 @@
 import { Notice, Setting, SettingDefinitionPage, setIcon } from 'obsidian';
 import {
-  updateInteractiveState,
   addForbiddenCharProtection,
+  buildDescRow,
   FirstLineIsTitlePlugin,
   mountLegacyHost,
 } from './settings-base';
@@ -211,10 +211,10 @@ function renderCharacterRows(
   });
 }
 
-/** Builds the "All OSes" trim-left/trim-right explanatory note. */
 /**
  * Explains the Trim left/right columns. Both character tables have them, so
- * this belongs with the master toggle rather than inside either table's group.
+ * this is its own row below the master toggle rather than inside either
+ * table's group.
  */
 function appendTrimNote(parent: HTMLElement | DocumentFragment): void {
   const locale = getCurrentLocale();
@@ -267,20 +267,6 @@ export function buildCharacterReplacementsPage(
       isEnabled,
       isWindowsAndroid,
     });
-
-    const masterEnabled =
-      plugin.settings.replaceCharacters.enableForbiddenCharReplacements;
-    updateInteractiveState(host, masterEnabled);
-    tableContainer.classList.toggle('flit-master-disabled', !masterEnabled);
-
-    // The group heading and this row's own description live outside `host`
-    // (siblings in the declarative row/group chrome), so the master toggle
-    // must grey them out explicitly rather than relying on host's descendants.
-    setting.descEl.classList.toggle('flit-master-disabled', !masterEnabled);
-    const groupHeading = setting.settingEl
-      .closest('.setting-group')
-      ?.querySelector<HTMLElement>(':scope > .setting-item-heading');
-    groupHeading?.classList.toggle('flit-master-disabled', !masterEnabled);
   };
 
   return {
@@ -292,19 +278,24 @@ export function buildCharacterReplacementsPage(
         name: t('settings.replaceCharacters.name'),
         // Deliberately not the section desc: the section summarises what the
         // page is for, the toggle explains what each position does.
-        desc: createFragment((frag) => {
-          frag.appendText(t('settings.replaceCharacters.toggleDesc'));
-          const note = frag.createDiv({ cls: 'flit-margin-top-15' });
-          appendTrimNote(note);
-        }),
+        desc: t('settings.replaceCharacters.toggleDesc'),
         control: {
           type: 'toggle',
           key: 'replaceCharacters.enableForbiddenCharReplacements',
         },
       },
+      buildDescRow(
+        createFragment((frag) => appendTrimNote(frag)),
+        {
+          visible: () =>
+            plugin.settings.replaceCharacters.enableForbiddenCharReplacements,
+        }
+      ),
       {
         type: 'group',
         heading: t('settings.replaceCharacters.allOSes.title'),
+        visible: () =>
+          plugin.settings.replaceCharacters.enableForbiddenCharReplacements,
         items: [
           {
             name: '',
@@ -323,6 +314,8 @@ export function buildCharacterReplacementsPage(
       {
         type: 'group',
         heading: t('settings.replaceCharacters.windowsAndroid.title'),
+        visible: () =>
+          plugin.settings.replaceCharacters.enableForbiddenCharReplacements,
         items: [
           {
             name: '',

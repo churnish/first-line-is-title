@@ -1,4 +1,4 @@
-import { App, TFile } from 'obsidian';
+import { App, SettingDefinitionRender, TFile } from 'obsidian';
 import { PluginSettings } from '../types';
 import { UNIVERSAL_FORBIDDEN_CHARS, WINDOWS_ANDROID_CHARS } from '../constants';
 import { detectOS } from '../utils';
@@ -28,59 +28,6 @@ export interface FirstLineIsTitlePlugin {
   cacheManager?: {
     clearReservedPaths(): void;
   };
-}
-
-/**
- * Updates the interactive state of all elements within a container
- * @param container - The container element
- * @param enabled - Whether elements should be enabled (true) or disabled (false)
- */
-export function updateInteractiveState(
-  container: HTMLElement,
-  enabled: boolean
-): void {
-  if (enabled) {
-    container.classList.remove('flit-master-disabled');
-    container.removeAttribute('inert');
-    const interactiveElements = container.querySelectorAll(
-      'input, button, a, select, .dropdown, textarea'
-    );
-    interactiveElements.forEach((el: HTMLElement) => {
-      // Only restore tabindex if it wasn't explicitly set to -1 originally
-      if (el.getAttribute('data-original-tabindex') !== null) {
-        const originalTabIndex = el.getAttribute('data-original-tabindex');
-        if (originalTabIndex === 'remove') {
-          el.removeAttribute('tabindex');
-        } else {
-          el.tabIndex = parseInt(originalTabIndex || '0');
-        }
-        el.removeAttribute('data-original-tabindex');
-      }
-      el.removeAttribute('aria-disabled');
-      el.classList.remove('flit-pointer-none');
-    });
-
-    updateDisabledRowsAccessibility(container);
-  } else {
-    container.classList.add('flit-master-disabled');
-    container.setAttribute('inert', '');
-    const interactiveElements = container.querySelectorAll(
-      'input, button, a, select, .dropdown, textarea'
-    );
-    interactiveElements.forEach((el: HTMLElement) => {
-      if (el.hasAttribute('tabindex')) {
-        el.setAttribute(
-          'data-original-tabindex',
-          el.getAttribute('tabindex') || '0'
-        );
-      } else {
-        el.setAttribute('data-original-tabindex', 'remove');
-      }
-      el.tabIndex = -1;
-      el.setAttribute('aria-disabled', 'true');
-      el.classList.add('flit-pointer-none');
-    });
-  }
 }
 
 /**
@@ -173,4 +120,39 @@ export function mountLegacyHost(settingEl: HTMLElement): HTMLElement {
     .querySelectorAll(':scope > .flit-settings-page')
     .forEach((stale) => stale.remove());
   return settingEl.createDiv({ cls: 'flit-settings-page' });
+}
+
+/**
+ * Appends a sequence of bare newline-separated lines (no bullet markup),
+ * joined with `<br>` rather than a `<ul>`/`<li>` list.
+ */
+export function appendLines(
+  parent: HTMLElement | DocumentFragment,
+  lines: Array<(target: HTMLElement | DocumentFragment) => void>
+): void {
+  lines.forEach((appendLine, index) => {
+    appendLine(parent);
+    if (index < lines.length - 1) parent.createEl('br');
+  });
+}
+
+/**
+ * Description-only row (no name, control, or action). The framework's item
+ * filter keeps only definitions with a truthy `name`, `render`, `control`,
+ * or `action` — `desc` alone doesn't count, so a bare `{ name: '', desc }`
+ * item is silently dropped before rendering. The no-op `render` is never
+ * called for its own sake; it exists only to satisfy the filter, since the
+ * framework applies `desc` to the row before invoking `render`.
+ */
+export function buildDescRow(
+  desc: string | DocumentFragment,
+  options?: { visible?: () => boolean }
+): SettingDefinitionRender {
+  return {
+    name: '',
+    desc,
+    searchable: false,
+    visible: options?.visible,
+    render: () => {},
+  };
 }

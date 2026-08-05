@@ -69,7 +69,7 @@ describe('CommandRegistrar', () => {
         (call: any[]) => call[0].id === 'rename-current-file'
       );
       expect(command).toBeDefined();
-      expect(command[0].icon).toBe('file-type');
+      expect(command[0].icon).toBe('file-type-corner');
     });
 
     it('should register rename-current-file-unless-excluded command', async () => {

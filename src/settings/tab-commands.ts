@@ -32,7 +32,7 @@ const COMMAND_SECTIONS: SectionConfig[] = [
       {
         nameKey: 'commands.putFirstLineInTitle',
         descKey: 'commands.descriptions.renameNoteEvenExcluded',
-        icon: 'file-type',
+        icon: 'file-type-corner',
         settingKey: 'core.commandVisibility.filePutFirstLineInTitle',
       },
       {
@@ -44,7 +44,7 @@ const COMMAND_SECTIONS: SectionConfig[] = [
       {
         nameKey: 'commands.enableRenamingForNote',
         descKey: 'commands.descriptions.stopExcludingNote',
-        icon: 'square-check',
+        icon: 'file-pen',
         settingKey: 'core.commandVisibility.fileStopExcluding',
       },
     ],
@@ -57,7 +57,7 @@ const COMMAND_SECTIONS: SectionConfig[] = [
       {
         nameKey: 'commands.putFirstLineInTitle',
         descKey: 'commands.descriptions.renameAllNotesInFolder',
-        icon: 'folder-pen',
+        icon: 'file-type-corner',
         settingKey: 'core.commandVisibility.folderPutFirstLineInTitle',
       },
       {
@@ -69,7 +69,7 @@ const COMMAND_SECTIONS: SectionConfig[] = [
       {
         nameKey: 'commands.enableRenamingInFolder',
         descKey: 'commands.descriptions.stopExcludingFolder',
-        icon: 'square-check',
+        icon: 'file-pen',
         settingKey: 'core.commandVisibility.folderStopExcluding',
       },
     ],
@@ -82,7 +82,7 @@ const COMMAND_SECTIONS: SectionConfig[] = [
       {
         nameKey: 'commands.putFirstLineInTitle',
         descKey: 'commands.descriptions.renameAllNotesWithTag',
-        icon: 'file-type',
+        icon: 'file-type-corner',
         settingKey: 'core.commandVisibility.tagPutFirstLineInTitle',
       },
       {
@@ -94,7 +94,7 @@ const COMMAND_SECTIONS: SectionConfig[] = [
       {
         nameKey: 'commands.enableRenamingForTag',
         descKey: 'commands.descriptions.stopExcludingTag',
-        icon: 'square-check',
+        icon: 'file-pen',
         settingKey: 'core.commandVisibility.tagStopExcluding',
       },
     ],
@@ -107,7 +107,7 @@ const COMMAND_SECTIONS: SectionConfig[] = [
       {
         nameKey: 'commands.putFirstLineInTitle',
         descKey: 'commands.descriptions.renameAllNotesInSearchResults',
-        icon: 'file-type',
+        icon: 'file-type-corner',
         settingKey: 'core.vaultSearchContextMenuVisibility.putFirstLineInTitle',
       },
       {
@@ -119,7 +119,7 @@ const COMMAND_SECTIONS: SectionConfig[] = [
       {
         nameKey: 'commands.enableRenaming',
         descKey: 'commands.descriptions.stopExcludingAllNotesInSearchResults',
-        icon: 'square-check',
+        icon: 'file-pen',
         settingKey: 'core.vaultSearchContextMenuVisibility.enable',
       },
     ],
