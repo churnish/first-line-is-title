@@ -1,5 +1,6 @@
 import { verboseLog } from '../utils';
 import { FirstLineIsTitlePlugin } from '../settings/settings-base';
+import { PRIMARY_CHAR_KEYS } from '../types/char-replacement';
 
 /**
  * PluginInitializer
@@ -46,21 +47,11 @@ export class PluginInitializer {
       this.settings.replaceCharacters.enableForbiddenCharReplacements &&
       !this.settings.core.hasEnabledForbiddenChars
     ) {
-      const allOSesKeys = [
-        'leftBracket',
-        'rightBracket',
-        'hash',
-        'caret',
-        'pipe',
-        'backslash',
-        'slash',
-        'colon',
-        'dot',
-      ];
-      allOSesKeys.forEach((key) => {
-        this.settings.replaceCharacters.charReplacements[
-          key as keyof typeof this.settings.replaceCharacters.charReplacements
-        ].enabled = true;
+      const autoEnableKeys = PRIMARY_CHAR_KEYS.filter(
+        (key) => key !== 'backslash'
+      );
+      autoEnableKeys.forEach((key) => {
+        this.settings.replaceCharacters.charReplacements[key].enabled = true;
       });
       this.settings.core.hasEnabledForbiddenChars = true;
       settingsChanged = true;
