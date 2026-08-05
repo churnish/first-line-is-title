@@ -153,7 +153,6 @@ export function buildAliasPage(
       control: {
         type: 'toggle',
         key: 'markupStripping.stripMarkupInAlias',
-        disabled: () => !plugin.settings.markupStripping.enableStripMarkup,
       },
     },
     {

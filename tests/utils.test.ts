@@ -499,7 +499,6 @@ describe('utils', () => {
   describe('extractTitle', () => {
     beforeEach(() => {
       // Enable all markup stripping by default for tests
-      settings.markupStripping.enableStripMarkup = true;
       settings.markupStripping.stripMarkupSettings.callouts = true;
       settings.markupStripping.stripMarkupSettings.quote = true;
       settings.markupStripping.stripMarkupSettings.taskLists = true;

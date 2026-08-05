@@ -12,26 +12,6 @@
   position: relative;
 }
 
-/* Always show scrollbar for tables */
-.flit-table-container::-webkit-scrollbar {
-  -webkit-appearance: none;
-  height: 8px;
-}
-
-.flit-table-container::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar-thumb-bg);
-  border-radius: 6px;
-}
-
-.flit-table-container::-webkit-scrollbar-track {
-  background-color: var(--scrollbar-bg);
-}
-
-/* Hide scrollbar when all features are disabled */
-.flit-table-container.flit-master-disabled::-webkit-scrollbar {
-  display: none;
-}
-
 /* Ensure Windows/Android table container doesn't clip outline */
 .flit-table-container.flit-windows-android-table {
   padding: 0;
@@ -214,7 +194,7 @@ br + .flit-table-container {
 }
 
 /* Note: Container-level .disabled styling is intentionally omitted.
-   Row-level disabled styling is handled by .flit-row-disabled and .flit-master-disabled classes. */
+   Row-level disabled styling is handled by the .flit-row-disabled class. */
 
 /* Note: Main .flit-table-container styles are in "Table Container Styles" section above */
 

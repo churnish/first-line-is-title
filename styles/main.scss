@@ -5,7 +5,7 @@
 // - Most styles are scoped under .flit-settings-page for specificity
 // - !important is used ONLY where necessary to override Obsidian base/theme styles
 // - Each !important usage is documented with a comment explaining why it's needed
-// - State classes (.flit-row-disabled, .flit-master-disabled) control visibility
+// - State class (.flit-row-disabled) controls per-row opacity/pointer-events
 
 // Modals and tables
 @use 'modals';

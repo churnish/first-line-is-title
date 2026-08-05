@@ -1,27 +1,4 @@
-// Master-toggle-off and row-disabled opacity/pointer-events states.
-
-/* Apply disabled styling to section elements when master toggle OFF */
-.flit-master-disabled .flit-custom-replacement-header,
-.flit-master-disabled .flit-add-replacement-button {
-  opacity: 0.5;
-}
-
-/* Gray out individual row content (but not the row container itself) */
-.flit-master-disabled
-  .flit-custom-replacement-setting
-  > *:not(.flit-actions-column) {
-  opacity: 0.5;
-}
-
-/* Keep action buttons visible - REQUIRES !important for state override */
-.flit-master-disabled .flit-actions-column {
-  opacity: 1 !important;
-}
-
-/* Reset row-disabled opacity when inside flit-master-disabled to prevent stacking */
-.flit-master-disabled .flit-row-disabled > * {
-  opacity: 1 !important;
-}
+// Row-disabled opacity/pointer-events states (individual row toggled off while its section is visible).
 
 .flit-row-disabled {
   pointer-events: none;
@@ -50,54 +27,4 @@
 .flit-row-disabled .flit-actions-column {
   pointer-events: auto;
   opacity: 1;
-}
-
-/* But disable enable column when master toggle is OFF */
-.flit-master-disabled .flit-enable-column {
-  pointer-events: none;
-}
-
-.flit-master-disabled {
-  pointer-events: none;
-}
-
-/* Apply opacity to specific element types, NOT containers */
-.flit-master-disabled .setting-item:not(.flit-no-border),
-.flit-master-disabled .flit-char-replacement-header,
-.flit-master-disabled .flit-char-replacement-setting,
-.flit-master-disabled .flit-custom-replacement-header,
-.flit-master-disabled .flit-custom-replacement-setting,
-.flit-master-disabled br,
-.flit-master-disabled p.setting-item-description,
-.flit-master-disabled div.setting-item-description,
-.flit-master-disabled span.setting-item-description {
-  opacity: 0.5;
-}
-
-.flit-master-disabled.setting-item-description,
-.flit-master-disabled.flit-section-header,
-.flit-master-disabled.setting-item-heading {
-  opacity: 0.5;
-}
-
-/* Keep master toggle at full opacity - REQUIRES !important for state override */
-.flit-master-disabled > .setting-item.flit-no-border {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
-
-/* Prevent opacity stacking for disabled rows in disabled sections */
-.flit-master-disabled .flit-char-replacement-setting.flit-row-disabled,
-.flit-master-disabled .flit-custom-replacement-setting.flit-row-disabled {
-  opacity: 0.5 !important;
-}
-
-/* Reset child opacity to prevent stacking */
-.flit-master-disabled .flit-row-disabled .flit-char-name-column,
-.flit-master-disabled .flit-row-disabled .flit-char-text-input-container,
-.flit-master-disabled .flit-row-disabled .flit-toggle-column,
-.flit-master-disabled .setting-item.flit-row-disabled .setting-item-name,
-.flit-master-disabled .setting-item.flit-row-disabled .setting-item-description,
-.flit-master-disabled .setting-item.flit-row-disabled .setting-item-control {
-  opacity: 1 !important;
 }

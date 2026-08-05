@@ -104,12 +104,12 @@ export function buildGeneralDefinitions(
         'settings.general.convertReplacementCharactersInTitle.desc.replaceCharacters',
         'settings.general.convertReplacementCharactersInTitle.desc.part2'
       ),
-      visible: () => plugin.settings.core.insertTitleOnCreation,
+      visible: () =>
+        plugin.settings.core.insertTitleOnCreation &&
+        plugin.settings.replaceCharacters.enableForbiddenCharReplacements,
       control: {
         type: 'toggle',
         key: 'core.convertReplacementCharactersInTitle',
-        disabled: () =>
-          !plugin.settings.replaceCharacters.enableForbiddenCharReplacements,
       },
     },
     {

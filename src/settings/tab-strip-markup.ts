@@ -119,21 +119,7 @@ function buildTemplaterDescription(): DocumentFragment {
 export function buildMarkupStrippingPage(
   plugin: FirstLineIsTitlePlugin
 ): SettingDefinitionPage {
-  const stripMarkupEnabled = (): boolean =>
-    plugin.settings.markupStripping.enableStripMarkup;
-
-  const items: SettingDefinitionItem[] = [
-    {
-      name: t('settings.stripMarkup.name'),
-      // Deliberately not the section desc: the section summarises what the
-      // page is for, the toggle explains what each position does.
-      desc: t('settings.stripMarkup.toggleDesc'),
-      control: {
-        type: 'toggle',
-        key: 'markupStripping.enableStripMarkup',
-      },
-    },
-  ];
+  const items: SettingDefinitionItem[] = [];
 
   for (const toggle of MARKUP_TOGGLES) {
     items.push({
@@ -142,7 +128,6 @@ export function buildMarkupStrippingPage(
       control: {
         type: 'toggle',
         key: `markupStripping.${toggle.path}`,
-        disabled: () => !stripMarkupEnabled(),
       },
     });
 
@@ -157,7 +142,6 @@ export function buildMarkupStrippingPage(
         control: {
           type: 'toggle',
           key: 'markupStripping.detectDiagrams',
-          disabled: () => !stripMarkupEnabled(),
         },
       });
     }
@@ -171,7 +155,6 @@ export function buildMarkupStrippingPage(
         control: {
           type: 'toggle',
           key: 'markupStripping.stripCommentsEntirely',
-          disabled: () => !stripMarkupEnabled(),
         },
       });
     }
@@ -183,7 +166,6 @@ export function buildMarkupStrippingPage(
     control: {
       type: 'toggle',
       key: 'markupStripping.stripTemplaterSyntax',
-      disabled: () => !stripMarkupEnabled(),
     },
   });
 

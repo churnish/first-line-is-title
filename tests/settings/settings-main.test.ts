@@ -180,14 +180,14 @@ describe('FirstLineIsTitleSettings', () => {
   });
 
   describe('force-off cascades', () => {
-    it('clears convertReplacementCharactersInTitle when char replacements go off', async () => {
+    it('preserves convertReplacementCharactersInTitle when char replacements go off', async () => {
       plugin.settings.core.convertReplacementCharactersInTitle = true;
       await tab.setControlValue(
         'replaceCharacters.enableForbiddenCharReplacements',
         false
       );
       expect(plugin.settings.core.convertReplacementCharactersInTitle).toBe(
-        false
+        true
       );
     });
 

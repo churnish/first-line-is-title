@@ -34,10 +34,7 @@ import { buildOtherPage } from './tab-other';
 const CASCADES: Record<string, (plugin: FirstLineIsTitlePlugin) => void> = {
   'replaceCharacters.enableForbiddenCharReplacements': (plugin) => {
     const { settings } = plugin;
-    if (!settings.replaceCharacters.enableForbiddenCharReplacements) {
-      settings.core.convertReplacementCharactersInTitle = false;
-      return;
-    }
+    if (!settings.replaceCharacters.enableForbiddenCharReplacements) return;
     if (settings.core.hasEnabledForbiddenChars) return;
 
     for (const key of [...PRIMARY_CHAR_KEYS, ...WINDOWS_ANDROID_CHAR_KEYS]) {
