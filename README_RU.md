@@ -1,6 +1,6 @@
-[English](https://github.com/greetclammy/first-line-is-title?tab=readme-ov-file#readme) • Русский
-
 # First Line is Title
+
+[English](https://github.com/greetclammy/first-line-is-title?tab=readme-ov-file#readme) • Русский
 
 Автоматически используйте первую строку заметки в качестве ее названия, прямо как в Заметках от Apple! Забудьте о ручном вводе имени файла или невнятных временных метках.
 
