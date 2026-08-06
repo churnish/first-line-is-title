@@ -381,18 +381,18 @@ export function buildOtherPage(
         heading: t('settings.other.configuration.title'),
         items: [
           {
-            name: t('settings.other.manageSettings.name'),
-            desc: t('settings.other.manageSettings.desc'),
+            name: t('settings.other.backupSettings.name'),
+            desc: t('settings.other.backupSettings.desc'),
             render: (setting) => {
               setting
                 .addButton((button) =>
                   button
-                    .setButtonText(t('settings.other.manageSettings.import'))
+                    .setButtonText(t('settings.other.backupSettings.import'))
                     .onClick(() => importSettingsFromFile(plugin, tab))
                 )
                 .addButton((button) =>
                   button
-                    .setButtonText(t('settings.other.manageSettings.export'))
+                    .setButtonText(t('settings.other.backupSettings.export'))
                     .onClick(() => exportSettingsToFile(plugin))
                 );
             },

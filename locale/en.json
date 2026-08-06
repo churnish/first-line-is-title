@@ -749,8 +749,8 @@
       "configuration": {
         "title": "Configuration"
       },
-      "manageSettings": {
-        "name": "Manage settings",
+      "backupSettings": {
+        "name": "Back up and restore",
         "desc": "Back up plugin settings to a file or restore from backup.",
         "export": "Export",
         "import": "Import"
