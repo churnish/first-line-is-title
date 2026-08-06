@@ -1,46 +1,36 @@
 // Property key/value input layout and hidden-property visibility classes.
 
 .flit-property-container {
-  flex: 1 !important;
-  min-width: 0 !important;
-  width: auto !important;
+  flex: 1;
+  min-width: 0;
+  width: auto;
 }
 
-.flit-property-key-input,
-.flit-property-value-input {
-  flex: 1 !important;
-  min-width: 60px !important;
+/* Qualified with the element type so these outrank Obsidian's
+   `input[type='text']` (0,1,1) rules without needing !important. */
+input.flit-property-key-input,
+input.flit-property-value-input {
+  flex: 1;
+  min-width: 60px;
 }
 
-/* Ensure all X buttons are the same size */
-.flit-button-container .clickable-icon {
-  width: 32px !important;
-  height: 32px !important;
-  min-width: 32px !important;
-  min-height: 32px !important;
-  font-size: 16px !important;
+/* Scoped to the element the class is actually applied to, so it outranks
+   `.metadata-property { display: flex }` (0,1,0) outright rather than relying
+   on stylesheet order — which a theme could otherwise win. */
+.metadata-property.flit-property-hidden {
+  display: none;
 }
 
-/* Fix Property disable renaming restore button on mobile */
-.flit-property-control-wrapper {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  width: 100% !important;
+.metadata-properties.flit-container-hidden {
+  display: none;
 }
 
-.flit-restore-button-container {
-  flex-shrink: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.flit-property-hidden {
-  display: none !important;
-}
-
-.flit-container-hidden {
+/* REQUIRES !important: Obsidian shows the editor's property container via
+   `.markdown-source-view.is-live-preview.show-properties .metadata-container:not(.mod-error)`,
+   which is (0,5,0). Beating that by specificity means chaining Obsidian's own
+   state classes, so the override would silently fail — leaving the alias
+   property visible — the moment any of them is renamed. */
+.metadata-container.flit-container-hidden {
   display: none !important;
 }
 

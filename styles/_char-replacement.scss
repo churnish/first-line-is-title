@@ -1,39 +1,4 @@
-// Per-character replacement rows: name/text/toggle columns, section header.
-
-.flit-char-settings-container {
-  display: block;
-}
-
-.flit-char-settings-container.hidden {
-  display: none;
-}
-
-.flit-char-replacement-section-header {
-  margin-bottom: 10px;
-}
-
-.flit-char-replacement-section-header.windows-android,
-.flit-char-replacement-section-header.command-palette,
-.flit-char-replacement-section-header.ribbon,
-.flit-char-replacement-section-header.context-menu {
-  margin-top: 12px;
-  margin-bottom: 5px;
-  padding-top: 8px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.flit-section-title {
-  margin: 0;
-  font-size: 1.33em;
-  font-weight: 600;
-}
-
-/* Use parent selector for specificity instead of !important */
-.flit-settings-page .flit-section-title {
-  border-bottom: none;
-}
+// Per-character replacement rows: name/text/toggle columns.
 
 .flit-char-replacement-header,
 .flit-char-replacement-setting {

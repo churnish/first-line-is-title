@@ -119,6 +119,9 @@ export function mountLegacyHost(settingEl: HTMLElement): HTMLElement {
   settingEl
     .querySelectorAll(':scope > .flit-settings-page')
     .forEach((stale) => stale.remove());
+  // Marks the row as a legacy host so the stylesheet can widen it without a
+  // :has() selector, which Obsidian's CSS lint flags for invalidation cost.
+  settingEl.addClass('flit-settings-page-host');
   return settingEl.createDiv({ cls: 'flit-settings-page' });
 }
 

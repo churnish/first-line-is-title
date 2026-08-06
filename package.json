@@ -73,6 +73,6 @@
     "vitest": "^4.0.0"
   },
   "dependencies": {
-    "monkey-around": "^3.0.0"
+    "monkey-around": "3.0.0"
   }
 }

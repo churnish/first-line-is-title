@@ -1,8 +1,8 @@
 // Table container, custom-replacement rows, column widths, input styling, and dropdown-in-table scroll positioning.
 
 .flit-table-container {
-  overflow-x: auto !important;
-  overflow-y: visible !important;
+  overflow-x: auto;
+  overflow-y: visible;
   width: fit-content;
   max-width: 100%;
   margin-bottom: 10px;
@@ -22,10 +22,10 @@ br + .flit-table-container {
   margin-top: 2px;
 }
 
-/* Fix Windows/Android table border visibility
-   REQUIRES !important: Obsidian themes may apply borders to containers */
-.flit-windows-android-table {
-  border: none !important;
+/* Qualified with .flit-table-container so it outranks theme rules targeting
+   the container by a single class, without !important. */
+.flit-table-container.flit-windows-android-table {
+  border: none;
 }
 
 .flit-windows-android-table .flit-table-wrapper {
@@ -59,72 +59,12 @@ br + .flit-table-container {
   padding-bottom: 0;
 }
 
-.flit-custom-replacement-header {
-  display: flex;
-  align-items: center;
-  padding: 9px 16px 8px 16px;
-  border-bottom: 1px solid var(--background-modifier-border);
-  font-weight: bold;
-  font-size: 0.9em;
-  gap: 8px;
-  width: fit-content;
-  min-width: 746px;
-}
-
-.flit-custom-replacement-header .flit-toggle-column:first-of-type,
-.flit-custom-replacement-header .flit-toggle-column:last-of-type {
-  margin-right: 0;
-}
-
-.flit-custom-replacement-header.hidden {
-  display: none;
-}
-
-.flit-custom-replacement-setting {
-  display: flex;
-  align-items: center;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--background-modifier-border);
-  gap: 8px;
-  width: fit-content;
-  min-width: 746px;
-}
-
-.flit-custom-replacement-setting .flit-toggle-column:first-of-type,
-.flit-custom-replacement-setting .flit-toggle-column:last-of-type {
-  margin-right: 0;
-}
-
-.flit-custom-replacement-setting:last-of-type {
-  border-bottom: none;
-}
-
-.flit-custom-replacement-setting.hidden {
-  display: none;
-}
-
 .flit-enable-column {
   width: 70px;
   min-width: 70px;
   max-width: 70px;
   flex-shrink: 0;
   text-align: left;
-}
-
-.flit-text-column {
-  width: 180px;
-  min-width: 180px;
-  max-width: 180px;
-  flex-shrink: 0;
-  text-align: left;
-  overflow: hidden;
-}
-
-.flit-text-column input {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  text-overflow: ellipsis;
 }
 
 .flit-toggle-column {
@@ -156,41 +96,12 @@ br + .flit-table-container {
   margin-left: 4px;
 }
 
-.flit-button-container {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-/* REQUIRES !important: Override Obsidian's clickable-icon opacity for disabled state */
+/* (0,2,0) already outranks Obsidian's `.clickable-icon` (0,1,0) and ties
+   `.clickable-icon[aria-disabled='true']`, which this stylesheet follows. */
 .clickable-icon.disabled {
   cursor: not-allowed;
-  opacity: 0.25 !important;
-  pointer-events: none !important;
-}
-
-.flit-add-replacement-button.hidden {
-  display: none;
-}
-
-/* Section title followed by setting item - use parent specificity */
-.flit-settings-page .flit-section-title + .setting-item {
-  border-top: none;
-  margin-top: 15px;
-  padding-top: 0;
-}
-
-/* Add margin to input elements in tables to prevent outline clipping */
-.flit-settings-page .flit-custom-replacement-setting input[type='text'],
-.flit-settings-page .flit-text-column input[type='text'] {
-  margin: 2px;
-  width: calc(100% - 4px);
-  max-width: calc(100% - 4px);
-}
-
-/* Adjust row alignment to accommodate input margins */
-.flit-settings-page .flit-custom-replacement-setting {
-  align-items: stretch;
+  opacity: 0.25;
+  pointer-events: none;
 }
 
 /* Note: Container-level .disabled styling is intentionally omitted.
@@ -206,7 +117,6 @@ br + .flit-table-container {
 /* For dropdowns INSIDE tables, use different positioning strategy */
 .flit-table-container .setting-item-control,
 .flit-table-wrapper .setting-item-control,
-.flit-custom-replacement-setting .setting-item-control,
 .flit-char-replacement-setting .setting-item-control {
   position: static;
   overflow: hidden;
@@ -215,17 +125,7 @@ br + .flit-table-container {
 /* Ensure dropdown menus from tables can still be visible with higher z-index */
 .flit-table-container select,
 .flit-table-wrapper select,
-.flit-custom-replacement-setting select,
 .flit-char-replacement-setting select {
   position: relative;
-  z-index: 2000 !important;
-}
-
-/* Ensure all dropdown-related elements have proper stacking */
-.flit-settings-page .dropdown-menu,
-.flit-settings-page .suggestion-container,
-.flit-settings-page .menu {
-  position: absolute !important;
-  z-index: 9999 !important;
-  overflow: visible !important;
+  z-index: 2000;
 }

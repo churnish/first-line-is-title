@@ -6,12 +6,8 @@
   margin-bottom: 12px;
 }
 
-.flit-settings-page .flit-heading-with-desc.setting-item-heading {
-  padding-bottom: 0;
-}
-
-.flit-settings-page .flit-first-section-heading.setting-item-heading {
-  margin-top: var(--size-4-6);
+.flit-settings-page .setting-group-heading {
+  border-bottom: none;
 }
 
 /* Add margin between heading info and toggle control (vanilla Obsidian default) */

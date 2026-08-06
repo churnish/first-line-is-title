@@ -1,33 +1,45 @@
 // Exclusion list rows and their below-list add-row chrome.
 
-.flit-exclusion-item-setting {
-  display: flex !important;
-  align-items: center !important;
+/* Qualified with .setting-item so `align-items` outranks Obsidian's
+   `.setting-item { align-items: flex-start }` (0,1,0) outright rather than
+   tying it and depending on stylesheet order. */
+.setting-item.flit-exclusion-item-setting {
+  display: flex;
+  align-items: center;
 }
 
 .flit-exclusion-item-setting .setting-item-info {
-  display: none !important;
+  display: none;
 }
 
+/* `width: 100%` is deliberately absent: Obsidian already sets it at (0,3,0)
+   via `.setting-item:not(:is(.mod-toggle, …)) .setting-item-control`.
+
+   REQUIRES !important on `flex`: phones collapse the control to content width
+   via `.is-phone .modal .setting-group.mod-list .setting-items
+   .setting-item-control` at (0,6,0), stranding ~100px to the right of the
+   delete button. That is right for ordinary list rows (label + chevron) but
+   wrong for ours, which pair a text input with a delete button. Outranking it
+   means chaining five Obsidian classes, which would fail silently if any were
+   renamed. `flex-basis: 0%` also makes the competing `width: auto` moot. */
 .flit-exclusion-item-setting .setting-item-control {
   flex: 1 !important;
-  max-width: none !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  width: 100% !important;
+  max-width: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .flit-exclusion-item-setting .setting-item-control input {
-  flex: 1 !important;
-  min-width: 0 !important;
-  margin: 2px !important;
+  flex: 1;
+  min-width: 0;
+  margin: 2px;
 }
 
 .flit-exclusion-item-setting .setting-item-control .clickable-icon {
-  flex-shrink: 0 !important;
-  width: 32px !important;
-  height: 32px !important;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
 }
 
 /* Below-the-list "Add" row: an empty-name Setting holding only a button.
@@ -36,14 +48,44 @@
    with no heading, the framework wraps it in the same card-styled
    .setting-items box a list uses; strip that box's chrome so the row reads
    as a plain floating button, matching the pre-migration look. */
-.setting-items:has(> .flit-add-item-row) {
+.setting-items.flit-add-item-row-box {
   background: transparent;
   border-radius: 0;
 }
 
+/* Restore the button's pill on mobile. Stripping the card above drops the
+   button onto --settings-background, and `.is-mobile` maps both that and
+   --interactive-normal to --background-secondary (#f6f6f6 light), while also
+   setting --input-shadow: none — same fill, no outline, invisible pill.
+   --background-modifier-border is what Obsidian itself uses for
+   --interactive-normal on mobile dark, so light now matches dark.
+   (0,2,1) beats app.css `button:not(.clickable-icon)` (0,1,1) outright. */
+.is-mobile .flit-add-item-row .setting-item-control button {
+  background-color: var(--background-modifier-border, #e4e4e4);
+}
+
+/* Press state. The resting rule above (0,3,1) outranks Obsidian's
+   `button:not(.clickable-icon).mobile-tap` (0,2,1), so the tap colour has to
+   be restated or pressing produces no change on mobile light, where
+   --interactive-hover happens to equal the resting --background-modifier-border.
+   border → border-hover is the same pair Obsidian already uses for
+   --interactive-normal/--interactive-hover on mobile dark, so dark is unchanged. */
+.is-mobile .flit-add-item-row .setting-item-control button.mobile-tap {
+  background-color: var(--background-modifier-border-hover, #dadada);
+}
+
+/* iPadOS with a trackpad or mouse gets :hover instead of .mobile-tap, and the
+   resting rule outranks app.css's `button:hover` (0,1,1) too. Gated on
+   (hover: hover) so touch-only devices never latch a sticky hover state. */
+@media (hover: hover) {
+  .is-mobile .flit-add-item-row .setting-item-control button:hover {
+    background-color: var(--background-modifier-border-hover, #dadada);
+  }
+}
+
 /* The framework's standard 24px inter-group margin reads as too much gap
    between a list's last row and its own "Add" affordance. */
-.setting-group:has(> .setting-items > .flit-add-item-row) {
+.setting-group.flit-add-item-row-group {
   margin-top: 4px;
 }
 

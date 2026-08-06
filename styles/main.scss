@@ -3,8 +3,10 @@
 
 // CSS architecture notes:
 // - Most styles are scoped under .flit-settings-page for specificity
-// - !important is used ONLY where necessary to override Obsidian base/theme styles
-// - Each !important usage is documented with a comment explaining why it's needed
+// - No !important: overrides win by qualifying the selector with the element's
+//   own class/tag instead, so a theme cannot flip them via stylesheet order
+// - No :has(): framework-owned ancestors are tagged with marker classes from JS
+//   (flit-settings-page-host, flit-add-item-row-box, flit-add-item-row-group)
 // - State class (.flit-row-disabled) controls per-row opacity/pointer-events
 
 // Modals and tables
@@ -17,13 +19,10 @@
 
 // Settings layout
 @use 'exclusions';
-@use 'settings-tabs';
+@use 'settings-page';
 @use 'dividers';
-@use 'section-headers';
 @use 'properties';
-@use 'notices';
 @use 'setting-icons';
-@use 'sub-settings';
 
 // Fixes and overrides
 @use 'dropdown-menu';
