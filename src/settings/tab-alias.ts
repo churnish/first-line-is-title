@@ -4,11 +4,35 @@ import {
   SettingDefinitionPage,
   Notice,
 } from 'obsidian';
-import { FirstLineIsTitlePlugin, mountLegacyHost } from './settings-base';
+import {
+  FirstLineIsTitlePlugin,
+  appendLines,
+  buildDescRow,
+} from './settings-base';
 import { t, getCurrentLocale } from '../i18n';
 
 // Plugin names (proper nouns, not subject to sentence case)
 const PLUGIN_HOVER_EDITOR = 'Hover Editor';
+
+/**
+ * The limitation caveats, as bare newline-separated lines (no bullet markup),
+ * matching the master-toggle note pattern in `tab-custom-rules.ts`.
+ */
+function buildLimitationsNote(): DocumentFragment {
+  return createFragment((frag) => {
+    appendLines(frag, [
+      (target) => {
+        target.appendText(t('settings.alias.limitations.bullet1.part1'));
+        target.createEl('a', {
+          text: PLUGIN_HOVER_EDITOR,
+          href: 'https://obsidian.md/plugins?id=obsidian-hover-editor',
+        });
+        target.appendText(t('settings.alias.limitations.bullet1.part2'));
+      },
+      (target) => target.appendText(t('settings.alias.limitations.bullet2')),
+    ]);
+  });
+}
 
 /** Russian typography uses guillemets where English bolds a UI label. */
 function appendEmphasisedTerm(frag: DocumentFragment, text: string): void {
@@ -205,33 +229,7 @@ export function buildAliasPage(
       type: 'group',
       heading: t('settings.alias.limitations.title'),
       visible: () => aliasesEnabled() && !Platform.isMobile,
-      items: [
-        {
-          name: '',
-          render: (setting) => {
-            const host = mountLegacyHost(setting.settingEl);
-            const list = host.createEl('ul', {
-              cls: 'setting-item-description flit-margin-top-15 flit-margin-bottom-15',
-            });
-
-            const pagePreviewBullet = list.createEl('li');
-            pagePreviewBullet.appendText(
-              t('settings.alias.limitations.bullet1.part1')
-            );
-            pagePreviewBullet.createEl('a', {
-              text: PLUGIN_HOVER_EDITOR,
-              href: 'obsidian://show-plugin?id=obsidian-hover-editor',
-            });
-            pagePreviewBullet.appendText(
-              t('settings.alias.limitations.bullet1.part2')
-            );
-
-            list.createEl('li', {
-              text: t('settings.alias.limitations.bullet2'),
-            });
-          },
-        },
-      ],
+      items: [buildDescRow(buildLimitationsNote())],
     },
   ];
 

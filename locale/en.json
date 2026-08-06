@@ -37,37 +37,6 @@
     },
     "enableRenamingNNotes": {
       "many": "Enable renaming ({{count}} notes)"
-    },
-    "descriptions": {
-      "renameActiveNoteEvenExcluded": "Rename active note, even if in excluded folder or with excluded tag or property.",
-      "renameActiveNoteUnlessExcluded": "Rename active note except if in excluded folder or with excluded tag or property.",
-      "renameAllNotesExceptExcluded": "Rename all notes in vault except if in excluded folder or with excluded tag or property.",
-      "excludeActiveNote": "Exclude active note from renaming.",
-      "stopExcludingActiveNote": "Stop excluding active note from renaming.",
-      "createLinkWithForbiddenChars": {
-        "part1": "Create internal link with forbidden characters handled as set in ",
-        "replaceCharacters": "Character replacements",
-        "part2": "."
-      },
-      "createLinkWithValidPath": {
-        "part1": "Create internal link with forbidden characters handled as set in ",
-        "replaceCharacters": "Character replacements",
-        "part2": ", and with original text in caption."
-      },
-      "createLinkWithCustomTarget": "Create internal link with selected text in caption. Set link path manually.",
-      "insertFilename": "Insert current file name at cursor position. Convert forbidden character replacements back to their original forms, as set in *Character replacements*.",
-      "renameNoteEvenExcluded": "Rename note, even if in excluded folder or with excluded tag.",
-      "excludeNote": "Exclude note from renaming.",
-      "stopExcludingNote": "Stop excluding note from renaming.",
-      "renameAllNotesInFolder": "Rename all notes in folder.",
-      "excludeFolder": "Exclude folder from renaming.",
-      "stopExcludingFolder": "Stop excluding folder from renaming.",
-      "renameAllNotesWithTag": "Rename all notes with tag.",
-      "excludeTag": "Exclude tag from renaming.",
-      "stopExcludingTag": "Stop excluding tag from renaming.",
-      "renameAllNotesInSearchResults": "Rename all notes in search results.",
-      "excludeAllNotesInSearchResults": "Exclude all notes in search results.",
-      "stopExcludingAllNotesInSearchResults": "Stop excluding all notes in search results from renaming."
     }
   },
   "notifications": {
@@ -127,7 +96,6 @@
     "renameWithExcludedProperties": "Rename notes with excluded properties",
     "renameWithChildTags": "Rename notes with subtags (e.g., #tag/subtag)",
     "resetAllSettings": "This will reset all plugin settings to their default values and delete all custom rules. This cannot be undone.",
-    "addRemoveProperty": "This will add/remove the key:value property in {{count}} note(s).",
     "disableEnableAddProperty": "This will add the property ",
     "disableEnableRemoveProperty": "This will remove the property ",
     "propertyTo": " to ",
@@ -162,7 +130,6 @@
       "add": "Add"
     }
   },
-  "ariaLabels": {},
   "settings": {
     "tabs": {
       "exclusions": "Exclusions",
@@ -195,10 +162,6 @@
         "name": "Place cursor at line end",
         "desc": "When moving the cursor to a first line with content, place it at the end of the line instead of the start."
       },
-      "disableInExcludedNotes": {
-        "name": "Disable in excluded notes",
-        "desc": "Don't move the cursor when creating notes in excluded folders, or from a template with excluded tags or properties."
-      },
       "insertTitleOnCreation": {
         "name": "Insert title on note creation",
         "desc": {
@@ -225,18 +188,18 @@
       },
       "renameAllNotes": {
         "name": "Rename all notes",
-        "desc": "Process all notes in the vault. Can also be run from the command palette or the ribbon.",
+        "desc": "Rename every note in the vault. Can also be run from the Command palette or the ribbon.",
         "button": "Rename"
       },
       "sendFeedback": {
         "name": "Send feedback",
-        "desc": "Request features or report issues.",
+        "desc": "Request features or report bugs.",
         "button": "Open"
       }
     },
     "exclusions": {
       "desc": "Set how notes should be excluded from renaming.",
-      "note": "Note: rules can't override other rules. For example, a note in excluded folder but with included tag will not be processed.",
+      "note": "A note is skipped if any rule excludes it, even if another rule includes it. For example, a note in an excluded folder but with an included tag will not be renamed.",
       "folders": {
         "title": "Folders",
         "renamedWarning": "Renamed, moved or deleted folders are not reflected below. Update manually if paths change.",
@@ -285,8 +248,8 @@
         "title": "Properties",
         "leaveBlank": {
           "part1": "Leave ",
-          "value": "value",
-          "part2": " blank to match all notes with this property key."
+          "value": "Property value",
+          "part2": " blank to match all notes with this property name."
         },
         "caseInsensitive": "Case-insensitive.",
         "excludeAllNote": {
@@ -294,7 +257,7 @@
           "excludeAllExcept": "Exclude all except...",
           "part2": " also excludes notes with no properties."
         },
-        "renamedWarning": "Renamed property keys aren't reflected below. Update manually after renaming.",
+        "renamedWarning": "Renamed property names aren't reflected below. Update manually after renaming.",
         "exclusionMode": {
           "name": "Exclusion mode",
           "desc": "Set how properties should be excluded."
@@ -315,7 +278,7 @@
       "fileNames": {
         "title": "File name matches",
         "addButton": "Add match",
-        "emptyState": "No file names added.",
+        "emptyState": "No matches added.",
         "headers": {
           "enable": "Enable",
           "text": "Text",
@@ -333,7 +296,7 @@
       },
       "aliasPropertyName": {
         "name": "Alias property name",
-        "desc": "Set the property key in which to insert the alias.",
+        "desc": "Set the property name in which to insert the alias.",
         "quickSwitcher": "Use 'aliases' to make the alias searchable in the Quick switcher and link suggester.",
         "multipleProperties": "To populate multiple properties, separate by comma (e.g., 'aliases, title').",
         "default": "Default: aliases"
@@ -445,6 +408,7 @@
     "customRules": {
       "name": "Enable custom rules",
       "desc": "Apply custom text replacements to file name.",
+      "listHeading": "Rules",
       "rulesAppliedSequentially": "Rules are applied sequentially from top to bottom.",
       "whitespacePreserved": "Whitespace preserved.",
       "leaveBlank": {
@@ -660,11 +624,9 @@
         "desc": {
           "part1": "For example, turn ",
           "example1": "%%Hello%%",
-          "part2": " or ",
-          "example2": "<!--Hello-->",
-          "part3": " into ",
-          "example3": "Hello",
-          "part4": "."
+          "part2": " into ",
+          "example2": "Hello",
+          "part3": "."
         }
       },
       "commentsEntirely": {
@@ -718,23 +680,22 @@
       }
     },
     "commands": {
-      "desc": "Set which context menu commands appear.",
-      "enable": "Enable",
+      "desc": "Set which plugin commands appear in context menus.",
       "file": {
-        "title": "Files",
-        "desc": "Enable commands in the file context menu."
+        "name": "Show file commands",
+        "desc": "Show plugin commands in file context menu."
       },
       "folder": {
-        "title": "Folders",
-        "desc": "Enable commands in the folder context menu."
+        "name": "Show folder commands",
+        "desc": "Show plugin commands in folder context menu."
       },
       "tag": {
-        "title": "Tags",
-        "desc": "Enable commands in the tag context menu."
+        "name": "Show tag commands",
+        "desc": "Show plugin commands in tag context menu."
       },
       "search": {
-        "title": "Search",
-        "desc": "Enable commands in the context menu for search results."
+        "name": "Show search commands",
+        "desc": "Show commands in vault search context menu."
       }
     },
     "other": {
@@ -797,7 +758,6 @@
       "clearSettings": {
         "name": "Clear settings",
         "desc": "Reset all plugin settings to their default values.",
-        "modalButton": "Clear settings",
         "button": "Clear"
       },
       "titleCase": {

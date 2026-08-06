@@ -49,8 +49,6 @@ function appendMasterNote(parent: HTMLElement | DocumentFragment): void {
   appendLines(parent, [
     (target) =>
       target.appendText(t('settings.customRules.rulesAppliedSequentially')),
-    (target) =>
-      target.appendText(t('settings.customRules.whitespacePreserved')),
     (target) => {
       target.appendText(t('settings.customRules.leaveBlank.part1'));
       appendEmphasis(target, 'settings.customRules.leaveBlank.replaceWith');
@@ -71,6 +69,8 @@ function appendMasterNote(parent: HTMLElement | DocumentFragment): void {
       appendEmphasis(target, 'settings.customRules.untitledWarning.untitled');
       target.appendText(t('settings.customRules.untitledWarning.part4'));
     },
+    (target) =>
+      target.appendText(t('settings.customRules.whitespacePreserved')),
   ]);
 }
 
@@ -265,7 +265,7 @@ export function buildCustomRulesPage(
       ),
       {
         type: 'list',
-        heading: t('settings.tabs.customRules'),
+        heading: t('settings.customRules.listHeading'),
         visible: () => plugin.settings.customRules.enableCustomReplacements,
         emptyState: t('settings.customRules.emptyState', 'No custom rules.'),
         items: rules().map((rule) => buildRuleRow(plugin, tab, rule)),

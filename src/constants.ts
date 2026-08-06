@@ -23,22 +23,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     // UI visibility
     enableContextMenus: true,
     enableVaultSearchContextMenu: true,
-    commandVisibility: {
-      folderPutFirstLineInTitle: true,
-      folderExclude: true,
-      folderStopExcluding: true,
-      filePutFirstLineInTitle: true,
-      fileExclude: true,
-      fileStopExcluding: true,
-      tagPutFirstLineInTitle: true,
-      tagExclude: true,
-      tagStopExcluding: true,
-    },
-    vaultSearchContextMenuVisibility: {
-      putFirstLineInTitle: true,
-      disable: true,
-      enable: true,
-    },
 
     // Context menu command groups
     enableFileCommands: true,

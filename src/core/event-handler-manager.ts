@@ -111,72 +111,58 @@ export class EventHandlerManager {
 
         // Handle multiple Markdown files
         if (markdownFiles.length > 0) {
-          if (
-            this.plugin.settings.core.commandVisibility.filePutFirstLineInTitle
-          ) {
-            if (!hasVisibleItems) {
-              menu.addSeparator();
-              hasVisibleItems = true;
-            }
-            menu.addItem((item) => {
-              item
-                .setTitle(
-                  tp('commands.putFirstLineInTitleNNotes', markdownFiles.length)
-                )
-                .setIcon('file-type')
-                .onClick(() => {
-                  new RenameModal(
-                    this.plugin.app,
-                    this.plugin,
-                    markdownFiles
-                  ).open();
-                });
-            });
-          }
+          if (!this.plugin.settings.core.enableFileCommands) return;
 
-          if (this.plugin.settings.core.commandVisibility.fileExclude) {
-            if (!hasVisibleItems) {
-              menu.addSeparator();
-              hasVisibleItems = true;
-            }
-            menu.addItem((item) => {
-              item
-                .setTitle(
-                  tp('commands.disableRenamingNNotes', markdownFiles.length)
-                )
-                .setIcon('pen-off')
-                .onClick(() => {
-                  new DisableEnableModal(
-                    this.plugin.app,
-                    this.plugin,
-                    markdownFiles,
-                    'disable'
-                  ).open();
-                });
-            });
+          if (!hasVisibleItems) {
+            menu.addSeparator();
+            hasVisibleItems = true;
           }
+          menu.addItem((item) => {
+            item
+              .setTitle(
+                tp('commands.putFirstLineInTitleNNotes', markdownFiles.length)
+              )
+              .setIcon('file-type-corner')
+              .onClick(() => {
+                new RenameModal(
+                  this.plugin.app,
+                  this.plugin,
+                  markdownFiles
+                ).open();
+              });
+          });
 
-          if (this.plugin.settings.core.commandVisibility.fileStopExcluding) {
-            if (!hasVisibleItems) {
-              menu.addSeparator();
-              hasVisibleItems = true;
-            }
-            menu.addItem((item) => {
-              item
-                .setTitle(
-                  tp('commands.enableRenamingNNotes', markdownFiles.length)
-                )
-                .setIcon('file-pen')
-                .onClick(() => {
-                  new DisableEnableModal(
-                    this.plugin.app,
-                    this.plugin,
-                    markdownFiles,
-                    'enable'
-                  ).open();
-                });
-            });
-          }
+          menu.addItem((item) => {
+            item
+              .setTitle(
+                tp('commands.disableRenamingNNotes', markdownFiles.length)
+              )
+              .setIcon('pen-off')
+              .onClick(() => {
+                new DisableEnableModal(
+                  this.plugin.app,
+                  this.plugin,
+                  markdownFiles,
+                  'disable'
+                ).open();
+              });
+          });
+
+          menu.addItem((item) => {
+            item
+              .setTitle(
+                tp('commands.enableRenamingNNotes', markdownFiles.length)
+              )
+              .setIcon('file-pen')
+              .onClick(() => {
+                new DisableEnableModal(
+                  this.plugin.app,
+                  this.plugin,
+                  markdownFiles,
+                  'enable'
+                ).open();
+              });
+          });
         }
 
         // Handle multiple folders
@@ -280,71 +266,44 @@ export class EventHandlerManager {
 
           if (files.length < 1) return;
 
-          let hasVisibleItems = false;
+          menu.addSeparator();
 
-          if (
-            this.plugin.settings.core.vaultSearchContextMenuVisibility
-              .putFirstLineInTitle
-          ) {
-            if (!hasVisibleItems) {
-              menu.addSeparator();
-              hasVisibleItems = true;
-            }
-            menu.addItem((item) => {
-              item
-                .setTitle(
-                  tp('commands.putFirstLineInTitleNNotes', files.length)
-                )
-                .setIcon('file-type')
-                .onClick(() => {
-                  new RenameModal(this.plugin.app, this.plugin, files).open();
-                });
-            });
-          }
+          menu.addItem((item) => {
+            item
+              .setTitle(tp('commands.putFirstLineInTitleNNotes', files.length))
+              .setIcon('file-type-corner')
+              .onClick(() => {
+                new RenameModal(this.plugin.app, this.plugin, files).open();
+              });
+          });
 
-          if (
-            this.plugin.settings.core.vaultSearchContextMenuVisibility.disable
-          ) {
-            if (!hasVisibleItems) {
-              menu.addSeparator();
-              hasVisibleItems = true;
-            }
-            menu.addItem((item) => {
-              item
-                .setTitle(tp('commands.disableRenamingNNotes', files.length))
-                .setIcon('pen-off')
-                .onClick(() => {
-                  new DisableEnableModal(
-                    this.plugin.app,
-                    this.plugin,
-                    files,
-                    'disable'
-                  ).open();
-                });
-            });
-          }
+          menu.addItem((item) => {
+            item
+              .setTitle(tp('commands.disableRenamingNNotes', files.length))
+              .setIcon('pen-off')
+              .onClick(() => {
+                new DisableEnableModal(
+                  this.plugin.app,
+                  this.plugin,
+                  files,
+                  'disable'
+                ).open();
+              });
+          });
 
-          if (
-            this.plugin.settings.core.vaultSearchContextMenuVisibility.enable
-          ) {
-            if (!hasVisibleItems) {
-              menu.addSeparator();
-              hasVisibleItems = true;
-            }
-            menu.addItem((item) => {
-              item
-                .setTitle(tp('commands.enableRenamingNNotes', files.length))
-                .setIcon('file-pen')
-                .onClick(() => {
-                  new DisableEnableModal(
-                    this.plugin.app,
-                    this.plugin,
-                    files,
-                    'enable'
-                  ).open();
-                });
-            });
-          }
+          menu.addItem((item) => {
+            item
+              .setTitle(tp('commands.enableRenamingNNotes', files.length))
+              .setIcon('file-pen')
+              .onClick(() => {
+                new DisableEnableModal(
+                  this.plugin.app,
+                  this.plugin,
+                  files,
+                  'enable'
+                ).open();
+              });
+          });
         }
       )
     );

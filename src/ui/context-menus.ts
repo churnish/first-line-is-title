@@ -187,10 +187,10 @@ export class ContextMenuManager {
     const shouldShowDisable = this.shouldShowDisableMenuForTag(tagName);
     const menuText = this.getTagMenuText(tagName);
 
-    if (this.plugin.settings.core.commandVisibility.tagPutFirstLineInTitle) {
+    {
       const menuItem = menuEl.createDiv({ cls: 'menu-item' });
       const iconEl = menuItem.createDiv({ cls: 'menu-item-icon' });
-      setIcon(iconEl, 'file-type');
+      setIcon(iconEl, 'file-type-corner');
       menuItem.createDiv({
         cls: 'menu-item-title',
         text: t('commands.putFirstLineInTitle'),
@@ -202,10 +202,7 @@ export class ContextMenuManager {
       });
     }
 
-    if (
-      shouldShowDisable &&
-      this.plugin.settings.core.commandVisibility.tagExclude
-    ) {
+    if (shouldShowDisable) {
       const menuItem = menuEl.createDiv({ cls: 'menu-item' });
       const iconEl = menuItem.createDiv({ cls: 'menu-item-icon' });
       setIcon(iconEl, 'pen-off');
@@ -220,10 +217,7 @@ export class ContextMenuManager {
       });
     }
 
-    if (
-      !shouldShowDisable &&
-      this.plugin.settings.core.commandVisibility.tagStopExcluding
-    ) {
+    if (!shouldShowDisable) {
       const menuItem = menuEl.createDiv({ cls: 'menu-item' });
       const iconEl = menuItem.createDiv({ cls: 'menu-item-icon' });
       setIcon(iconEl, 'file-pen');
@@ -251,15 +245,7 @@ export class ContextMenuManager {
       totalFiles += files.length;
     });
 
-    const hasRenameCommand =
-      this.plugin.settings.core.commandVisibility.folderPutFirstLineInTitle &&
-      totalFiles > 0;
-    const hasDisableCommand =
-      this.plugin.settings.core.commandVisibility.folderExclude;
-    const hasEnableCommand =
-      this.plugin.settings.core.commandVisibility.folderStopExcluding;
-
-    if (!hasRenameCommand && !hasDisableCommand && !hasEnableCommand) return;
+    const hasRenameCommand = totalFiles > 0;
 
     menu.addSeparator();
 
@@ -267,7 +253,7 @@ export class ContextMenuManager {
       menu.addItem((item) => {
         item
           .setTitle(tp('commands.putFirstLineInTitleNFolders', folders.length))
-          .setIcon('file-type')
+          .setIcon('file-type-corner')
           .onClick(() => {
             new RenameMultipleFoldersModal(
               this.plugin.app,
@@ -278,26 +264,22 @@ export class ContextMenuManager {
       });
     }
 
-    if (hasDisableCommand) {
-      menu.addItem((item) => {
-        item
-          .setTitle(tp('commands.disableRenamingNFolders', folders.length))
-          .setIcon('pen-off')
-          .onClick(async () => {
-            await this.plugin.processMultipleFolders(folders, 'disable');
-          });
-      });
-    }
+    menu.addItem((item) => {
+      item
+        .setTitle(tp('commands.disableRenamingNFolders', folders.length))
+        .setIcon('pen-off')
+        .onClick(async () => {
+          await this.plugin.processMultipleFolders(folders, 'disable');
+        });
+    });
 
-    if (hasEnableCommand) {
-      menu.addItem((item) => {
-        item
-          .setTitle(tp('commands.enableRenamingNFolders', folders.length))
-          .setIcon('file-pen')
-          .onClick(async () => {
-            await this.plugin.processMultipleFolders(folders, 'enable');
-          });
-      });
-    }
+    menu.addItem((item) => {
+      item
+        .setTitle(tp('commands.enableRenamingNFolders', folders.length))
+        .setIcon('file-pen')
+        .onClick(async () => {
+          await this.plugin.processMultipleFolders(folders, 'enable');
+        });
+    });
   }
 }

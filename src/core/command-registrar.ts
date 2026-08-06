@@ -91,7 +91,7 @@ export class CommandRegistrar {
     this.plugin.addCommand({
       id: 'rename-current-file-unless-excluded',
       name: t('commands.putFirstLineInTitleUnlessExcluded'),
-      icon: 'file-type',
+      icon: 'file-type-corner',
       checkCallback: (checking: boolean) => {
         const activeEditor = this.app.workspace.activeEditor;
         if (!activeEditor?.file || activeEditor.file.extension !== 'md') {

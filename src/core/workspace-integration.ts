@@ -56,14 +56,14 @@ export class WorkspaceIntegration {
    */
   registerRibbonIcons(): void {
     this.plugin.addRibbonIcon(
-      'file-type',
+      'file-type-corner',
       t('commands.putFirstLineInTitle'),
       () => {
         void this.plugin.commandRegistrar.executeRenameCurrentFile();
       }
     );
     this.plugin.addRibbonIcon(
-      'files',
+      'file-stack',
       t('commands.putFirstLineInTitleAllNotes'),
       () => {
         new RenameAllFilesModal(this.app, this.plugin).open();

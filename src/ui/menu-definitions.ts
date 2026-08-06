@@ -37,13 +37,8 @@ export class MenuDefinitions {
         {
           id: 'tag-put-first-line-in-title',
           title: t('commands.putFirstLineInTitle'),
-          icon: 'file-type',
-          visible: (_context) => {
-            return (
-              this.plugin.settings.core.enableTagCommands &&
-              this.plugin.settings.core.commandVisibility.tagPutFirstLineInTitle
-            );
-          },
+          icon: 'file-type-corner',
+          visible: (_context) => this.plugin.settings.core.enableTagCommands,
           onClick: (context) => {
             const tagContext = context as TagContext;
             new ProcessTagModal(
@@ -70,10 +65,7 @@ export class MenuDefinitions {
               this.plugin.contextMenuManager.shouldShowDisableMenuForTag(
                 tagContext.tagName
               );
-            return (
-              shouldShowDisable &&
-              this.plugin.settings.core.commandVisibility.tagExclude
-            );
+            return shouldShowDisable;
           },
           onClick: async (context) => {
             const tagContext = context as TagContext;
@@ -97,10 +89,7 @@ export class MenuDefinitions {
               this.plugin.contextMenuManager.shouldShowDisableMenuForTag(
                 tagContext.tagName
               );
-            return (
-              !shouldShowDisable &&
-              this.plugin.settings.core.commandVisibility.tagStopExcluding
-            );
+            return !shouldShowDisable;
           },
           onClick: async (context) => {
             const tagContext = context as TagContext;
@@ -121,14 +110,8 @@ export class MenuDefinitions {
         {
           id: 'folder-put-first-line-in-title',
           title: t('commands.putFirstLineInTitle'),
-          icon: 'file-type',
-          visible: (_context) => {
-            return (
-              this.plugin.settings.core.enableFolderCommands &&
-              this.plugin.settings.core.commandVisibility
-                .folderPutFirstLineInTitle
-            );
-          },
+          icon: 'file-type-corner',
+          visible: (_context) => this.plugin.settings.core.enableFolderCommands,
           onClick: (context) => {
             const folderContext = context as FolderContext;
             new RenameFolderModal(
@@ -155,10 +138,7 @@ export class MenuDefinitions {
               this.plugin.contextMenuManager.shouldShowDisableMenuForFolder(
                 folderContext.folder.path
               );
-            return (
-              shouldShowDisable &&
-              this.plugin.settings.core.commandVisibility.folderExclude
-            );
+            return shouldShowDisable;
           },
           onClick: async (context) => {
             const folderContext = context as FolderContext;
@@ -182,10 +162,7 @@ export class MenuDefinitions {
               this.plugin.contextMenuManager.shouldShowDisableMenuForFolder(
                 folderContext.folder.path
               );
-            return (
-              !shouldShowDisable &&
-              this.plugin.settings.core.commandVisibility.folderStopExcluding
-            );
+            return !shouldShowDisable;
           },
           onClick: async (context) => {
             const folderContext = context as FolderContext;
@@ -206,14 +183,8 @@ export class MenuDefinitions {
         {
           id: 'file-put-first-line-in-title',
           title: t('commands.putFirstLineInTitle'),
-          icon: 'file-type',
-          visible: (_context) => {
-            return (
-              this.plugin.settings.core.enableFileCommands &&
-              this.plugin.settings.core.commandVisibility
-                .filePutFirstLineInTitle
-            );
-          },
+          icon: 'file-type-corner',
+          visible: (_context) => this.plugin.settings.core.enableFileCommands,
           onClick: async (context) => {
             const fileContext = context as FileContext;
             const exclusionOverrides = {
@@ -237,8 +208,6 @@ export class MenuDefinitions {
           icon: 'pen-off',
           visible: (context) => {
             if (!this.plugin.settings.core.enableFileCommands) return false;
-            if (!this.plugin.settings.core.commandVisibility.fileExclude)
-              return false;
 
             const fileContext = context as FileContext;
             const fileCache = this.plugin.app.metadataCache.getFileCache(
@@ -289,8 +258,6 @@ export class MenuDefinitions {
           icon: 'file-pen',
           visible: (context) => {
             if (!this.plugin.settings.core.enableFileCommands) return false;
-            if (!this.plugin.settings.core.commandVisibility.fileStopExcluding)
-              return false;
 
             const fileContext = context as FileContext;
             const fileCache = this.plugin.app.metadataCache.getFileCache(

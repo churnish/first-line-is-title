@@ -66,22 +66,6 @@ export interface CoreSettings {
   // UI visibility
   enableContextMenus: boolean;
   enableVaultSearchContextMenu: boolean;
-  commandVisibility: {
-    folderPutFirstLineInTitle: boolean;
-    folderExclude: boolean;
-    folderStopExcluding: boolean;
-    filePutFirstLineInTitle: boolean;
-    fileExclude: boolean;
-    fileStopExcluding: boolean;
-    tagPutFirstLineInTitle: boolean;
-    tagExclude: boolean;
-    tagStopExcluding: boolean;
-  };
-  vaultSearchContextMenuVisibility: {
-    putFirstLineInTitle: boolean;
-    disable: boolean;
-    enable: boolean;
-  };
 
   // Context menu command groups
   enableFileCommands: boolean;

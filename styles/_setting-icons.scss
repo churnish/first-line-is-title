@@ -1,23 +1,4 @@
-// Inline setting-item icon and colon separator styling.
-
-/* Own class rather than Obsidian's .setting-item-icon, and unscoped: these rows
-   are declarative and have no .flit-settings-page ancestor to scope under. */
-.flit-setting-item-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1lh;
-  height: 1lh;
-  margin-right: 8px;
-  color: var(--text-muted);
-  flex-shrink: 0;
-  vertical-align: text-bottom;
-}
-
-.flit-setting-item-icon svg {
-  width: 1lh;
-  height: 1lh;
-}
+// Colon separator styling.
 
 .flit-colon-separator {
   color: var(--text-muted);

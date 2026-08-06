@@ -106,7 +106,7 @@ function buildTemplaterDescription(): DocumentFragment {
     frag.appendText(t('settings.stripMarkup.templater.desc.part1'));
     frag.createEl('a', {
       text: 'Templater',
-      href: 'obsidian://show-plugin?id=templater-obsidian',
+      href: 'https://obsidian.md/plugins?id=templater-obsidian',
     });
     frag.appendText(t('settings.stripMarkup.templater.desc.part2'));
     frag.createEl('code', {

@@ -1,208 +1,6 @@
-import {
-  Notice,
-  SettingDefinitionGroup,
-  SettingDefinitionPage,
-  SettingDefinitionRender,
-  setIcon,
-} from 'obsidian';
+import { SettingDefinitionPage } from 'obsidian';
 import { FirstLineIsTitlePlugin } from './settings-base';
-import { getPath, setPath } from './settings-paths';
 import { t } from '../i18n';
-
-interface CommandConfig {
-  nameKey: string;
-  descKey: string;
-  icon: string;
-  settingKey: string;
-}
-
-interface SectionConfig {
-  titleKey: string;
-  descKey: string;
-  enableSettingKey: string;
-  commands: CommandConfig[];
-}
-
-const COMMAND_SECTIONS: SectionConfig[] = [
-  {
-    titleKey: 'settings.commands.file.title',
-    descKey: 'settings.commands.file.desc',
-    enableSettingKey: 'core.enableFileCommands',
-    commands: [
-      {
-        nameKey: 'commands.putFirstLineInTitle',
-        descKey: 'commands.descriptions.renameNoteEvenExcluded',
-        icon: 'file-type-corner',
-        settingKey: 'core.commandVisibility.filePutFirstLineInTitle',
-      },
-      {
-        nameKey: 'commands.disableRenamingForNote',
-        descKey: 'commands.descriptions.excludeNote',
-        icon: 'pen-off',
-        settingKey: 'core.commandVisibility.fileExclude',
-      },
-      {
-        nameKey: 'commands.enableRenamingForNote',
-        descKey: 'commands.descriptions.stopExcludingNote',
-        icon: 'file-pen',
-        settingKey: 'core.commandVisibility.fileStopExcluding',
-      },
-    ],
-  },
-  {
-    titleKey: 'settings.commands.folder.title',
-    descKey: 'settings.commands.folder.desc',
-    enableSettingKey: 'core.enableFolderCommands',
-    commands: [
-      {
-        nameKey: 'commands.putFirstLineInTitle',
-        descKey: 'commands.descriptions.renameAllNotesInFolder',
-        icon: 'file-type-corner',
-        settingKey: 'core.commandVisibility.folderPutFirstLineInTitle',
-      },
-      {
-        nameKey: 'commands.disableRenamingInFolder',
-        descKey: 'commands.descriptions.excludeFolder',
-        icon: 'pen-off',
-        settingKey: 'core.commandVisibility.folderExclude',
-      },
-      {
-        nameKey: 'commands.enableRenamingInFolder',
-        descKey: 'commands.descriptions.stopExcludingFolder',
-        icon: 'file-pen',
-        settingKey: 'core.commandVisibility.folderStopExcluding',
-      },
-    ],
-  },
-  {
-    titleKey: 'settings.commands.tag.title',
-    descKey: 'settings.commands.tag.desc',
-    enableSettingKey: 'core.enableTagCommands',
-    commands: [
-      {
-        nameKey: 'commands.putFirstLineInTitle',
-        descKey: 'commands.descriptions.renameAllNotesWithTag',
-        icon: 'file-type-corner',
-        settingKey: 'core.commandVisibility.tagPutFirstLineInTitle',
-      },
-      {
-        nameKey: 'commands.disableRenamingForTag',
-        descKey: 'commands.descriptions.excludeTag',
-        icon: 'pen-off',
-        settingKey: 'core.commandVisibility.tagExclude',
-      },
-      {
-        nameKey: 'commands.enableRenamingForTag',
-        descKey: 'commands.descriptions.stopExcludingTag',
-        icon: 'file-pen',
-        settingKey: 'core.commandVisibility.tagStopExcluding',
-      },
-    ],
-  },
-  {
-    titleKey: 'settings.commands.search.title',
-    descKey: 'settings.commands.search.desc',
-    enableSettingKey: 'core.enableVaultSearchContextMenu',
-    commands: [
-      {
-        nameKey: 'commands.putFirstLineInTitle',
-        descKey: 'commands.descriptions.renameAllNotesInSearchResults',
-        icon: 'file-type-corner',
-        settingKey: 'core.vaultSearchContextMenuVisibility.putFirstLineInTitle',
-      },
-      {
-        nameKey: 'commands.disableRenaming',
-        descKey: 'commands.descriptions.excludeAllNotesInSearchResults',
-        icon: 'pen-off',
-        settingKey: 'core.vaultSearchContextMenuVisibility.disable',
-      },
-      {
-        nameKey: 'commands.enableRenaming',
-        descKey: 'commands.descriptions.stopExcludingAllNotesInSearchResults',
-        icon: 'file-pen',
-        settingKey: 'core.vaultSearchContextMenuVisibility.enable',
-      },
-    ],
-  },
-];
-
-/**
- * Command rows use `render` rather than a declarative `control` because
- * `SettingDefinitionBase` has no `icon` field and each row shows the Lucide
- * icon of the command it governs. Render rows are still search-indexed by
- * `name`, but they do not persist automatically — hence the explicit write.
- */
-function buildCommandRow(
-  plugin: FirstLineIsTitlePlugin,
-  section: SectionConfig,
-  config: CommandConfig
-): SettingDefinitionRender {
-  return {
-    name: t(config.nameKey),
-    desc: t(config.descKey),
-    visible: () =>
-      getPath(
-        plugin.settings as unknown as Record<string, unknown>,
-        section.enableSettingKey
-      ) === true,
-    render: (setting) => {
-      setting.addToggle((toggle) =>
-        toggle
-          .setValue(
-            getPath(
-              plugin.settings as unknown as Record<string, unknown>,
-              config.settingKey
-            ) === true
-          )
-          .onChange(async (value) => {
-            setPath(
-              plugin.settings as unknown as Record<string, unknown>,
-              config.settingKey,
-              value
-            );
-            plugin.debugLog(config.settingKey, value);
-            try {
-              await plugin.saveSettings();
-            } catch {
-              const notice = new Notice(t('settings.errors.saveFailed'));
-              notice.containerEl.addClass('mod-warning');
-            }
-          })
-      );
-
-      const iconEl = setting.nameEl.createDiv({
-        cls: 'flit-setting-item-icon',
-      });
-      setIcon(iconEl, config.icon);
-      setting.nameEl.insertBefore(iconEl, setting.nameEl.firstChild);
-    },
-  };
-}
-
-function buildCommandSection(
-  plugin: FirstLineIsTitlePlugin,
-  section: SectionConfig
-): SettingDefinitionGroup {
-  return {
-    type: 'group',
-    heading: t(section.titleKey),
-    items: [
-      {
-        // The heading already names the section, so the master row is labelled
-        // generically; its description carries the specifics.
-        name: t('settings.commands.enable'),
-        desc: t(section.descKey),
-        control: {
-          type: 'toggle',
-          key: section.enableSettingKey,
-        },
-      },
-      ...section.commands.map((config) =>
-        buildCommandRow(plugin, section, config)
-      ),
-    ],
-  };
-}
 
 export function buildCommandsPage(
   plugin: FirstLineIsTitlePlugin
@@ -211,8 +9,30 @@ export function buildCommandsPage(
     type: 'page',
     name: t('settings.tabs.commands'),
     desc: t('settings.commands.desc'),
-    items: COMMAND_SECTIONS.map((section) =>
-      buildCommandSection(plugin, section)
-    ),
+    items: [
+      {
+        name: t('settings.commands.file.name'),
+        desc: t('settings.commands.file.desc'),
+        control: { type: 'toggle', key: 'core.enableFileCommands' },
+      },
+      {
+        name: t('settings.commands.folder.name'),
+        desc: t('settings.commands.folder.desc'),
+        control: { type: 'toggle', key: 'core.enableFolderCommands' },
+      },
+      {
+        name: t('settings.commands.tag.name'),
+        desc: t('settings.commands.tag.desc'),
+        control: { type: 'toggle', key: 'core.enableTagCommands' },
+      },
+      {
+        name: t('settings.commands.search.name'),
+        desc: t('settings.commands.search.desc'),
+        control: {
+          type: 'toggle',
+          key: 'core.enableVaultSearchContextMenu',
+        },
+      },
+    ],
   };
 }
