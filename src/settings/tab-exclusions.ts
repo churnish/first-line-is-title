@@ -43,7 +43,7 @@ function appendEmphasis(
   }
 }
 
-/** The "rules can't override rules" caveat. */
+/** The "any rule can exclude, none can re-include" caveat. */
 function buildPageIntro(): DocumentFragment {
   return createFragment((frag) => {
     frag.appendText(t('settings.exclusions.note'));
@@ -58,25 +58,36 @@ function buildFoldersIntro(): DocumentFragment {
 
 function buildTagsIntro(): DocumentFragment {
   return createFragment((frag) => {
+    frag.appendText(t('settings.exclusions.tags.tagWranglerWarning'));
+  });
+}
+
+/** Second line of the "Exclusion mode" desc, not the group intro — the note only applies to that setting's "Exclude all except..." option. */
+function buildTagsExclusionModeDesc(): DocumentFragment {
+  return createFragment((frag) => {
     appendLines(frag, [
+      (target) =>
+        target.appendText(t('settings.exclusions.tags.exclusionMode.desc')),
       (target) => {
-        target.appendText(t('settings.exclusions.tags.excludeAllNote.part1'));
         appendEmphasis(
           target,
           'settings.exclusions.tags.excludeAllNote.excludeAllExcept'
         );
         target.appendText(t('settings.exclusions.tags.excludeAllNote.part2'));
       },
-      (target) =>
-        target.appendText(t('settings.exclusions.tags.tagWranglerWarning')),
     ]);
   });
 }
 
-/** Case-sensitivity note sorts last, after the other behavioural notes. */
+/**
+ * The "renamed elsewhere" warning sorts first; case-sensitivity sorts last,
+ * after the other behavioural notes.
+ */
 function buildPropertiesIntro(): DocumentFragment {
   return createFragment((frag) => {
     appendLines(frag, [
+      (target) =>
+        target.appendText(t('settings.exclusions.properties.renamedWarning')),
       (target) => {
         target.appendText(t('settings.exclusions.properties.leaveBlank.part1'));
         appendEmphasis(
@@ -85,10 +96,21 @@ function buildPropertiesIntro(): DocumentFragment {
         );
         target.appendText(t('settings.exclusions.properties.leaveBlank.part2'));
       },
-      (target) => {
+      (target) =>
+        target.appendText(t('settings.exclusions.properties.caseInsensitive')),
+    ]);
+  });
+}
+
+/** Second line of the "Exclusion mode" desc, not the group intro — the note only applies to that setting's "Exclude all except..." option. */
+function buildPropertiesExclusionModeDesc(): DocumentFragment {
+  return createFragment((frag) => {
+    appendLines(frag, [
+      (target) =>
         target.appendText(
-          t('settings.exclusions.properties.excludeAllNote.part1')
-        );
+          t('settings.exclusions.properties.exclusionMode.desc')
+        ),
+      (target) => {
         appendEmphasis(
           target,
           'settings.exclusions.properties.excludeAllNote.excludeAllExcept'
@@ -97,25 +119,24 @@ function buildPropertiesIntro(): DocumentFragment {
           t('settings.exclusions.properties.excludeAllNote.part2')
         );
       },
-      (target) =>
-        target.appendText(t('settings.exclusions.properties.renamedWarning')),
-      (target) =>
-        target.appendText(t('settings.exclusions.properties.caseInsensitive')),
     ]);
   });
 }
 
-/** Case-sensitivity note sorts last, after the other behavioural notes. */
+/**
+ * The "renamed elsewhere" warning sorts first; case-sensitivity sorts last,
+ * after the other behavioural notes.
+ */
 function buildDisablePropertyIntro(): DocumentFragment {
   return createFragment((frag) => {
     appendLines(frag, [
       (target) =>
         target.appendText(
-          t('settings.exclusions.disableProperty.alwaysRespected')
+          t('settings.exclusions.disableProperty.updateWarning')
         ),
       (target) =>
         target.appendText(
-          t('settings.exclusions.disableProperty.updateWarning')
+          t('settings.exclusions.disableProperty.alwaysRespected')
         ),
       (target) =>
         target.appendText(
@@ -484,20 +505,66 @@ function buildFileNameExclusionRow(
 }
 
 /**
+ * Focuses the last input matching `selector` in the list the add row belongs
+ * to. All four lists share the page, so the query is scoped to the group
+ * immediately preceding the add row rather than the whole document.
+ */
+function focusLastListInput(
+  addRowGroup: HTMLElement | null,
+  selector: string
+): void {
+  const listGroup = addRowGroup?.previousElementSibling;
+  if (!listGroup) return;
+  const inputs = listGroup.querySelectorAll<HTMLInputElement>(selector);
+  if (inputs.length === 0) return;
+  inputs[inputs.length - 1].focus();
+}
+
+/**
  * Restores the pre-migration below-the-list "Add" button (a full setting row)
  * in place of the native list's header `+` affordance.
+ *
+ * `focusInputSelector` is null for lists whose rows have no single unambiguous
+ * text field; those get the duplicate guard without the focus follow-up.
  */
 function buildAddItemRow(
   label: string,
-  onAdd: () => void
+  isBottomEntryEmpty: () => boolean,
+  focusInputSelector: string | null,
+  onAdd: () => Promise<void>
 ): SettingDefinitionRender {
   return {
     name: '',
     searchable: false,
     render: (setting) => {
       setting.settingEl.addClass('flit-add-item-row');
+      // The card box and group are framework-owned; tag them here so the
+      // stylesheet can strip their chrome without a :has() selector, which
+      // Obsidian's CSS lint flags for invalidation cost.
+      const box = setting.settingEl.parentElement;
+      box?.addClass('flit-add-item-row-box');
+      const group = box?.parentElement ?? null;
+      group?.addClass('flit-add-item-row-group');
+
+      const focusBottomEntry = () => {
+        if (focusInputSelector === null) return;
+        focusLastListInput(group, focusInputSelector);
+      };
+
       setting.addButton((button) => {
-        button.setButtonText(label).onClick(onAdd);
+        button.setButtonText(label).onClick(() => {
+          // A blank bottom entry is exactly what the button would create, so
+          // hand it focus instead of stacking another empty row onto it.
+          if (isBottomEntryEmpty()) {
+            focusBottomEntry();
+            return;
+          }
+          void (async () => {
+            await onAdd();
+            // The new row only exists once `tab.update()` has re-rendered.
+            window.setTimeout(focusBottomEntry, TIMING.NEXT_TICK_MS);
+          })();
+        });
       });
     },
   };
@@ -527,13 +594,19 @@ function buildStringExclusionList(
         })();
       },
     },
-    buildAddItemRow(addButtonText, () => {
-      void (async () => {
+    buildAddItemRow(
+      addButtonText,
+      () => {
+        const items = getItems();
+        return items.length > 0 && items[items.length - 1].trim() === '';
+      },
+      '.flit-exclusion-item-setting input[type="text"]',
+      async () => {
         getItems().push('');
         await persistSettings(plugin);
         tab.update();
-      })();
-    }),
+      }
+    ),
   ];
 }
 
@@ -639,7 +712,7 @@ export function buildExclusionsPage(
           },
           {
             name: t('settings.exclusions.tags.exclusionMode.name'),
-            desc: t('settings.exclusions.tags.exclusionMode.desc'),
+            desc: buildTagsExclusionModeDesc(),
             control: {
               type: 'dropdown',
               key: 'exclusions.tagScopeStrategy',
@@ -670,7 +743,7 @@ export function buildExclusionsPage(
           buildDescRow(buildPropertiesIntro()),
           {
             name: t('settings.exclusions.properties.exclusionMode.name'),
-            desc: t('settings.exclusions.properties.exclusionMode.desc'),
+            desc: buildPropertiesExclusionModeDesc(),
             control: {
               type: 'dropdown',
               key: 'exclusions.propertyScopeStrategy',
@@ -693,13 +766,21 @@ export function buildExclusionsPage(
           })();
         },
       },
-      buildAddItemRow(t('settings.exclusions.properties.addButton'), () => {
-        void (async () => {
+      buildAddItemRow(
+        t('settings.exclusions.properties.addButton'),
+        () => {
+          const props = exclusions().excludedProperties;
+          if (props.length === 0) return false;
+          const last = props[props.length - 1];
+          return last.key.trim() === '' && last.value.trim() === '';
+        },
+        '.flit-property-key-input',
+        async () => {
           exclusions().excludedProperties.push({ key: '', value: '' });
           await persistSettings(plugin);
           tab.update();
-        })();
-      }),
+        }
+      ),
 
       {
         type: 'group',
@@ -726,8 +807,15 @@ export function buildExclusionsPage(
           })();
         },
       },
-      buildAddItemRow(t('settings.exclusions.fileNames.addButton'), () => {
-        void (async () => {
+      buildAddItemRow(
+        t('settings.exclusions.fileNames.addButton'),
+        () => {
+          const list = exclusions().fileNameExclusions;
+          return list.length > 0 && list[list.length - 1].text.trim() === '';
+        },
+        // Rows are multi-field cards with no single obvious text field to focus.
+        null,
+        async () => {
           exclusions().fileNameExclusions.push({
             text: '',
             onlyAtStart: false,
@@ -737,8 +825,8 @@ export function buildExclusionsPage(
           });
           await persistSettings(plugin);
           tab.update();
-        })();
-      }),
+        }
+      ),
 
       {
         type: 'group',

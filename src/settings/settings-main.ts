@@ -160,13 +160,16 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
   }
 
   hide(): void {
-    // Exclusion lists can accumulate duplicates while being edited; collapse
-    // them once the modal closes.
+    // Exclusion lists can accumulate duplicates and blank rows while being
+    // edited; collapse them once the modal closes.
     if (deduplicateExclusions(this.plugin.settings)) {
       this.plugin.saveSettings().catch(() => {
         const notice = new Notice(t('settings.errors.saveFailed'));
         notice.containerEl.addClass('mod-warning');
       });
+      // List definitions map their items at definition time, so the pruned
+      // arrays only reach the DOM after the definitions are rebuilt.
+      this.update();
     }
     super.hide();
   }

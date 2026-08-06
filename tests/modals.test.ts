@@ -11,7 +11,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as mockObsidian from './mockObsidian';
 import { App, TFile } from './mockObsidian';
-import { DEFAULT_SETTINGS } from '../src/constants';
+import { createTestSettings } from './testUtils';
 
 // Track Notice calls via spy
 let NoticeSpy: ReturnType<typeof vi.spyOn>;
@@ -80,7 +80,7 @@ describe('Modal Error Notifications', () => {
     mockApp = new App();
     mockPlugin = {
       app: mockApp,
-      settings: { ...DEFAULT_SETTINGS },
+      settings: createTestSettings(),
       renameEngine: {
         // processFile returns { success: boolean; reason?: string }
         processFile: vi.fn().mockResolvedValue({ success: true }),

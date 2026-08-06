@@ -3,15 +3,6 @@ import FirstLineIsTitlePlugin from '../../main';
 import { verboseLog } from '../utils';
 
 /**
- * Extended App interface with plugin manager access
- */
-interface AppWithPlugins {
-  plugins?: {
-    plugins?: Record<string, unknown>;
-  };
-}
-
-/**
  * Extended Workspace interface with custom events
  */
 interface WorkspaceWithCustomEvents {
@@ -48,7 +39,8 @@ export interface FileCreationActions {
  *
  * Decision flow:
  * 1. Check if features enabled (guard clause)
- * 2. Check folder/tag/property exclusions
+ * 2. Check folder exclusions
+ * 2b. Check tag/property/disable-renaming exclusions (content-based, real-time)
  * 3. Check Templater integration if applicable
  * 4. Determine which settings are active
  * 5. Apply content-based checks for specific combinations
@@ -84,6 +76,17 @@ export class FileCreationCoordinator {
       return this.noActions('1Y → 2Y');
     }
     this.logDecision('2', 'N');
+
+    // Node 2b: Is file excluded by tag/property/disable-renaming (content-based, real-time)?
+    if (this.isContentExcluded(file, context.initialContent)) {
+      this.logDecision(
+        '2b',
+        'Y',
+        'Do nothing (tag/property/disable-renaming excluded)'
+      );
+      return this.noActions('1Y → 2N → 2bY');
+    }
+    this.logDecision('2b', 'N');
 
     // Node 3: Are there exclusions configured?
     if (this.hasExclusions()) {
@@ -351,6 +354,18 @@ export class FileCreationCoordinator {
   }
 
   /**
+   * Node 2b: Check tag/property/disable-renaming exclusion using real-time content.
+   * Folder already checked at Node 2 — skip it here to avoid divergent re-implementation.
+   */
+  private isContentExcluded(file: TFile, initialContent: string): boolean {
+    return this.plugin.fileOperations.isFileExcludedForCursorPositioning(
+      file,
+      initialContent,
+      true // skipFolderCheck
+    );
+  }
+
+  /**
    * Node 3: Check if any tags or properties are configured in Exclusions
    * Note: Folders are checked separately in Node 2
    */
@@ -363,39 +378,35 @@ export class FileCreationCoordinator {
   }
 
   /**
+   * Templater's settings object, or undefined when Templater isn't loaded.
+   */
+  private getTemplaterSettings(): Record<string, unknown> | undefined {
+    const templater = this.plugin.app.plugins.plugins['templater-obsidian'] as
+      | Record<string, unknown>
+      | undefined;
+    return templater?.settings as Record<string, unknown> | undefined;
+  }
+
+  /**
    * Node 4: Check if Templater plugin is installed and enabled
    */
   private isTemplaterOn(): boolean {
-    // Check if Templater plugin exists in app.plugins
-    const templater = (this.plugin.app as unknown as AppWithPlugins).plugins
-      ?.plugins;
-    return (
-      templater !== undefined &&
-      typeof templater === 'object' &&
-      'templater-obsidian' in templater
-    );
+    return 'templater-obsidian' in this.plugin.app.plugins.plugins;
   }
 
   /**
    * Node 5: Check if Templater's "Trigger on new file creation" is enabled
    */
   private isTemplaterTriggerOn(): boolean {
-    const templater = (this.plugin.app as unknown as AppWithPlugins).plugins
-      ?.plugins?.['templater-obsidian'] as Record<string, unknown> | undefined;
-    if (!templater) return false;
-    const settings = templater.settings as Record<string, unknown> | undefined;
-    return settings?.trigger_on_file_creation === true;
+    return this.getTemplaterSettings()?.trigger_on_file_creation === true;
   }
 
   /**
    * Node 6: Check if file path matches Templater's template folder location
    */
   private isInTemplateFolder(file: TFile): boolean {
-    const templater = (this.plugin.app as unknown as AppWithPlugins).plugins
-      ?.plugins?.['templater-obsidian'] as Record<string, unknown> | undefined;
-    if (!templater) return false;
-    const settings = templater.settings as Record<string, unknown> | undefined;
-    const templateFolder = (settings?.templates_folder as string) || '';
+    const templateFolder =
+      (this.getTemplaterSettings()?.templates_folder as string) || '';
 
     if (!templateFolder || templateFolder === '/') return false;
 
@@ -406,11 +417,7 @@ export class FileCreationCoordinator {
    * Node 7: Check if Templater's "Enable folder templates" is ON
    */
   private isFolderTemplatesEnabled(): boolean {
-    const templater = (this.plugin.app as unknown as AppWithPlugins).plugins
-      ?.plugins?.['templater-obsidian'] as Record<string, unknown> | undefined;
-    if (!templater) return false;
-    const settings = templater.settings as Record<string, unknown> | undefined;
-    return settings?.enable_folder_templates === true;
+    return this.getTemplaterSettings()?.enable_folder_templates === true;
   }
 
   /**
@@ -418,11 +425,7 @@ export class FileCreationCoordinator {
    * Uses Templater's walk-up algorithm (deepest match wins)
    */
   private folderTemplateMatches(file: TFile): boolean {
-    const templater = (this.plugin.app as unknown as AppWithPlugins).plugins
-      ?.plugins?.['templater-obsidian'] as Record<string, unknown> | undefined;
-    if (!templater) return false;
-    const settings = templater.settings as Record<string, unknown> | undefined;
-    const folderTemplates = settings?.folder_templates;
+    const folderTemplates = this.getTemplaterSettings()?.folder_templates;
     if (!Array.isArray(folderTemplates)) return false;
 
     let folder = file.parent;
@@ -452,22 +455,14 @@ export class FileCreationCoordinator {
    * Node 10: Check if Templater's "Enable file regex templates" is ON
    */
   private isFileRegexEnabled(): boolean {
-    const templater = (this.plugin.app as unknown as AppWithPlugins).plugins
-      ?.plugins?.['templater-obsidian'] as Record<string, unknown> | undefined;
-    if (!templater) return false;
-    const settings = templater.settings as Record<string, unknown> | undefined;
-    return settings?.enable_file_templates === true;
+    return this.getTemplaterSettings()?.enable_file_templates === true;
   }
 
   /**
    * Node 11: Check if any Templater file regex matches current path
    */
   private fileRegexMatches(file: TFile): boolean {
-    const templater = (this.plugin.app as unknown as AppWithPlugins).plugins
-      ?.plugins?.['templater-obsidian'] as Record<string, unknown> | undefined;
-    if (!templater) return false;
-    const settings = templater.settings as Record<string, unknown> | undefined;
-    const fileTemplates = settings?.file_templates;
+    const fileTemplates = this.getTemplaterSettings()?.file_templates;
     if (!Array.isArray(fileTemplates)) return false;
 
     for (const ft of fileTemplates as unknown[]) {

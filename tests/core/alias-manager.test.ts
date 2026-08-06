@@ -55,7 +55,9 @@ function deepMerge<T extends Record<string, any>>(
 // Create mock plugin for AliasManager
 function createMockPlugin(settingsOverrides: DeepPartial<PluginSettings> = {}) {
   const app = createMockApp();
-  const settings = deepMerge(DEFAULT_SETTINGS, {
+  // Clone the base first: deepMerge only copies branches it touches, so untouched
+  // branches would stay shared references into DEFAULT_SETTINGS.
+  const settings = deepMerge(structuredClone(DEFAULT_SETTINGS), {
     aliases: {
       enableAliases: true,
       truncateAlias: false,

@@ -7,9 +7,10 @@ import {
   hasDisablePropertyInFile,
   containsFileNameExclusion,
   extractTitle,
+  deduplicateExclusions,
 } from '../src/utils';
 import { createTestSettings, createMockFile, createMockApp } from './testUtils';
-import { PluginSettings } from '../src/types';
+import { PluginSettings, FileNameExclusion } from '../src/types';
 import { TFile, App, Platform } from './mockObsidian';
 
 describe('utils', () => {
@@ -695,6 +696,178 @@ describe('utils', () => {
 
       it('should treat tab-indented empty ordered marker as code block (no Untitled)', () => {
         expect(extractTitle('\t1. ', settings)).toBe('1.');
+      });
+    });
+  });
+
+  describe('deduplicateExclusions', () => {
+    const makeFileNameExclusion = (
+      overrides: Partial<FileNameExclusion> = {}
+    ): FileNameExclusion => ({
+      text: 'draft',
+      onlyAtStart: false,
+      onlyWholeLine: false,
+      enabled: true,
+      caseSensitive: false,
+      ...overrides,
+    });
+
+    beforeEach(() => {
+      settings.exclusions.excludedFolders = [];
+      settings.exclusions.excludedTags = [];
+      settings.exclusions.excludedProperties = [];
+      settings.exclusions.fileNameExclusions = [];
+    });
+
+    describe('blank entry removal', () => {
+      it('should remove blank folder entries', () => {
+        settings.exclusions.excludedFolders = ['', 'Notes', ''];
+
+        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(settings.exclusions.excludedFolders).toEqual(['Notes']);
+      });
+
+      it('should remove whitespace-only folder entries', () => {
+        settings.exclusions.excludedFolders = ['Notes', '   '];
+
+        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(settings.exclusions.excludedFolders).toEqual(['Notes']);
+      });
+
+      it('should remove blank tag entries', () => {
+        settings.exclusions.excludedTags = ['', 'project', ''];
+
+        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(settings.exclusions.excludedTags).toEqual(['project']);
+      });
+
+      it('should remove property entries with blank key and value', () => {
+        settings.exclusions.excludedProperties = [
+          { key: '', value: '' },
+          { key: 'status', value: 'draft' },
+        ];
+
+        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(settings.exclusions.excludedProperties).toEqual([
+          { key: 'status', value: 'draft' },
+        ]);
+      });
+
+      it('should keep a property entry that has a key but a blank value', () => {
+        settings.exclusions.excludedProperties = [{ key: 'status', value: '' }];
+
+        expect(deduplicateExclusions(settings)).toBe(false);
+        expect(settings.exclusions.excludedProperties).toEqual([
+          { key: 'status', value: '' },
+        ]);
+      });
+
+      it('should remove file name exclusions with blank text', () => {
+        settings.exclusions.fileNameExclusions = [
+          makeFileNameExclusion({ text: '' }),
+          makeFileNameExclusion({ text: 'draft' }),
+          makeFileNameExclusion({ text: '  ' }),
+        ];
+
+        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(settings.exclusions.fileNameExclusions).toEqual([
+          makeFileNameExclusion({ text: 'draft' }),
+        ]);
+      });
+
+      it('should preserve the flags of surviving file name exclusions', () => {
+        const kept = makeFileNameExclusion({
+          text: 'draft',
+          onlyAtStart: true,
+          onlyWholeLine: true,
+          enabled: false,
+          caseSensitive: true,
+        });
+        settings.exclusions.fileNameExclusions = [
+          makeFileNameExclusion({ text: '' }),
+          kept,
+        ];
+
+        deduplicateExclusions(settings);
+
+        expect(settings.exclusions.fileNameExclusions).toEqual([kept]);
+      });
+
+      it('should collapse an all-blank list to an empty array', () => {
+        settings.exclusions.excludedFolders = ['', '  ', ''];
+
+        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(settings.exclusions.excludedFolders).toEqual([]);
+      });
+    });
+
+    describe('deduplication', () => {
+      it('should keep the last occurrence of a duplicate folder', () => {
+        settings.exclusions.excludedFolders = ['Notes', 'Archive', 'notes'];
+
+        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(settings.exclusions.excludedFolders).toEqual([
+          'Archive',
+          'notes',
+        ]);
+      });
+
+      it('should treat folder paths as equal regardless of surrounding slashes', () => {
+        settings.exclusions.excludedFolders = ['Notes', '/Notes/'];
+
+        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(settings.exclusions.excludedFolders).toEqual(['Notes']);
+      });
+
+      it('should keep the last occurrence of a duplicate tag', () => {
+        settings.exclusions.excludedTags = ['Project', 'work', 'project'];
+
+        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(settings.exclusions.excludedTags).toEqual(['work', 'project']);
+      });
+
+      it('should deduplicate properties only when key and value both match', () => {
+        settings.exclusions.excludedProperties = [
+          { key: 'status', value: 'draft' },
+          { key: 'status', value: 'final' },
+          { key: 'Status', value: 'Draft' },
+        ];
+
+        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(settings.exclusions.excludedProperties).toEqual([
+          { key: 'status', value: 'final' },
+          { key: 'Status', value: 'Draft' },
+        ]);
+      });
+
+      it('should not deduplicate file name exclusions', () => {
+        settings.exclusions.fileNameExclusions = [
+          makeFileNameExclusion({ text: 'draft' }),
+          makeFileNameExclusion({ text: 'draft', onlyAtStart: true }),
+        ];
+
+        expect(deduplicateExclusions(settings)).toBe(false);
+        expect(settings.exclusions.fileNameExclusions).toHaveLength(2);
+      });
+    });
+
+    describe('return value', () => {
+      it('should return false when every list is already clean', () => {
+        settings.exclusions.excludedFolders = ['Notes'];
+        settings.exclusions.excludedTags = ['project'];
+        settings.exclusions.excludedProperties = [
+          { key: 'status', value: 'draft' },
+        ];
+        settings.exclusions.fileNameExclusions = [makeFileNameExclusion()];
+
+        expect(deduplicateExclusions(settings)).toBe(false);
+      });
+
+      it('should return true when an entry only needed trimming', () => {
+        settings.exclusions.excludedTags = ['  project  '];
+
+        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(settings.exclusions.excludedTags).toEqual(['project']);
       });
     });
   });

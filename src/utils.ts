@@ -377,20 +377,14 @@ export function extractTitle(
       return false;
     };
 
+    // HTML comments are deliberately not stripped — only Obsidian's %%…%%.
     if (settings.markupStripping.stripCommentsEntirely) {
       // Strip comments entirely: remove everything
       line = line.replace(/%%.*?%%/g, '');
-      line = line.replace(/<!--.*?-->/g, '');
     } else if (settings.markupStripping.stripMarkupSettings.comments) {
       // Strip markup but keep content: remove markers only
       line = line.replace(
         /%%(.+?)%%/g,
-        (match: string, content: string, offset: number) => {
-          return checkEscaped(match, offset) ? match : content;
-        }
-      );
-      line = line.replace(
-        /<!--(.+?)-->/g,
         (match: string, content: string, offset: number) => {
           return checkEscaped(match, offset) ? match : content;
         }
@@ -1032,15 +1026,17 @@ function cleanPropertyText(text: string): string {
 }
 
 /**
- * Deduplicates exclusion arrays in plugin settings
+ * Deduplicates exclusion arrays in plugin settings and drops blank entries
  * Keeps the last occurrence of each duplicate (removes earlier ones)
  * Normalization rules:
  * - Folders: case-insensitive, leading/trailing slashes removed
  * - Tags: case-insensitive
  * - Properties: both key and value must match (case-insensitive)
+ * File name exclusions are only pruned of blanks, never deduplicated — their
+ * per-entry flags make equality ambiguous.
  *
  * @param settings - Plugin settings object to deduplicate
- * @returns true if any duplicates were removed, false otherwise
+ * @returns true if any entries were removed or cleaned, false otherwise
  */
 export function deduplicateExclusions(settings: PluginSettings): boolean {
   let hasChanges = false;
@@ -1056,15 +1052,12 @@ export function deduplicateExclusions(settings: PluginSettings): boolean {
     }
   });
 
+  // Blank entries are never recorded in folderMap, so they drop out here
   const keepFolderIndices = new Set(folderMap.values());
   settings.exclusions.excludedFolders =
-    settings.exclusions.excludedFolders.filter((_, index) => {
-      const normalized = normalizeFolderPath(
-        settings.exclusions.excludedFolders[index]
-      );
-      // Keep if normalized is empty OR it's the last occurrence
-      return normalized === '' || keepFolderIndices.has(index);
-    });
+    settings.exclusions.excludedFolders.filter((_, index) =>
+      keepFolderIndices.has(index)
+    );
 
   if (settings.exclusions.excludedFolders.length !== originalFolderCount) {
     hasChanges = true;
@@ -1092,15 +1085,10 @@ export function deduplicateExclusions(settings: PluginSettings): boolean {
     }
   });
 
+  // Blank entries are never recorded in tagMap, so they drop out here
   const keepTagIndices = new Set(tagMap.values());
   settings.exclusions.excludedTags = settings.exclusions.excludedTags.filter(
-    (_, index) => {
-      const normalized = normalizeTagName(
-        settings.exclusions.excludedTags[index]
-      );
-      // Keep if normalized is empty OR it's the last occurrence
-      return normalized === '' || keepTagIndices.has(index);
-    }
+    (_, index) => keepTagIndices.has(index)
   );
 
   if (settings.exclusions.excludedTags.length !== originalTagCount) {
@@ -1131,18 +1119,13 @@ export function deduplicateExclusions(settings: PluginSettings): boolean {
     }
   });
 
+  // Entries with a blank key and value are never recorded in propertyMap, so
+  // they drop out here
   const keepPropertyIndices = new Set(propertyMap.values());
   settings.exclusions.excludedProperties =
-    settings.exclusions.excludedProperties.filter((_, index) => {
-      const prop = settings.exclusions.excludedProperties[index];
-      const normalizedKey = normalizePropertyText(prop.key);
-      const normalizedValue = normalizePropertyText(prop.value);
-      // Keep if both are empty OR it's the last occurrence
-      return (
-        (normalizedKey === '' && normalizedValue === '') ||
-        keepPropertyIndices.has(index)
-      );
-    });
+    settings.exclusions.excludedProperties.filter((_, index) =>
+      keepPropertyIndices.has(index)
+    );
 
   if (settings.exclusions.excludedProperties.length !== originalPropertyCount) {
     hasChanges = true;
@@ -1158,6 +1141,18 @@ export function deduplicateExclusions(settings: PluginSettings): boolean {
       }
       return { key: cleanedKey, value: cleanedValue };
     });
+
+  // Drop blank file name exclusions; they are not deduplicated because their
+  // per-entry flags make two same-text entries meaningfully different
+  const originalFileNameCount = settings.exclusions.fileNameExclusions.length;
+  settings.exclusions.fileNameExclusions =
+    settings.exclusions.fileNameExclusions.filter(
+      (exclusion) => exclusion.text.trim() !== ''
+    );
+
+  if (settings.exclusions.fileNameExclusions.length !== originalFileNameCount) {
+    hasChanges = true;
+  }
 
   return hasChanges;
 }

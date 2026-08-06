@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { App, TFile, Editor } from '../mockObsidian';
 import { DEFAULT_SETTINGS } from '../../src/constants';
+import { createTestSettings } from '../testUtils';
 
 // Mock the i18n module
 vi.mock('../../src/i18n', () => ({
@@ -33,7 +34,7 @@ describe('CommandRegistrar', () => {
     mockApp = new App();
     mockPlugin = {
       app: mockApp,
-      settings: { ...DEFAULT_SETTINGS },
+      settings: createTestSettings(),
       addCommand: vi.fn(),
       renameEngine: {
         processFile: vi.fn().mockResolvedValue(undefined),
@@ -83,7 +84,7 @@ describe('CommandRegistrar', () => {
         (call: any[]) => call[0].id === 'rename-current-file-unless-excluded'
       );
       expect(command).toBeDefined();
-      expect(command[0].icon).toBe('file-type');
+      expect(command[0].icon).toBe('file-type-corner');
     });
 
     it('should register rename-all-files command with file-stack icon', async () => {

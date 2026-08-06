@@ -34,8 +34,13 @@ export function createMockApp(): App {
 export function createTestSettings(
   overrides: Partial<PluginSettings> = {}
 ): PluginSettings {
+  // Deep-clone the base: a shallow spread would leave nested branches (exclusions,
+  // core, ...) pointing at DEFAULT_SETTINGS' own objects, so one test mutating
+  // settings.exclusions.excludedFolders would leak into every later test.
+  // Overrides stay a top-level shallow merge — callers pass whole sub-objects and
+  // rely on them replacing the branch outright.
   return {
-    ...DEFAULT_SETTINGS,
+    ...structuredClone(DEFAULT_SETTINGS),
     ...overrides,
   };
 }

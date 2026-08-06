@@ -64,6 +64,7 @@ vi.mock('../../src/settings/tab-other', () => ({
 }));
 
 import { FirstLineIsTitleSettings } from '../../src/settings/settings-main';
+import { deduplicateExclusions } from '../../src/utils';
 
 interface TestPlugin {
   app: App;
@@ -276,6 +277,28 @@ describe('FirstLineIsTitleSettings', () => {
         plugin.editorLifecycle.initializeCheckingSystem
       ).toHaveBeenCalledTimes(1);
       expect(plugin.settings.core.checkInterval).toBe(750);
+    });
+  });
+
+  describe('hide', () => {
+    it('saves and rebuilds the definitions when exclusions were pruned', () => {
+      vi.mocked(deduplicateExclusions).mockReturnValueOnce(true);
+
+      tab.hide();
+
+      expect(plugin.saveSettings).toHaveBeenCalledTimes(1);
+      // List items are mapped at definition time, so the pruned arrays only
+      // reach the DOM once the definitions are rebuilt.
+      expect(update).toHaveBeenCalledTimes(1);
+    });
+
+    it('does nothing when the exclusion lists were already clean', () => {
+      vi.mocked(deduplicateExclusions).mockReturnValueOnce(false);
+
+      tab.hide();
+
+      expect(plugin.saveSettings).not.toHaveBeenCalled();
+      expect(update).not.toHaveBeenCalled();
     });
   });
 });

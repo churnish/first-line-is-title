@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { App, TFile, MarkdownView } from '../mockObsidian';
-import { DEFAULT_SETTINGS } from '../../src/constants';
+import { createTestSettings } from '../testUtils';
 
 // Mock the i18n module
 vi.mock('../../src/i18n', () => ({
@@ -55,7 +55,7 @@ describe('WorkspaceIntegration', () => {
     mockApp = new App();
     mockPlugin = {
       app: mockApp,
-      settings: { ...DEFAULT_SETTINGS },
+      settings: createTestSettings(),
       addRibbonIcon: vi.fn(),
       registerEvent: vi.fn(),
       commandRegistrar: {
@@ -97,7 +97,7 @@ describe('WorkspaceIntegration', () => {
       expect(mockPlugin.addRibbonIcon).toHaveBeenCalledTimes(3);
     });
 
-    it('should register file-type icon for rename', async () => {
+    it('should register file-type-corner icon for rename', async () => {
       const { WorkspaceIntegration } =
         await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
@@ -105,13 +105,13 @@ describe('WorkspaceIntegration', () => {
       integration.registerRibbonIcons();
 
       expect(mockPlugin.addRibbonIcon).toHaveBeenCalledWith(
-        'file-type',
+        'file-type-corner',
         'commands.putFirstLineInTitle',
         expect.any(Function)
       );
     });
 
-    it('should register files icon for bulk rename', async () => {
+    it('should register file-stack icon for bulk rename', async () => {
       const { WorkspaceIntegration } =
         await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
@@ -119,7 +119,7 @@ describe('WorkspaceIntegration', () => {
       integration.registerRibbonIcons();
 
       expect(mockPlugin.addRibbonIcon).toHaveBeenCalledWith(
-        'files',
+        'file-stack',
         'commands.putFirstLineInTitleAllNotes',
         expect.any(Function)
       );
@@ -139,16 +139,16 @@ describe('WorkspaceIntegration', () => {
       );
     });
 
-    it('should call executeRenameCurrentFile when file-type ribbon is clicked', async () => {
+    it('should call executeRenameCurrentFile when file-type-corner ribbon is clicked', async () => {
       const { WorkspaceIntegration } =
         await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       integration.registerRibbonIcons();
 
-      // Get the callback for file-type icon
+      // Get the callback for file-type-corner icon
       const filePenCall = mockPlugin.addRibbonIcon.mock.calls.find(
-        (call: any[]) => call[0] === 'file-type'
+        (call: any[]) => call[0] === 'file-type-corner'
       );
       const callback = filePenCall[2];
 
@@ -181,7 +181,7 @@ describe('WorkspaceIntegration', () => {
       ).toHaveBeenCalled();
     });
 
-    it('should open RenameAllFilesModal when files ribbon is clicked', async () => {
+    it('should open RenameAllFilesModal when file-stack ribbon is clicked', async () => {
       const { WorkspaceIntegration } =
         await import('../../src/core/workspace-integration');
       const { RenameAllFilesModal } = await import('../../src/modals');
@@ -189,9 +189,9 @@ describe('WorkspaceIntegration', () => {
 
       integration.registerRibbonIcons();
 
-      // Get the callback for files icon
+      // Get the callback for file-stack icon
       const filesCall = mockPlugin.addRibbonIcon.mock.calls.find(
-        (call: any[]) => call[0] === 'files'
+        (call: any[]) => call[0] === 'file-stack'
       );
       const callback = filesCall[2];
 
