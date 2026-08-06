@@ -19,7 +19,7 @@
 - Замена символов, запрещенных в именах файлов, на допустимые альтернативы, или их удаление.
 - Удаление Markdown-разметки в именах файлов.
 - Настройка пользовательских правил замены.
-- Автоматическое создание свойства с копией первой строки — делает запрещенные символы доступными для поиска в быстром переключателе, [Quick Switcher++](https://obsidian.md/plugins?id=darlal-switcher-plus) и [Omnisearch](https://obsidian.md/plugins?id=omnisearch), а также позволяет использовать в качестве имени файла в таких плагинах как [Notebook Navigator](https://obsidian.md/plugins?id=notebook-navigator) и [Front Matter Title](https://obsidian.md/plugins?id=obsidian-front-matter-title-plugin).
+- Автоматическое создание свойства с копией первой строки — делает запрещенные символы доступными для поиска в быстром переключателе, [Quick Switcher++](https://community.obsidian.md/plugins/darlal-switcher-plus) и [Omnisearch](https://community.obsidian.md/plugins/omnisearch), а также позволяет использовать в качестве имени файла в таких плагинах как [Notebook Navigator](https://community.obsidian.md/plugins/notebook-navigator) и [Front Matter Title](https://community.obsidian.md/plugins/obsidian-front-matter-title-plugin).
 - Команды для массового переименования всех заметок в папке, всех заметок с тегом, результатов поиска или всего хранилища.
 - Автоматическая вставка имени файла в первую строку при создании заметки.
 - Исключение отдельных заметок, папок, тегов, свойств или имен файлов из переименования, или включение переименования только для некоторых из них.
@@ -34,7 +34,7 @@
 
 Пока _First Line is Title_ не [появился](https://github.com/obsidianmd/obsidian-releases/pull/8400) в каталоге плагинов, для установки следуйте инструкциям ниже:
 
-1. Скачайте и включите сторонний плагин [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
+1. Скачайте и включите сторонний плагин [BRAT](https://community.obsidian.md/plugins/obsidian42-brat).
 2. Выберите _Добавить бета-плагин для тестирования_ в палитре команд.
 3. Вставьте https://github.com/churnish/first-line-is-title в текстовое поле.
 4. Выберите _Latest version_.

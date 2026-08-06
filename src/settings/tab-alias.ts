@@ -25,7 +25,7 @@ function buildLimitationsNote(): DocumentFragment {
         target.appendText(t('settings.alias.limitations.bullet1.part1'));
         target.createEl('a', {
           text: PLUGIN_HOVER_EDITOR,
-          href: 'https://obsidian.md/plugins?id=obsidian-hover-editor',
+          href: 'https://community.obsidian.md/plugins/obsidian-hover-editor',
         });
         target.appendText(t('settings.alias.limitations.bullet1.part2'));
       },

@@ -37,12 +37,12 @@ function buildCardLinkDescription(): DocumentFragment {
   return createFragment((frag) => {
     frag.appendText(t('settings.other.grabCardLink.desc.part1'));
     frag.createEl('a', {
-      href: 'https://obsidian.md/plugins?id=auto-card-link',
+      href: 'https://community.obsidian.md/plugins/auto-card-link',
       text: PLUGIN_AUTO_CARD_LINK,
     });
     frag.appendText(t('settings.other.grabCardLink.desc.part2'));
     frag.createEl('a', {
-      href: 'https://obsidian.md/plugins?id=obsidian-link-embed',
+      href: 'https://community.obsidian.md/plugins/obsidian-link-embed',
       text: PLUGIN_LINK_EMBED,
     });
     frag.appendText(t('settings.other.grabCardLink.desc.part3'));
