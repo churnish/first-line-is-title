@@ -30,6 +30,7 @@ import { TitleInsertion } from './src/core/title-insertion';
 import { LinkManager } from './src/core/link-manager';
 import { EventHandlerManager } from './src/core/event-handler-manager';
 import { FileStateManager } from './src/core/file-state-manager';
+import { NotebookNavigatorIntegration } from './src/core/notebook-navigator-integration';
 
 // Build-time constant injected by esbuild
 declare const BUILD_GIT_HASH: string;
@@ -45,6 +46,7 @@ export default class FirstLineIsTitle extends Plugin {
 
   renameEngine: RenameEngine;
   contextMenuManager: ContextMenuManager;
+  notebookNavigatorIntegration: NotebookNavigatorIntegration;
   aliasManager: AliasManager;
   fileOperations: FileOperations;
   commandRegistrar: CommandRegistrar;
@@ -59,8 +61,23 @@ export default class FirstLineIsTitle extends Plugin {
   private _propertyVisibility?: PropertyVisibility;
   private _linkManager?: LinkManager;
 
+  private settingTab?: FirstLineIsTitleSettings;
+
   private _debugPatchCleanup?: () => void;
   private _createdDebugNamespace: boolean = false;
+
+  /**
+   * Rebuilds the settings tab's definition tree.
+   *
+   * Exclusion lists render one row per array entry, and those rows are computed
+   * when `getSettingDefinitions()` runs — which happens only at tab
+   * registration and on `update()`. Mutating an exclusion array from a context
+   * menu would otherwise leave the settings UI showing a stale list until the
+   * plugin reloads.
+   */
+  private refreshSettingsTab(): void {
+    this.settingTab?.update();
+  }
 
   get folderOperations(): FolderOperations {
     if (!this._folderOperations) {
@@ -118,7 +135,8 @@ export default class FirstLineIsTitle extends Plugin {
   }
 
   async toggleFolderExclusion(folderPath: string): Promise<void> {
-    return this.folderOperations.toggleFolderExclusion(folderPath);
+    await this.folderOperations.toggleFolderExclusion(folderPath);
+    this.refreshSettingsTab();
   }
 
   async putFirstLineInTitleForTag(
@@ -134,7 +152,8 @@ export default class FirstLineIsTitle extends Plugin {
   }
 
   async toggleTagExclusion(tagName: string): Promise<void> {
-    return this.tagOperations.toggleTagExclusion(tagName);
+    await this.tagOperations.toggleTagExclusion(tagName);
+    this.refreshSettingsTab();
   }
 
   // Debug logging helper for setting changes
@@ -257,7 +276,9 @@ export default class FirstLineIsTitle extends Plugin {
     folders: TFolder[],
     action: 'rename' | 'disable' | 'enable'
   ): Promise<void> {
-    return this.folderOperations.processMultipleFolders(folders, action);
+    await this.folderOperations.processMultipleFolders(folders, action);
+    // Bulk exclusion changes mutate the same arrays, but only once at the end.
+    if (action !== 'rename') this.refreshSettingsTab();
   }
 
   async processMultipleFiles(files: TFile[], action: 'rename'): Promise<void> {
@@ -542,6 +563,7 @@ export default class FirstLineIsTitle extends Plugin {
     this.aliasManager = new AliasManager(this);
 
     this.contextMenuManager = new ContextMenuManager(this);
+    this.notebookNavigatorIntegration = new NotebookNavigatorIntegration(this);
 
     // Initialize file operations (required by workspace integration)
     this.fileOperations = new FileOperations(this);
@@ -581,7 +603,8 @@ export default class FirstLineIsTitle extends Plugin {
     await pluginInitializer.initializeFirstEnableLogic();
     await pluginInitializer.checkFirstTimeExclusionsSetup();
 
-    this.addSettingTab(new FirstLineIsTitleSettings(this.app, this));
+    this.settingTab = new FirstLineIsTitleSettings(this.app, this);
+    this.addSettingTab(this.settingTab);
 
     // Register command palette commands
     this.commandRegistrar = new CommandRegistrar(this);
@@ -590,6 +613,7 @@ export default class FirstLineIsTitle extends Plugin {
     // Defer ribbon icon registration until workspace layout is ready
     this.app.workspace.onLayoutReady(() => {
       this.workspaceIntegration.registerRibbonIcons();
+      this.notebookNavigatorIntegration.register();
     });
 
     // Register all event handlers

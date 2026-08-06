@@ -201,6 +201,7 @@ class MockApp {
   keymap: any;
   scope: any;
   commands: any;
+  plugins: any;
 
   constructor() {
     this.vault = new Vault();
@@ -218,6 +219,14 @@ class MockApp {
     };
     this.commands = {
       commands: {},
+    };
+    // Mirrors Obsidian's plugin manager, which always exists at runtime even
+    // when no community plugins are loaded.
+    this.plugins = {
+      plugins: {},
+      enabledPlugins: new Set<string>(),
+      getPlugin: vi.fn().mockReturnValue(null),
+      on: vi.fn(),
     };
   }
 

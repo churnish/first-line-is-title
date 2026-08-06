@@ -1,4 +1,4 @@
-import { Menu } from 'obsidian';
+import { Menu, MenuItem } from 'obsidian';
 import FirstLineIsTitlePlugin from '../../main';
 
 /**
@@ -38,14 +38,47 @@ export class MenuRenderer {
    * @param context Context object passed to visibility/onClick functions
    */
   render(menu: Menu, config: MenuConfig, context: unknown): void {
-    const visibleItems = config.items.filter((item) => item.visible(context));
+    const visibleItems = this.getVisibleItems(config, context);
 
     if (config.addSeparator && visibleItems.length > 0) {
       menu.addSeparator();
     }
 
+    this.renderItems(
+      (cb) => {
+        menu.addItem(cb);
+      },
+      visibleItems,
+      context
+    );
+  }
+
+  /**
+   * Render menu items via a bare addItem callback (e.g. a third-party plugin's
+   * menu API that doesn't expose the full Obsidian Menu, only addItem).
+   */
+  renderToAddItem(
+    addItem: (cb: (item: MenuItem) => void) => void,
+    config: MenuConfig,
+    context: unknown
+  ): void {
+    this.renderItems(addItem, this.getVisibleItems(config, context), context);
+  }
+
+  private getVisibleItems(
+    config: MenuConfig,
+    context: unknown
+  ): MenuItemConfig[] {
+    return config.items.filter((item) => item.visible(context));
+  }
+
+  private renderItems(
+    addItem: (cb: (item: MenuItem) => void) => void,
+    visibleItems: MenuItemConfig[],
+    context: unknown
+  ): void {
     for (const itemConfig of visibleItems) {
-      menu.addItem((item) => {
+      addItem((item) => {
         const title =
           typeof itemConfig.title === 'function'
             ? itemConfig.title(context)

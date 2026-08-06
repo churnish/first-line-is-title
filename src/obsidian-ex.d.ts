@@ -3,7 +3,15 @@
  * These extend the official API with unofficial/undocumented properties
  */
 
-import { Command, TFile, Editor, Menu, View, Setting } from 'obsidian';
+import {
+  Command,
+  TFile,
+  Editor,
+  EventRef,
+  Menu,
+  View,
+  Setting,
+} from 'obsidian';
 
 declare module 'obsidian' {
   export class SettingGroup {
@@ -28,6 +36,14 @@ declare module 'obsidian' {
     plugins: {
       enabledPlugins: Set<string>;
       getPlugin(id: string): unknown;
+      /**
+       * Registry of loaded plugin instances, keyed by plugin ID (undocumented)
+       */
+      plugins: Record<string, unknown>;
+      /**
+       * Fires (debounced) whenever a plugin is enabled or disabled (undocumented)
+       */
+      on(name: 'changed', callback: () => unknown): EventRef;
     };
   }
 
