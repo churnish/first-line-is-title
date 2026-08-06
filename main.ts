@@ -352,9 +352,6 @@ export default class FirstLineIsTitle extends Plugin {
 
     try {
       if (!hasProperty) {
-        const originalMtime = this.settings.core.preserveModificationDate
-          ? activeFile.stat.mtime
-          : undefined;
         await this.app.fileManager.processFrontMatter(
           activeFile,
           (frontmatter: Record<string, unknown>) => {
@@ -362,8 +359,7 @@ export default class FirstLineIsTitle extends Plugin {
               this.parsePropertyValue(
                 this.settings.exclusions.disableRenamingValue
               );
-          },
-          originalMtime !== undefined ? { mtime: originalMtime } : undefined
+          }
         );
       }
 
@@ -395,15 +391,11 @@ export default class FirstLineIsTitle extends Plugin {
 
     try {
       if (hasProperty) {
-        const originalMtime = this.settings.core.preserveModificationDate
-          ? activeFile.stat.mtime
-          : undefined;
         await this.app.fileManager.processFrontMatter(
           activeFile,
           (frontmatter: Record<string, unknown>) => {
             delete frontmatter[this.settings.exclusions.disableRenamingKey];
-          },
-          originalMtime !== undefined ? { mtime: originalMtime } : undefined
+          }
         );
       }
 

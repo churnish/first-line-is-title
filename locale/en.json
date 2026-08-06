@@ -751,10 +751,6 @@
         "onTitleChange": "On title change",
         "never": "Never"
       },
-      "preserveModificationDate": {
-        "name": "Preserve original modification date",
-        "desc": "Don't alter note last modified timestamp when renaming or when modifying properties."
-      },
       "grabCardLink": {
         "name": "Grab title from card link",
         "desc": {

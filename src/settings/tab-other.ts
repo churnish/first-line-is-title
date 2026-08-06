@@ -305,14 +305,6 @@ export function buildOtherPage(
         },
       },
       {
-        name: t('settings.other.preserveModificationDate.name'),
-        desc: t('settings.other.preserveModificationDate.desc'),
-        control: {
-          type: 'toggle',
-          key: 'core.preserveModificationDate',
-        },
-      },
-      {
         name: t('settings.other.grabCardLink.name'),
         desc: buildCardLinkDescription(),
         control: {

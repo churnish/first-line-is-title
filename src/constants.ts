@@ -9,7 +9,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     renameOnSave: false,
     onlyRenameIfHeading: false,
     manualNotificationMode: 'Always',
-    preserveModificationDate: true,
     charCount: 100,
     checkInterval: 0,
     fileReadMethod: 'Editor',

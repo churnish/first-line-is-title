@@ -1410,10 +1410,6 @@ export class DisableEnableModal extends Modal {
     try {
       for (const file of filesToProcess) {
         try {
-          const originalMtime = this.plugin.settings.core
-            .preserveModificationDate
-            ? file.stat.mtime
-            : undefined;
           await this.app.fileManager.processFrontMatter(
             file,
             (frontmatter: Record<string, unknown>) => {
@@ -1422,8 +1418,7 @@ export class DisableEnableModal extends Modal {
               } else {
                 delete frontmatter[key];
               }
-            },
-            originalMtime !== undefined ? { mtime: originalMtime } : undefined
+            }
           );
           processedCount++;
         } catch (error) {

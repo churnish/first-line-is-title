@@ -52,7 +52,6 @@ export interface CoreSettings {
   renameOnSave: boolean;
   onlyRenameIfHeading: boolean;
   manualNotificationMode: NotificationMode;
-  preserveModificationDate: boolean;
   charCount: number;
   checkInterval: number;
   fileReadMethod: FileReadMethod;
