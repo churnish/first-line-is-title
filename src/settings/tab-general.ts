@@ -3,8 +3,7 @@ import { FirstLineIsTitlePlugin } from './settings-base';
 import { RenameAllFilesModal } from '../modals';
 import { t, getCurrentLocale } from '../i18n';
 
-const FEEDBACK_URL =
-  'https://github.com/greetclammy/first-line-is-title/issues';
+const FEEDBACK_URL = 'https://github.com/churnish/first-line-is-title/issues';
 
 /**
  * Builds a description where one term is emphasized. Russian typography uses

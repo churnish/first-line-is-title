@@ -1,4 +1,4 @@
-[English](https://github.com/greetclammy/first-line-is-title?tab=readme-ov-file#readme) • Русский
+[English](https://github.com/churnish/first-line-is-title?tab=readme-ov-file#readme) • Русский
 
 # First Line is Title
 
@@ -36,7 +36,7 @@
 
 1. Скачайте и включите сторонний плагин [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
 2. Выберите _Добавить бета-плагин для тестирования_ в палитре команд.
-3. Вставьте https://github.com/greetclammy/first-line-is-title в текстовое поле.
+3. Вставьте https://github.com/churnish/first-line-is-title в текстовое поле.
 4. Выберите _Latest version_.
 5. Отметьте _Enable after installing the plugin_.
 6. Нажмите _Add Plugin_.
@@ -45,7 +45,7 @@
 
 Примечание: для получения обновлений _First Line is Title_ вам придется проверять их наличие и устанавливать вручную.
 
-1. Скачайте `first-line-is-title.zip` из раздела `Assets` [последнего релиза](https://github.com/greetclammy/first-line-is-title/releases).
+1. Скачайте `first-line-is-title.zip` из раздела `Assets` [последнего релиза](https://github.com/churnish/first-line-is-title/releases).
 2. Распакуйте папку и поместите ее в папку `.obsidian/plugins` (скрыта в большинстве ОС) в корне вашего хранилища.
 3. Перезагрузите плагины или приложение.
 4. Включите _First Line is Title_ в Настройках Obsidian → Плагины сообщества → Установленные плагины.
@@ -87,5 +87,5 @@
 
 ## Поддержка
 
-- [Откройте ишью](https://github.com/greetclammy/first-line-is-title/issues) при возникновении проблем.
+- [Откройте ишью](https://github.com/churnish/first-line-is-title/issues) при возникновении проблем.
 - Предложения по улучшению принимаются, но приоритет отдается стабильности. Pull requests приветствуются.
