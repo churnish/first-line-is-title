@@ -144,11 +144,11 @@
     "general": {
       "renameAutomatically": {
         "name": "Rename automatically",
-        "desc": "Rename notes automatically when they're open and edited. When off, only rename via command."
+        "desc": "Rename notes automatically when they're open and edited. Turn this off to only rename via command."
       },
       "renameOnFocus": {
         "name": "Rename on focus",
-        "desc": "Rename notes when they become active in the editor."
+        "desc": "Also rename notes when they become active in the editor."
       },
       "onlyRenameIfHeading": {
         "name": "Only rename if heading",
@@ -362,7 +362,7 @@
     "replaceCharacters": {
       "name": "Replace forbidden characters",
       "desc": "Replace forbidden file name characters with safe alternatives.",
-      "toggleDesc": "Replace characters forbidden in Obsidian file names with safe alternatives. When off, strip them entirely.",
+      "toggleDesc": "Replace characters forbidden in Obsidian file names with safe alternatives. Turn this off to strip them entirely.",
       "trimNote": {
         "part1": "Enable ",
         "trimLeft": "Trim left",
