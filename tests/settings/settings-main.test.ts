@@ -32,8 +32,11 @@ vi.mock('../../src/settings/tab-general', () => ({
   buildGeneralDefinitions: vi.fn(() => []),
   buildFooterDefinitions: vi.fn(() => [
     { name: 'settings.general.renameAllNotes.name', render: vi.fn() },
-    { name: '', render: vi.fn() },
   ]),
+  buildFeedbackGroup: vi.fn(() => ({
+    type: 'group',
+    items: [{ name: 'settings.general.sendFeedback.name', render: vi.fn() }],
+  })),
 }));
 vi.mock('../../src/settings/tab-exclusions', () => ({
   buildExclusionsPage: vi.fn(() => ({ type: 'page', name: 'Exclusions' })),
@@ -111,12 +114,15 @@ describe('FirstLineIsTitleSettings', () => {
         .filter((def) => (def as { type?: string }).type === 'page')
         .map((def) => (def as { name?: string }).name);
 
+    // Matched by heading, not by type — feedback occupies a second group.
     const advancedGroup = () =>
       tab
         .getSettingDefinitions()
-        .find((def) => (def as { type?: string }).type === 'group') as
-        | { heading?: string; items?: { name?: string }[] }
-        | undefined;
+        .find(
+          (def) =>
+            (def as { heading?: string }).heading ===
+            'settings.tabs.advancedGroup'
+        ) as { heading?: string; items?: { name?: string }[] } | undefined;
 
     it('keeps only Exclusions as a top-level page', () => {
       expect(topLevel()).toEqual(['Exclusions']);
@@ -135,18 +141,30 @@ describe('FirstLineIsTitleSettings', () => {
       ]);
     });
 
-    it('places the page-level actions above the Advanced group', () => {
+    it('places the page-level action directly above the Advanced group', () => {
       const defs = tab.getSettingDefinitions();
       const groupIndex = defs.findIndex(
-        (def) => (def as { type?: string }).type === 'group'
+        (def) =>
+          (def as { heading?: string }).heading ===
+          'settings.tabs.advancedGroup'
       );
-      const beforeGroup = defs.slice(groupIndex - 2, groupIndex);
-      expect((beforeGroup[0] as { name?: string }).name).toBe(
+      expect((defs[groupIndex - 1] as { name?: string }).name).toBe(
         'settings.general.renameAllNotes.name'
       );
-      // The feedback call to action is deliberately unnamed so it stays out of
-      // the settings search index.
-      expect((beforeGroup[1] as { name?: string }).name).toBe('');
+    });
+
+    it('puts feedback last, alone in a group with no heading', () => {
+      const defs = tab.getSettingDefinitions();
+      const last = defs[defs.length - 1] as {
+        type?: string;
+        heading?: string;
+        items?: { name?: string }[];
+      };
+      expect(last.type).toBe('group');
+      expect(last.heading).toBeUndefined();
+      expect(last.items?.map((i) => i.name)).toEqual([
+        'settings.general.sendFeedback.name',
+      ]);
     });
   });
 

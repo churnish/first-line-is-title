@@ -1,4 +1,8 @@
-import { PluginSettingTab, SettingDefinitionItem } from 'obsidian';
+import {
+  PluginSettingTab,
+  SettingDefinitionItem,
+  SettingDefinitionGroup,
+} from 'obsidian';
 import { FirstLineIsTitlePlugin } from './settings-base';
 import { RenameAllFilesModal } from '../modals';
 import { t, getCurrentLocale } from '../i18n';
@@ -124,8 +128,8 @@ export function buildGeneralDefinitions(
 }
 
 /**
- * Actions that belong below every settings section rather than inside one.
- * Appended after the sub-page links so they read as page-level footers.
+ * Vault-wide action that belongs below the everyday settings rather than inside
+ * one of them. Appended after the sub-page links so it reads as a page footer.
  */
 export function buildFooterDefinitions(
   plugin: FirstLineIsTitlePlugin
@@ -146,18 +150,34 @@ export function buildFooterDefinitions(
         );
       },
     },
-    {
-      name: t('settings.general.sendFeedback.name'),
-      desc: t('settings.general.sendFeedback.desc'),
-      render: (setting) => {
-        setting.addButton((button) =>
-          button
-            .setButtonText(t('settings.general.sendFeedback.button'))
-            .onClick(() => {
-              window.open(FEEDBACK_URL, '_blank');
-            })
-        );
-      },
-    },
   ];
+}
+
+/**
+ * Feedback sits alone in a headingless group below Advanced: it addresses the
+ * plugin itself rather than any setting, so it gets its own box at the very
+ * bottom instead of trailing the everyday settings.
+ *
+ * Stays in the settings search index — `searchable: false` would hide the only
+ * route users have to report a bug when they search rather than scroll.
+ */
+export function buildFeedbackGroup(): SettingDefinitionGroup {
+  return {
+    type: 'group',
+    items: [
+      {
+        name: t('settings.general.sendFeedback.name'),
+        desc: t('settings.general.sendFeedback.desc'),
+        render: (setting) => {
+          setting.addButton((button) =>
+            button
+              .setButtonText(t('settings.general.sendFeedback.button'))
+              .onClick(() => {
+                window.open(FEEDBACK_URL, '_blank');
+              })
+          );
+        },
+      },
+    ],
+  };
 }

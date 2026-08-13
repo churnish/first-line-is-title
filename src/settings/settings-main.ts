@@ -14,7 +14,11 @@ import {
   WINDOWS_ANDROID_CHAR_KEYS,
 } from '../types/char-replacement';
 
-import { buildGeneralDefinitions, buildFooterDefinitions } from './tab-general';
+import {
+  buildGeneralDefinitions,
+  buildFooterDefinitions,
+  buildFeedbackGroup,
+} from './tab-general';
 import { buildExclusionsPage } from './tab-exclusions';
 import { buildCharacterReplacementsPage } from './tab-replace-characters';
 import { buildCustomRulesPage } from './tab-custom-rules';
@@ -142,7 +146,7 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
       // convention that a tab's primary section is unlabelled.
       ...buildGeneralDefinitions(this.plugin, this),
       buildExclusionsPage(this.plugin, this),
-      // Page-level actions close out the everyday settings, above Advanced.
+      // Page-level action closes out the everyday settings, above Advanced.
       ...buildFooterDefinitions(this.plugin),
       {
         type: 'group',
@@ -156,6 +160,7 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
           buildOtherPage(this.plugin, this),
         ],
       },
+      buildFeedbackGroup(),
     ];
   }
 
