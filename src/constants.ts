@@ -14,9 +14,9 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     fileReadMethod: 'Editor',
 
     // New file handling
-    insertTitleOnCreation: false,
+    insertTitleOnCreation: true,
     convertReplacementCharactersInTitle: true,
-    moveCursorToFirstLine: false,
+    moveCursorToFirstLine: true,
     placeCursorAtLineEnd: true,
     newNoteDelay: 0,
 
