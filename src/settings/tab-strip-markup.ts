@@ -1,6 +1,7 @@
 import { SettingDefinitionItem, SettingDefinitionPage } from 'obsidian';
 import { FirstLineIsTitlePlugin } from './settings-base';
 import { t, getCurrentLocale } from '../i18n';
+import { createPluginLink, buildPluginLinkRouterGroup } from './plugin-links';
 
 /**
  * A markup-type toggle: `id` is the locale namespace under
@@ -104,10 +105,7 @@ function buildMultiPartDescription(descKey: string): DocumentFragment {
 function buildTemplaterDescription(): DocumentFragment {
   return createFragment((frag) => {
     frag.appendText(t('settings.stripMarkup.templater.desc.part1'));
-    frag.createEl('a', {
-      text: 'Templater',
-      href: 'https://community.obsidian.md/plugins/templater-obsidian',
-    });
+    createPluginLink(frag, 'templater-obsidian', 'Templater');
     frag.appendText(t('settings.stripMarkup.templater.desc.part2'));
     frag.createEl('code', {
       text: t('settings.stripMarkup.templater.desc.code'),
@@ -168,6 +166,8 @@ export function buildMarkupStrippingPage(
       key: 'markupStripping.stripTemplaterSyntax',
     },
   });
+
+  items.push(buildPluginLinkRouterGroup(plugin.app));
 
   return {
     type: 'page',

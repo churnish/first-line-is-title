@@ -45,6 +45,11 @@ declare module 'obsidian' {
        */
       on(name: 'changed', callback: () => unknown): EventRef;
     };
+    /** Settings pane controller (undocumented API) */
+    setting?: {
+      /** Close the settings pane */
+      close?(): void;
+    };
   }
 
   interface WorkspaceLeaf {

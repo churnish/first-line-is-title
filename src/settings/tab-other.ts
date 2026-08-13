@@ -10,6 +10,7 @@ import { DEFAULT_SETTINGS } from '../constants';
 import { verboseLog } from '../utils';
 import { t, getCurrentLocale } from '../i18n';
 import { PluginInitializer } from '../core/plugin-initializer';
+import { createPluginLink, buildPluginLinkRouterGroup } from './plugin-links';
 
 // Plugin names (proper nouns, not subject to sentence case)
 const PLUGIN_AUTO_CARD_LINK = 'Auto Card Link';
@@ -36,15 +37,9 @@ function descriptionWithDefault(
 function buildCardLinkDescription(): DocumentFragment {
   return createFragment((frag) => {
     frag.appendText(t('settings.other.grabCardLink.desc.part1'));
-    frag.createEl('a', {
-      href: 'https://community.obsidian.md/plugins/auto-card-link',
-      text: PLUGIN_AUTO_CARD_LINK,
-    });
+    createPluginLink(frag, 'auto-card-link', PLUGIN_AUTO_CARD_LINK);
     frag.appendText(t('settings.other.grabCardLink.desc.part2'));
-    frag.createEl('a', {
-      href: 'https://community.obsidian.md/plugins/obsidian-link-embed',
-      text: PLUGIN_LINK_EMBED,
-    });
+    createPluginLink(frag, 'obsidian-link-embed', PLUGIN_LINK_EMBED);
     frag.appendText(t('settings.other.grabCardLink.desc.part3'));
   });
 }
@@ -439,6 +434,7 @@ export function buildOtherPage(
           },
         ],
       },
+      buildPluginLinkRouterGroup(plugin.app),
     ],
   };
 }

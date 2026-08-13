@@ -10,6 +10,7 @@ import {
   buildDescRow,
 } from './settings-base';
 import { t, getCurrentLocale } from '../i18n';
+import { createPluginLink, buildPluginLinkRouterGroup } from './plugin-links';
 
 // Plugin names (proper nouns, not subject to sentence case)
 const PLUGIN_HOVER_EDITOR = 'Hover Editor';
@@ -23,10 +24,7 @@ function buildLimitationsNote(): DocumentFragment {
     appendLines(frag, [
       (target) => {
         target.appendText(t('settings.alias.limitations.bullet1.part1'));
-        target.createEl('a', {
-          text: PLUGIN_HOVER_EDITOR,
-          href: 'https://community.obsidian.md/plugins/obsidian-hover-editor',
-        });
+        createPluginLink(target, 'obsidian-hover-editor', PLUGIN_HOVER_EDITOR);
         target.appendText(t('settings.alias.limitations.bullet1.part2'));
       },
       (target) => target.appendText(t('settings.alias.limitations.bullet2')),
@@ -232,6 +230,8 @@ export function buildAliasPage(
       items: [buildDescRow(buildLimitationsNote())],
     },
   ];
+
+  items.push(buildPluginLinkRouterGroup(plugin.app));
 
   return {
     type: 'page',
