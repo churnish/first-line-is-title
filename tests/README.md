@@ -3,23 +3,43 @@
 ## Structure
 
 ```
-test/
-├── README.md           # This file
-├── mockObsidian.ts     # Mock implementation of Obsidian API
-├── setup.ts            # Test environment setup
-├── testUtils.ts        # Helper functions for tests
-├── core/               # Core module tests
-│   ├── cache-manager.test.ts
-│   ├── rate-limiter.test.ts
-│   └── rename-engine.test.ts
-├── utils/              # Utility module tests
-│   ├── content-reader.test.ts
-│   ├── debug.test.ts
-│   ├── file-exclusions.test.ts
-│   ├── string-processing.test.ts
-│   └── tag-utils.test.ts
+tests/
+├── README.md                  # This file
+├── mockObsidian.ts             # Mock implementation of Obsidian API
+├── setup.ts                    # Test environment setup
+├── testUtils.ts                # Helper functions for tests
+├── jsdom.d.ts                  # DOM environment type augmentations
+├── constants.test.ts
 ├── i18n.test.ts
-└── utils.test.ts
+├── locale-parity.test.ts
+├── main.test.ts
+├── modals.test.ts
+├── testUtils.test.ts
+├── utils.test.ts
+├── core/                       # Core module tests
+│   ├── alias-manager.test.ts
+│   ├── cache-manager.test.ts
+│   ├── command-registrar.test.ts
+│   ├── event-handler-manager.test.ts
+│   ├── file-creation-coordinator.test.ts
+│   ├── file-state-manager.test.ts
+│   ├── plugin-initializer.test.ts
+│   ├── rate-limiter.test.ts
+│   ├── rename-engine.test.ts
+│   └── workspace-integration.test.ts
+├── operations/                 # Batch operation tests
+│   └── file-operations.test.ts
+├── settings/                   # Settings tab tests
+│   ├── plugin-links.test.ts
+│   ├── settings-main.test.ts
+│   ├── settings-paths.test.ts
+│   └── tab-general.test.ts
+└── utils/                      # Utility module tests
+    ├── content-reader.test.ts
+    ├── debug.test.ts
+    ├── file-exclusions.test.ts
+    ├── string-processing.test.ts
+    └── tag-utils.test.ts
 ```
 
 ## Running tests
@@ -61,16 +81,13 @@ Tests run automatically on push via GitHub Actions (Node 18 & 20).
 | Core Utilities    | 42    | Logging, headings, file name exclusions, disable properties                 |
 | Debug Utilities   | 41    | Setting logs, content output, dumps                                         |
 
-**Total: 490+ tests**
+**Total: 805 tests across 27 files** (`npx vitest run`)
 
 ### Not yet tested
 
-- Alias Manager (frontmatter manipulation)
 - Property Manager
-- File Operations (batch operations)
-- Title Insertion (editor integration)
 - Link Manager
-- Settings UI / Modals / Context Menus
+- Context menus
 
 ---
 

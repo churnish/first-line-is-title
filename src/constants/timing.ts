@@ -40,8 +40,17 @@ export const TIMING = {
   /** Delay for cleanup of renamed files tracking */
   RENAME_TRACKING_CLEANUP_DELAY_MS: 150,
 
-  /** Delay for cursor positioning after requestAnimationFrame */
+  /** Delay before positioning the cursor in a newly created file, so the editor view has mounted and can be found by path */
   RAF_CURSOR_POSITIONING_DELAY_MS: 200,
+
+  /** Race window for Templater's creation event, measured from the file's ctime rather than from now because the CREATE handler has usually already burned part of it */
+  TEMPLATER_EVENT_TIMEOUT_MS: 2000,
+
+  /** Grace period before dropping the Templater listener, kept longer than the timeout above so the timeout resolves first and a late event cannot settle an already-settled promise */
+  TEMPLATER_EVENT_CLEANUP_GRACE_MS: 100,
+
+  /** Minimum gap between title insertions while a canvas is active, so a canvas creating many files at once does not trigger a mass insertion */
+  TITLE_INSERTION_RATE_LIMIT_MS: 1000,
 
   /** Delay for focusing input elements after DOM updates */
   INPUT_FOCUS_DELAY_MS: 50,

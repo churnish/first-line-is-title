@@ -6,6 +6,8 @@ import {
   getFrontMatterInfo,
 } from 'obsidian';
 import { PluginSettings, OSPreset } from './types';
+import { CHAR_TO_SETTING_KEY } from './types/char-replacement';
+import { isRootFolderPath } from './utils/string-processing';
 import { t } from './i18n';
 import { PropertyManager } from './core/property-manager';
 
@@ -16,6 +18,7 @@ export {
   reverseSafeLinkTarget,
   processForbiddenChars,
 } from './utils/string-processing';
+export { deepMerge } from './utils/deep-merge';
 export {
   normalizeTag,
   parseTagsFromYAML,
@@ -26,7 +29,6 @@ export {
   isFileInConfiguredFolders,
   fileHasExcludedProperties,
   shouldProcessFile,
-  isFileExcluded,
 } from './utils/file-exclusions';
 
 // Re-export from PropertyManager (wrapped to avoid unbound-method warning)
@@ -171,7 +173,7 @@ export function canModifyFile(
 // - isFileInConfiguredFolders → utils/file-exclusions.ts
 // - fileHasExcludedProperties → utils/file-exclusions.ts
 // - shouldProcessFile → utils/file-exclusions.ts
-// - isFileExcluded → utils/file-exclusions.ts
+// - deepMerge → utils/deep-merge.ts
 
 export function hasDisablePropertyInFile(
   file: TFile,
@@ -186,8 +188,14 @@ export function hasDisablePropertyInFile(
 
     if (!frontmatter) return false;
 
+    // Property matching folds case, so resolve the configured key against the frontmatter's own casing
+    const matchedKey = Object.keys(frontmatter).find(
+      (key) => key.toLowerCase() === disableKey.toLowerCase()
+    );
+    if (matchedKey === undefined) return false;
+
     // Get the property value
-    const propertyValue = (frontmatter as Record<string, unknown>)[disableKey];
+    const propertyValue = (frontmatter as Record<string, unknown>)[matchedKey];
 
     if (propertyValue === undefined || propertyValue === null) return false;
 
@@ -377,7 +385,7 @@ export function extractTitle(
       return false;
     };
 
-    // HTML comments are deliberately not stripped — only Obsidian's %%…%%.
+    // Comment toggles cover Obsidian's %%…%% only — HTML comments are stripped by the htmlTags toggle instead.
     if (settings.markupStripping.stripCommentsEntirely) {
       // Strip comments entirely: remove everything
       line = line.replace(/%%.*?%%/g, '');
@@ -534,9 +542,17 @@ export function extractTitle(
     }
 
     if (settings.markupStripping.stripMarkupSettings.htmlTags) {
+      // Runs once, outside the capped pass loop below, so a pathological tag input can't cause the cap to skip it.
+      line = line.replace(/<!--[\s\S]*?-->/g, '');
+
+      // Each pass unwraps one nesting level. Capped so a pathological line cannot stall
+      // the rename on the editor's critical path; leftover tags are preferable to a hang.
+      const maxTagUnwrapPasses = 50;
       let previousLine = '';
-      while (line !== previousLine) {
+      let passes = 0;
+      while (line !== previousLine && passes < maxTagUnwrapPasses) {
         previousLine = line;
+        passes++;
         line = line.replace(
           /<([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>(.*?)<\/\1>/g,
           '$2'
@@ -815,62 +831,49 @@ export function findTitleSourceLine(
   return t('untitled');
 }
 
+// Punctuation binds to the character before it, so no space is restored in front of it
+const PUNCTUATION_AFTER_REPLACEMENT = ',.?;:!"\'»«¡¿‽';
+
 /**
- * Deep merge two objects recursively
- * Arrays and primitives from source override defaults
- * Nested objects are merged recursively
- * @param defaults The default object (will not be mutated)
- * @param source The source object with overrides (will not be mutated)
- * @returns A new object with merged values
+ * Substitute every occurrence of a replacement string with its original character,
+ * restoring the whitespace that `trimLeft`/`trimRight` removed during replacement.
  */
-export function deepMerge<T>(defaults: T, source: Partial<T>): T {
-  // Handle null/undefined cases
-  if (!defaults || typeof defaults !== 'object') return defaults;
-  if (!source || typeof source !== 'object') return defaults;
-
-  // Create a deep copy of defaults to avoid mutation
-  const result = JSON.parse(JSON.stringify(defaults)) as T;
-  // Use Record for dynamic key access
-  const resultRecord = result as Record<string, unknown>;
-  const sourceRecord = source as Record<string, unknown>;
-
-  // Merge properties from source
-  for (const key in source) {
-    if (!Object.prototype.hasOwnProperty.call(source, key)) continue;
-
-    const sourceValue = sourceRecord[key];
-    const defaultValue = resultRecord[key];
-
-    // If source value is null/undefined, skip it (keep default)
-    if (sourceValue === null || sourceValue === undefined) continue;
-
-    // If default value doesn't exist, use source value
-    if (defaultValue === null || defaultValue === undefined) {
-      resultRecord[key] = sourceValue;
-      continue;
-    }
-
-    // Handle arrays: replace entirely (don't merge items)
-    if (Array.isArray(sourceValue)) {
-      resultRecord[key] = JSON.parse(JSON.stringify(sourceValue));
-      continue;
-    }
-
-    // Handle objects: merge recursively
-    if (
-      typeof sourceValue === 'object' &&
-      typeof defaultValue === 'object' &&
-      !Array.isArray(defaultValue)
-    ) {
-      resultRecord[key] = deepMerge(defaultValue, sourceValue);
-      continue;
-    }
-
-    // Handle primitives: override with source value
-    resultRecord[key] = sourceValue;
+function restoreWithTrimmedSpacing(
+  text: string,
+  replacementChar: string,
+  originalChar: string,
+  trimLeft: boolean,
+  trimRight: boolean
+): string {
+  if (!trimLeft && !trimRight) {
+    return text.replaceAll(replacementChar, originalChar);
   }
 
-  return result;
+  let result = '';
+  let searchFrom = 0;
+  let index = text.indexOf(replacementChar, searchFrom);
+
+  while (index !== -1) {
+    result += text.substring(searchFrom, index);
+
+    let restored = trimLeft ? ' ' + originalChar : originalChar;
+    if (trimRight) {
+      // Empty when the match ends the string; `includes('')` is true, so no trailing space is added
+      const charToRight = text.substring(
+        index + replacementChar.length,
+        index + replacementChar.length + 1
+      );
+      if (!PUNCTUATION_AFTER_REPLACEMENT.includes(charToRight)) {
+        restored += ' ';
+      }
+    }
+
+    result += restored;
+    searchFrom = index + replacementChar.length;
+    index = text.indexOf(replacementChar, searchFrom);
+  }
+
+  return result + text.substring(searchFrom);
 }
 
 /**
@@ -878,12 +881,14 @@ export function deepMerge<T>(defaults: T, source: Partial<T>): T {
  * @param text - The text to process
  * @param settings - Plugin settings containing character replacement configuration
  * @param plugin - Optional plugin instance for verbose logging
+ * @param options.restoreTrimmedSpacing - Re-insert the spaces that `trimLeft`/`trimRight` removed. Opt-in because callers that echo a filename verbatim (the insert-filename command) must not gain spaces the filename never had.
  * @returns The text with replacements reversed to original characters
  */
 export function reverseCharacterReplacements(
   text: string,
   settings: PluginSettings,
-  plugin?: { settings: PluginSettings }
+  plugin?: { settings: PluginSettings },
+  options?: { restoreTrimmedSpacing?: boolean }
 ): string {
   if (!settings.core.convertReplacementCharactersInTitle) {
     return text;
@@ -891,32 +896,11 @@ export function reverseCharacterReplacements(
 
   let result = text;
 
-  // Character mapping
-  const charMap: Record<string, string> = {
-    '/': 'slash',
-    ':': 'colon',
-    '*': 'asterisk',
-    '?': 'question',
-    '<': 'lessThan',
-    '>': 'greaterThan',
-    '"': 'quote',
-    '|': 'pipe',
-    '#': 'hash',
-    '[': 'leftBracket',
-    ']': 'rightBracket',
-    '^': 'caret',
-    '\\': 'backslash',
-    '.': 'dot',
-  };
-
   // Find duplicate replacement strings (ambiguous - can't reverse)
   const replacementCounts = new Map<string, number>();
   const enabledReplacements: string[] = [];
-  for (const settingKey of Object.values(charMap)) {
-    const replacement =
-      settings.replaceCharacters.charReplacements[
-        settingKey as keyof typeof settings.replaceCharacters.charReplacements
-      ];
+  for (const settingKey of Object.values(CHAR_TO_SETTING_KEY)) {
+    const replacement = settings.replaceCharacters.charReplacements[settingKey];
     if (replacement.enabled && replacement.replacement) {
       replacementCounts.set(
         replacement.replacement,
@@ -934,11 +918,10 @@ export function reverseCharacterReplacements(
   }
 
   // Reverse each enabled replacement using actual user settings
-  for (const [originalChar, settingKey] of Object.entries(charMap)) {
-    const replacement =
-      settings.replaceCharacters.charReplacements[
-        settingKey as keyof typeof settings.replaceCharacters.charReplacements
-      ];
+  for (const [originalChar, settingKey] of Object.entries(
+    CHAR_TO_SETTING_KEY
+  )) {
+    const replacement = settings.replaceCharacters.charReplacements[settingKey];
     if (replacement.enabled && replacement.replacement) {
       // Skip if this replacement string is used by multiple enabled characters (ambiguous)
       const count = replacementCounts.get(replacement.replacement) || 0;
@@ -951,7 +934,15 @@ export function reverseCharacterReplacements(
         }
         continue;
       }
-      result = result.replaceAll(replacement.replacement, originalChar);
+      result = options?.restoreTrimmedSpacing
+        ? restoreWithTrimmedSpacing(
+            result,
+            replacement.replacement,
+            originalChar,
+            replacement.trimLeft,
+            replacement.trimRight
+          )
+        : result.replaceAll(replacement.replacement, originalChar);
     }
   }
 
@@ -963,18 +954,22 @@ export function reverseCharacterReplacements(
 }
 
 /**
- * Normalizes a folder path for duplicate comparison
+ * Builds the equality key used to detect duplicate folder entries
  * - Trims whitespace
  * - Removes leading and trailing slashes (except preserves root "/")
  * - Converts to lowercase for case-insensitive comparison
+ *
+ * Case-folding is what separates this from `normalizeFolderPathForMatching` in
+ * utils/file-exclusions.ts, which preserves case because it matches real paths.
  */
-function normalizeFolderPath(path: string): string {
-  const trimmed = path.trim();
-  // Preserve root folder
-  if (trimmed === '/') {
+function folderPathComparisonKey(path: string): string {
+  if (isRootFolderPath(path)) {
     return '/';
   }
-  return trimmed.replace(/^\/+|\/+$/g, '').toLowerCase();
+  return path
+    .trim()
+    .replace(/^\/+|\/+$/g, '')
+    .toLowerCase();
 }
 
 /**
@@ -983,12 +978,10 @@ function normalizeFolderPath(path: string): string {
  * - Removes leading and trailing slashes (except preserves root "/")
  */
 function cleanFolderPath(path: string): string {
-  const trimmed = path.trim();
-  // Preserve root folder
-  if (trimmed === '/') {
+  if (isRootFolderPath(path)) {
     return '/';
   }
-  return trimmed.replace(/^\/+|\/+$/g, '');
+  return path.trim().replace(/^\/+|\/+$/g, '');
 }
 
 /**
@@ -1026,7 +1019,8 @@ function cleanPropertyText(text: string): string {
 }
 
 /**
- * Deduplicates exclusion arrays in plugin settings and drops blank entries
+ * Normalizes the exclusion lists in plugin settings: drops blank entries, cleans
+ * entry text, and deduplicates folders, tags and properties
  * Keeps the last occurrence of each duplicate (removes earlier ones)
  * Normalization rules:
  * - Folders: case-insensitive, leading/trailing slashes removed
@@ -1035,18 +1029,21 @@ function cleanPropertyText(text: string): string {
  * File name exclusions are only pruned of blanks, never deduplicated — their
  * per-entry flags make equality ambiguous.
  *
- * @param settings - Plugin settings object to deduplicate
+ * @param settings - Plugin settings object to normalize
  * @returns true if any entries were removed or cleaned, false otherwise
  */
-export function deduplicateExclusions(settings: PluginSettings): boolean {
+export function normalizeExclusionLists(settings: PluginSettings): boolean {
   let hasChanges = false;
 
   // Deduplicate folders
-  const originalFolderCount = settings.exclusions.excludedFolders.length;
+  // Each list is read through `?? []`: this also runs on settings imported from a file,
+  // which can omit any list entirely despite what the types promise
+  const excludedFolders = settings.exclusions.excludedFolders ?? [];
+  const originalFolderCount = excludedFolders.length;
   const folderMap = new Map<string, number>(); // normalized -> last index
 
-  settings.exclusions.excludedFolders.forEach((folder, index) => {
-    const normalized = normalizeFolderPath(folder);
+  excludedFolders.forEach((folder, index) => {
+    const normalized = folderPathComparisonKey(folder);
     if (normalized !== '') {
       folderMap.set(normalized, index);
     }
@@ -1054,10 +1051,9 @@ export function deduplicateExclusions(settings: PluginSettings): boolean {
 
   // Blank entries are never recorded in folderMap, so they drop out here
   const keepFolderIndices = new Set(folderMap.values());
-  settings.exclusions.excludedFolders =
-    settings.exclusions.excludedFolders.filter((_, index) =>
-      keepFolderIndices.has(index)
-    );
+  settings.exclusions.excludedFolders = excludedFolders.filter((_, index) =>
+    keepFolderIndices.has(index)
+  );
 
   if (settings.exclusions.excludedFolders.length !== originalFolderCount) {
     hasChanges = true;
@@ -1075,10 +1071,11 @@ export function deduplicateExclusions(settings: PluginSettings): boolean {
   );
 
   // Deduplicate tags
-  const originalTagCount = settings.exclusions.excludedTags.length;
+  const excludedTags = settings.exclusions.excludedTags ?? [];
+  const originalTagCount = excludedTags.length;
   const tagMap = new Map<string, number>(); // normalized -> last index
 
-  settings.exclusions.excludedTags.forEach((tag, index) => {
+  excludedTags.forEach((tag, index) => {
     const normalized = normalizeTagName(tag);
     if (normalized !== '') {
       tagMap.set(normalized, index);
@@ -1087,8 +1084,8 @@ export function deduplicateExclusions(settings: PluginSettings): boolean {
 
   // Blank entries are never recorded in tagMap, so they drop out here
   const keepTagIndices = new Set(tagMap.values());
-  settings.exclusions.excludedTags = settings.exclusions.excludedTags.filter(
-    (_, index) => keepTagIndices.has(index)
+  settings.exclusions.excludedTags = excludedTags.filter((_, index) =>
+    keepTagIndices.has(index)
   );
 
   if (settings.exclusions.excludedTags.length !== originalTagCount) {
@@ -1107,25 +1104,27 @@ export function deduplicateExclusions(settings: PluginSettings): boolean {
   );
 
   // Deduplicate properties (both key AND value must match)
-  const originalPropertyCount = settings.exclusions.excludedProperties.length;
-  const propertyMap = new Map<string, number>(); // "key:value" -> last index
+  const excludedProperties = settings.exclusions.excludedProperties ?? [];
+  const originalPropertyCount = excludedProperties.length;
+  const propertyMap = new Map<string, number>(); // [key, value] -> last index
 
-  settings.exclusions.excludedProperties.forEach((prop, index) => {
+  excludedProperties.forEach((prop, index) => {
     const normalizedKey = normalizePropertyText(prop.key);
     const normalizedValue = normalizePropertyText(prop.value);
-    if (normalizedKey !== '' || normalizedValue !== '') {
-      const composite = `${normalizedKey}:${normalizedValue}`;
+    // A value without a key can never match: every consumer filters on a non-blank key,
+    // so keeping it would render a live-looking rule that does nothing
+    if (normalizedKey !== '') {
+      // JSON encoding keeps "a:b"/"" distinct from "a"/"b", which a ":" join collapses
+      const composite = JSON.stringify([normalizedKey, normalizedValue]);
       propertyMap.set(composite, index);
     }
   });
 
-  // Entries with a blank key and value are never recorded in propertyMap, so
-  // they drop out here
+  // Entries with a blank key are never recorded in propertyMap, so they drop out here
   const keepPropertyIndices = new Set(propertyMap.values());
-  settings.exclusions.excludedProperties =
-    settings.exclusions.excludedProperties.filter((_, index) =>
-      keepPropertyIndices.has(index)
-    );
+  settings.exclusions.excludedProperties = excludedProperties.filter(
+    (_, index) => keepPropertyIndices.has(index)
+  );
 
   if (settings.exclusions.excludedProperties.length !== originalPropertyCount) {
     hasChanges = true;
@@ -1144,11 +1143,11 @@ export function deduplicateExclusions(settings: PluginSettings): boolean {
 
   // Drop blank file name exclusions; they are not deduplicated because their
   // per-entry flags make two same-text entries meaningfully different
-  const originalFileNameCount = settings.exclusions.fileNameExclusions.length;
-  settings.exclusions.fileNameExclusions =
-    settings.exclusions.fileNameExclusions.filter(
-      (exclusion) => exclusion.text.trim() !== ''
-    );
+  const fileNameExclusions = settings.exclusions.fileNameExclusions ?? [];
+  const originalFileNameCount = fileNameExclusions.length;
+  settings.exclusions.fileNameExclusions = fileNameExclusions.filter(
+    (exclusion) => exclusion.text.trim() !== ''
+  );
 
   if (settings.exclusions.fileNameExclusions.length !== originalFileNameCount) {
     hasChanges = true;

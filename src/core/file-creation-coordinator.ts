@@ -1,6 +1,21 @@
-import { TFile, getFrontMatterInfo, EventRef } from 'obsidian';
+import {
+  TFile,
+  CachedMetadata,
+  EventRef,
+  getAllTags,
+  getFrontMatterInfo,
+} from 'obsidian';
 import FirstLineIsTitlePlugin from '../../main';
+import { TIMING } from '../constants/timing';
 import { verboseLog } from '../utils';
+// Leaf modules, not the '../utils' barrel: the coordinator suite mocks the barrel down to verboseLog
+import { shouldProcessFile } from '../utils/file-exclusions';
+import {
+  fileHasTargetTags,
+  getFrontmatterTagsFromCache,
+} from '../utils/tag-utils';
+import { filterNonEmpty } from '../utils/string-processing';
+import { EXCLUSION_STRATEGY } from '../types';
 
 /**
  * Extended Workspace interface with custom events
@@ -32,18 +47,34 @@ export interface FileCreationActions {
 }
 
 /**
- * Coordinates file creation behavior based on decision tree logic.
+ * Coordinates file creation behavior: decides whether to move the cursor and/or
+ * insert a title when a note is created.
  *
- * Implements the decision tree from DEV_DOCS/Architecture/Move cursor to first line.canvas
- * Determines whether to move cursor and/or insert title on file creation.
+ * The node numbers below are the sole definition of the tree — they are not
+ * shorthand for an external diagram — and they are load-bearing: every branch
+ * appends `<node><branch>` to `decisionPath`, which is what debug reports are
+ * read against. Renumbering invalidates every previously captured path.
  *
- * Decision flow:
- * 1. Check if features enabled (guard clause)
- * 2. Check folder exclusions
- * 2b. Check tag/property/disable-renaming exclusions (content-based, real-time)
- * 3. Check Templater integration if applicable
- * 4. Determine which settings are active
- * 5. Apply content-based checks for specific combinations
+ * Gates, in order (each falls through to the next unless it returns):
+ * - 1  Either feature enabled? No → do nothing.
+ * - 2  Folder excluded? Yes → do nothing.
+ * - 2b Tag/property/disable-renaming excluded, judged on real-time content? Yes → do nothing.
+ * - 3  Any tag or property exclusions configured? No → settings hub.
+ * - 4  Templater installed? No → settings hub.
+ * - 5  Templater's trigger on file creation on? No → settings hub.
+ * - 6  File sits in Templater's template folder? Yes → settings hub.
+ * - 7  Folder templates on? Yes → node 9, else node 10.
+ * - 9  A folder template matches this path? Yes → Templater wait, No → settings hub.
+ * - 10 File regex templates on? No → settings hub.
+ * - 11 A file regex matches this path? Yes → Templater wait, No → settings hub.
+ * - 12 Templater event arrived within the timeout? No → settings hub.
+ * - 13 Template carries an excluded tag/property? Yes → do nothing, No → settings hub.
+ *
+ * Settings hub (nodes 14-18) then maps the enabled features onto the final
+ * actions: 14A title only, 14B cursor only, 14C both, with nodes 15/18 checking
+ * for existing content below the YAML and 16/17 reading "Place cursor at line
+ * end". The numbering skips 8: no such node exists, and the gap is kept rather
+ * than closed so existing decision paths stay comparable.
  */
 export class FileCreationCoordinator {
   private plugin: FirstLineIsTitlePlugin;
@@ -65,61 +96,70 @@ export class FileCreationCoordinator {
     // Node 1: Is either feature enabled?
     const featuresEnabled = this.isFeatureEnabled();
     if (featuresEnabled === 'neither') {
-      this.logDecision('1', 'N', 'Do nothing (both features disabled)');
+      this.recordDecisionAndLogOutcome(
+        '1',
+        'N',
+        'Do nothing (both features disabled)'
+      );
       return this.noActions('1N');
     }
-    this.logDecision('1', 'Y');
+    this.recordDecision('1', 'Y');
 
+    // Node 2 runs before Node 2b because a path prefix test is far cheaper than the content gate, which parses YAML and reads the metadata cache
     // Node 2: Is folder excluded?
     if (this.isFolderExcluded(file)) {
-      this.logDecision('2', 'Y', 'Do nothing (folder excluded)');
+      this.recordDecisionAndLogOutcome(
+        '2',
+        'Y',
+        'Do nothing (folder excluded)'
+      );
       return this.noActions('1Y → 2Y');
     }
-    this.logDecision('2', 'N');
+    this.recordDecision('2', 'N');
 
     // Node 2b: Is file excluded by tag/property/disable-renaming (content-based, real-time)?
     if (this.isContentExcluded(file, context.initialContent)) {
-      this.logDecision(
+      this.recordDecisionAndLogOutcome(
         '2b',
         'Y',
         'Do nothing (tag/property/disable-renaming excluded)'
       );
       return this.noActions('1Y → 2N → 2bY');
     }
-    this.logDecision('2b', 'N');
+    this.recordDecision('2b', 'N');
 
     // Node 3: Are there exclusions configured?
     if (this.hasExclusions()) {
-      this.logDecision('3', 'Y');
+      this.recordDecision('3', 'Y');
 
       // Node 4: Is Templater enabled?
       if (!this.isTemplaterOn()) {
-        this.logDecision('4', 'N');
+        this.recordDecision('4', 'N');
         return this.proceedToSettingsHub(file, context, this.pathString());
       }
-      this.logDecision('4', 'Y');
+      this.recordDecision('4', 'Y');
 
       // Node 5: Is Templater trigger on file creation enabled?
       if (!this.isTemplaterTriggerOn()) {
-        this.logDecision('5', 'N');
+        this.recordDecision('5', 'N');
         return this.proceedToSettingsHub(file, context, this.pathString());
       }
-      this.logDecision('5', 'Y');
+      this.recordDecision('5', 'Y');
 
       // Node 6: Does path match Template folder location?
       if (this.isInTemplateFolder(file)) {
-        this.logDecision('6', 'Y');
+        this.recordDecision('6', 'Y');
         return this.proceedToSettingsHub(file, context, this.pathString());
       }
-      this.logDecision('6', 'N');
+      this.recordDecision('6', 'N');
 
       // Node 7: Is Enable folder templates ON?
       if (this.isFolderTemplatesEnabled()) {
-        this.logDecision('7', 'Y');
+        this.recordDecision('7', 'Y');
 
         // Node 9: Do any Folder fields match current path?
         if (this.folderTemplateMatches(file)) {
-          this.logDecision('9', 'Y');
+          this.recordDecision('9', 'Y');
           // Wait for Templater event (Node 12)
           return await this.handleTemplaterEvent(
             file,
@@ -127,19 +167,19 @@ export class FileCreationCoordinator {
             this.pathString()
           );
         }
-        this.logDecision('9', 'N');
-        // Per canvas edge 46: 9N goes directly to settings hub
+        this.recordDecision('9', 'N');
+        // 9N skips node 10: once folder templates are on, Templater resolves the folder template and never falls back to a file regex, so there is nothing left to match
         return this.proceedToSettingsHub(file, context, this.pathString());
       }
-      this.logDecision('7', 'N');
+      this.recordDecision('7', 'N');
 
       // Node 10: Is Enable file regex templates ON? (only reached if 7N)
       if (this.isFileRegexEnabled()) {
-        this.logDecision('10', 'Y');
+        this.recordDecision('10', 'Y');
 
         // Node 11: Do any File regex fields match?
         if (this.fileRegexMatches(file)) {
-          this.logDecision('11', 'Y');
+          this.recordDecision('11', 'Y');
           // Wait for Templater event (Node 12)
           return await this.handleTemplaterEvent(
             file,
@@ -147,16 +187,16 @@ export class FileCreationCoordinator {
             this.pathString()
           );
         }
-        this.logDecision('11', 'N');
+        this.recordDecision('11', 'N');
       } else {
-        this.logDecision('10', 'N');
+        this.recordDecision('10', 'N');
       }
 
       // No Templater template matched - proceed to settings hub
       return this.proceedToSettingsHub(file, context, this.pathString());
     } else {
       // Node 3: No exclusions
-      this.logDecision('3', 'N');
+      this.recordDecision('3', 'N');
       return this.proceedToSettingsHub(file, context, this.pathString());
     }
   }
@@ -169,25 +209,29 @@ export class FileCreationCoordinator {
     context: FileCreationContext,
     pathSoFar: string
   ): Promise<FileCreationActions> {
-    // Node 12: Wait for Templater event (2000ms after ctime)
+    // Node 12: Wait for Templater event
     const eventFired = await this.waitForTemplaterEvent(
       file,
-      2000,
+      TIMING.TEMPLATER_EVENT_TIMEOUT_MS,
       file.stat.ctime
     );
 
     if (!eventFired) {
-      this.logDecision('12', 'N');
+      this.recordDecision('12', 'N');
       return this.proceedToSettingsHub(file, context, pathSoFar + ' → 12N');
     }
-    this.logDecision('12', 'Y');
+    this.recordDecision('12', 'Y');
 
     // Node 13: Does template have excluded tag/property?
     if (this.templateHasExclusions(file)) {
-      this.logDecision('13', 'Y', 'Do nothing (template has exclusions)');
+      this.recordDecisionAndLogOutcome(
+        '13',
+        'Y',
+        'Do nothing (template has exclusions)'
+      );
       return this.noActions(pathSoFar + ' → 12Y → 13Y');
     }
-    this.logDecision('13', 'N');
+    this.recordDecision('13', 'N');
 
     return this.proceedToSettingsHub(file, context, pathSoFar + ' → 12Y → 13N');
   }
@@ -204,14 +248,14 @@ export class FileCreationCoordinator {
 
     if (featuresEnabled === 'title') {
       // Path A: Title only
-      this.logDecision('14', 'A');
+      this.recordDecision('14', 'A');
 
       // Node 15: Has content below YAML?
       if (this.hasContentBelowYaml(context.initialContent)) {
-        this.logDecision('15', 'Y', 'Do nothing (has content)');
+        this.recordDecisionAndLogOutcome('15', 'Y', 'Do nothing (has content)');
         return this.noActions(pathSoFar + ' → 14A → 15Y');
       }
-      this.logDecision('15', 'N', 'Insert title');
+      this.recordDecisionAndLogOutcome('15', 'N', 'Insert title');
       return {
         shouldMoveCursor: false,
         shouldInsertTitle: true,
@@ -220,11 +264,15 @@ export class FileCreationCoordinator {
       };
     } else if (featuresEnabled === 'cursor') {
       // Path B: Cursor only
-      this.logDecision('14', 'B');
+      this.recordDecision('14', 'B');
 
       // Node 16: Is Place cursor at line end ON?
       if (this.isPlaceCursorAtEndEnabled()) {
-        this.logDecision('16', 'Y', 'Move cursor + Place at end');
+        this.recordDecisionAndLogOutcome(
+          '16',
+          'Y',
+          'Move cursor + Place at end'
+        );
         return {
           shouldMoveCursor: true,
           shouldInsertTitle: false,
@@ -232,7 +280,7 @@ export class FileCreationCoordinator {
           decisionPath: pathSoFar + ' → 14B → 16Y',
         };
       } else {
-        this.logDecision('16', 'N', 'Move cursor');
+        this.recordDecisionAndLogOutcome('16', 'N', 'Move cursor');
         return {
           shouldMoveCursor: true,
           shouldInsertTitle: false,
@@ -242,15 +290,19 @@ export class FileCreationCoordinator {
       }
     } else {
       // Path C: Both features enabled
-      this.logDecision('14', 'C');
+      this.recordDecision('14', 'C');
 
       // Node 17: Is Place cursor at line end ON?
       if (this.isPlaceCursorAtEndEnabled()) {
-        this.logDecision('17', 'Y');
+        this.recordDecision('17', 'Y');
 
         // Node 18: Has content below YAML?
         if (this.hasContentBelowYaml(context.initialContent)) {
-          this.logDecision('18', 'Y', 'Move cursor + Place at end');
+          this.recordDecisionAndLogOutcome(
+            '18',
+            'Y',
+            'Move cursor + Place at end'
+          );
           return {
             shouldMoveCursor: true,
             shouldInsertTitle: false,
@@ -258,7 +310,7 @@ export class FileCreationCoordinator {
             decisionPath: pathSoFar + ' → 14C → 17Y → 18Y',
           };
         } else {
-          this.logDecision(
+          this.recordDecisionAndLogOutcome(
             '18',
             'N',
             'Insert title + Move cursor + Place at end'
@@ -271,7 +323,11 @@ export class FileCreationCoordinator {
           };
         }
       } else {
-        this.logDecision('17', 'N', 'Insert title + Move cursor');
+        this.recordDecisionAndLogOutcome(
+          '17',
+          'N',
+          'Insert title + Move cursor'
+        );
         return {
           shouldMoveCursor: true,
           shouldInsertTitle: true,
@@ -303,65 +359,28 @@ export class FileCreationCoordinator {
    * Node 2: Check if folder is excluded
    */
   private isFolderExcluded(file: TFile): boolean {
-    // Obsidian uses "" for root folder, but FLIT stores it as "/"
-    const folderPath =
-      file.parent?.path === '' ? '/' : file.parent?.path || '/';
-    const folderExclusions = this.plugin.settings.exclusions.excludedFolders;
-    const folderStrategy = this.plugin.settings.exclusions.folderScopeStrategy;
-    const excludeSubfolders = this.plugin.settings.exclusions.excludeSubfolders;
-    const includeSubfolders = this.plugin.settings.exclusions.includeSubfolders;
-
-    // If no folders configured, don't exclude anything (regardless of strategy)
-    const nonEmptyFolders = folderExclusions.filter((f) => f.trim() !== '');
-    if (nonEmptyFolders.length === 0) {
-      return false;
-    }
-
-    // Check exact match or subfolder match
-    let isInList = false;
-    for (const exc of nonEmptyFolders) {
-      if (exc === folderPath) {
-        // Exact match
-        isInList = true;
-        break;
-      }
-      // Root folder "/" has no subfolders to check
-      if (exc === '/') continue;
-
-      // Check subfolder match based on mode
-      if (folderStrategy === 'Exclude all except...') {
-        // Whitelist mode: check includeSubfolders
-        if (includeSubfolders && folderPath.startsWith(exc + '/')) {
-          isInList = true;
-          break;
-        }
-      } else {
-        // Blacklist mode: check excludeSubfolders
-        if (excludeSubfolders && folderPath.startsWith(exc + '/')) {
-          isInList = true;
-          break;
-        }
-      }
-    }
-
-    if (folderStrategy === 'Exclude all except...') {
-      // Whitelist mode: exclude if NOT in list
-      return !isInList;
-    } else {
-      // Blacklist mode: exclude if in list
-      return isInList;
-    }
+    // Folder-only overrides on the shared gate: a local matcher drifted from it before
+    return !shouldProcessFile(
+      file,
+      this.plugin.settings,
+      this.plugin.app,
+      undefined,
+      { ignoreTag: true, ignoreProperty: true },
+      this.plugin
+    );
   }
 
   /**
    * Node 2b: Check tag/property/disable-renaming exclusion using real-time content.
-   * Folder already checked at Node 2 — skip it here to avoid divergent re-implementation.
+   * Runs the same evaluation the rename path runs, so the title is inserted and the cursor
+   * moved exactly when renaming is allowed for this file, and not otherwise.
    */
   private isContentExcluded(file: TFile, initialContent: string): boolean {
     return this.plugin.fileOperations.isFileExcludedForCursorPositioning(
       file,
       initialContent,
-      true // skipFolderCheck
+      // Node 2 already ran this same folder check through this same gate: an optimization, not a semantic difference
+      { ignoreFolder: true }
     );
   }
 
@@ -550,70 +569,67 @@ export class FileCreationCoordinator {
       );
 
       // Clean up event listener if timeout occurs
+      // Must outlast the resolve timer above, hence the grace period on top of the same remainingTime
       window.setTimeout(() => {
         if (!eventFired) {
           this.plugin.app.workspace.offref(eventRef);
         }
-      }, remainingTime + 100);
+      }, remainingTime + TIMING.TEMPLATER_EVENT_CLEANUP_GRACE_MS);
     });
   }
 
   /**
-   * Node 13: Check if template itself has excluded tags/properties
+   * Node 13: Check if template itself has excluded tags/properties.
+   * Re-checks after Templater expansion, which can add tags or properties the file did not carry at Node 2b.
    */
   private templateHasExclusions(file: TFile): boolean {
     try {
       const cache = this.plugin.app.metadataCache.getFileCache(file);
       const frontmatter = cache?.frontmatter;
-      const excludedTags = this.plugin.settings.exclusions.excludedTags;
-      const excludedProps = this.plugin.settings.exclusions.excludedProperties;
-      const tagStrategy = this.plugin.settings.exclusions.tagScopeStrategy;
-      const propertyStrategy =
-        this.plugin.settings.exclusions.propertyScopeStrategy;
+      const exclusions = this.plugin.settings.exclusions;
+      const listedTags = filterNonEmpty(exclusions.excludedTags);
+      // Node 13 gates on the property key alone; configured values are not part of the template rule
+      const listedPropKeys = exclusions.excludedProperties
+        .map((p) => p.key.trim().toLowerCase())
+        .filter((key) => key !== '');
 
-      // Check tags (from both frontmatter and body)
-      if (excludedTags.length > 0) {
-        // Use cache.tags which includes both frontmatter and body tags
-        const allTags = cache?.tags?.map((t) => t.tag) || [];
-        const hasExcludedTag = allTags.some((tag: string) =>
-          excludedTags.includes(tag)
+      if (listedTags.length > 0) {
+        const hasListedTag = fileHasTargetTags(
+          file,
+          this.plugin.settings,
+          this.plugin.app
         );
 
-        if (tagStrategy === 'Exclude all except...') {
-          // Whitelist mode: has exclusion if template has tags NOT in list
-          // This means: if file has any tags, and NONE are in the whitelist, it's excluded
-          if (allTags.length > 0 && !hasExcludedTag) {
+        if (
+          exclusions.tagScopeStrategy === EXCLUSION_STRATEGY.EXCLUDE_ALL_EXCEPT
+        ) {
+          // Whitelist mode: a template that carries tags but none of the listed ones is excluded
+          if (this.templateHasAnyTagInScope(cache) && !hasListedTag) {
             return true;
           }
-        } else {
-          // Blacklist mode: has exclusion if template has tags in list
-          if (hasExcludedTag) {
-            return true;
-          }
+        } else if (hasListedTag) {
+          return true;
         }
       }
 
-      // Check properties
-      if (excludedProps.length > 0 && frontmatter) {
-        const allPropKeys = Object.keys(frontmatter);
-        const whitelistedProps = excludedProps.map((p: unknown) =>
-          p && typeof p === 'object' && 'property' in p ? p.property : ''
+      if (listedPropKeys.length > 0 && frontmatter) {
+        const allPropKeys = Object.keys(frontmatter).map((key) =>
+          key.toLowerCase()
         );
-        const hasWhitelistedProp = allPropKeys.some((key) =>
-          whitelistedProps.includes(key)
+        const hasListedProp = allPropKeys.some((key) =>
+          listedPropKeys.includes(key)
         );
 
-        if (propertyStrategy === 'Exclude all except...') {
-          // Whitelist mode: has exclusion if template has properties, but NONE are whitelisted
-          // This matches the tag logic: "has at least one whitelisted item"
-          if (allPropKeys.length > 0 && !hasWhitelistedProp) {
+        if (
+          exclusions.propertyScopeStrategy ===
+          EXCLUSION_STRATEGY.EXCLUDE_ALL_EXCEPT
+        ) {
+          // Whitelist mode: a template that carries properties but none of the listed ones is excluded
+          if (allPropKeys.length > 0 && !hasListedProp) {
             return true;
           }
-        } else {
-          // Blacklist mode: has exclusion if template has properties in list
-          if (hasWhitelistedProp) {
-            return true;
-          }
+        } else if (hasListedProp) {
+          return true;
         }
       }
 
@@ -622,6 +638,24 @@ export class FileCreationCoordinator {
       verboseLog(this.plugin, `Error checking template exclusions: ${error}`);
       return false;
     }
+  }
+
+  /**
+   * Node 13 whitelist half: does the template carry any tags at all, within the configured scope?
+   * getAllTags combines frontmatter and inline tags; cache.tags is inline-only, so the narrower
+   * scopes have to be read from their own source rather than filtered out of the combined list.
+   */
+  private templateHasAnyTagInScope(cache: CachedMetadata | null): boolean {
+    if (!cache) return false;
+
+    const mode = this.plugin.settings.exclusions.tagMatchingMode;
+    if (mode === 'In note body only') {
+      return (cache.tags?.length ?? 0) > 0;
+    }
+    if (mode === 'In Properties only') {
+      return getFrontmatterTagsFromCache(cache).length > 0;
+    }
+    return (getAllTags(cache)?.length ?? 0) > 0;
   }
 
   /**
@@ -659,22 +693,27 @@ export class FileCreationCoordinator {
   }
 
   /**
-   * Log a decision node result
+   * Append a decision node result to the breadcrumb. Silent by design: the
+   * intermediate gates are only meaningful as part of a full path.
    */
-  private logDecision(
+  private recordDecision(nodeNumber: string, branch: string): void {
+    this.decisionPath.push(`${nodeNumber}${branch}`);
+  }
+
+  /**
+   * Append a decision node result and log the path it resolved to. Reserved for
+   * branches that settle the outcome, so one file creation logs one line.
+   */
+  private recordDecisionAndLogOutcome(
     nodeNumber: string,
     branch: string,
-    outcome?: string
+    outcome: string
   ): void {
-    const entry = `${nodeNumber}${branch}`;
-    this.decisionPath.push(entry);
-
-    if (outcome) {
-      verboseLog(
-        this.plugin,
-        `[FileCreation] Decision path: ${this.pathString()} → ${outcome}`
-      );
-    }
+    this.recordDecision(nodeNumber, branch);
+    verboseLog(
+      this.plugin,
+      `[FileCreation] Decision path: ${this.pathString()} → ${outcome}`
+    );
   }
 
   /**

@@ -37,24 +37,29 @@ export interface CharReplacements {
 export type CharKey = keyof CharReplacements;
 
 /**
- * All supported character keys as a constant array
+ * Maps each replaceable character to its {@link CharReplacements} key.
+ *
+ * Sole source of the char↔key pairing: it was previously re-encoded in four places
+ * (two reversal loops, a lookup table and a switch), which is how they drifted apart.
+ * Iteration order is significant to the reversal loops, since one replacement string
+ * can be a substring of another.
  */
-export const CHAR_KEYS: CharKey[] = [
-  'slash',
-  'colon',
-  'asterisk',
-  'question',
-  'lessThan',
-  'greaterThan',
-  'quote',
-  'pipe',
-  'hash',
-  'leftBracket',
-  'rightBracket',
-  'caret',
-  'backslash',
-  'dot',
-];
+export const CHAR_TO_SETTING_KEY: Record<string, CharKey> = {
+  '/': 'slash',
+  ':': 'colon',
+  '*': 'asterisk',
+  '?': 'question',
+  '<': 'lessThan',
+  '>': 'greaterThan',
+  '"': 'quote',
+  '|': 'pipe',
+  '#': 'hash',
+  '[': 'leftBracket',
+  ']': 'rightBracket',
+  '^': 'caret',
+  '\\': 'backslash',
+  '.': 'dot',
+};
 
 /**
  * Characters forbidden on all operating systems, in settings-table display order.
@@ -83,3 +88,21 @@ export const WINDOWS_ANDROID_CHAR_KEYS: CharKey[] = [
   'greaterThan',
   'question',
 ];
+
+/**
+ * Characters auto-enabled the first time forbidden char replacement is switched on.
+ *
+ * Two independent code paths run this cascade — plugin load and the settings
+ * toggle — and both latch on the same flag, so whichever fires first locks the
+ * other out. They must therefore enable an identical key set.
+ *
+ * Windows/Android keys are included because the forbidden set is universal:
+ * `processForbiddenChars` DELETES a forbidden character whose toggle is off
+ * rather than passing it through, so omitting them would strip `? * " < >` from
+ * every new user's filenames on every OS.
+ */
+export const FIRST_ENABLE_CHAR_KEYS: CharKey[] = [
+  ...PRIMARY_CHAR_KEYS,
+  ...WINDOWS_ANDROID_CHAR_KEYS,
+  // Backslash defaults off; enabling it flips `extractTitle` to the literal-backslash branch, which stops treating `\` as a Markdown escape character.
+].filter((key) => key !== 'backslash');

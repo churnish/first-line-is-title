@@ -21,8 +21,17 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
   },
   resolve: {
-    alias: {
-      obsidian: resolve(__dirname, './tests/mockObsidian.ts'),
-    },
+    alias: [
+      {
+        find: 'obsidian',
+        replacement: resolve(__dirname, './tests/mockObsidian.ts'),
+      },
+      // Without this, a `../main` import resolves to the bundled main.js build artifact,
+      // which requires 'obsidian' at runtime and cannot load under vitest.
+      {
+        find: /^(?:\.\.\/)+main$/,
+        replacement: resolve(__dirname, './main.ts'),
+      },
+    ],
   },
 });

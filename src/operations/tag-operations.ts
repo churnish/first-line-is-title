@@ -1,6 +1,6 @@
 import { App, Notice, TFile } from 'obsidian';
 import { verboseLog } from '../utils';
-import { PluginSettings } from '../types';
+import { EXCLUSION_STRATEGY, PluginSettings } from '../types';
 import { RenameEngine } from '../core/rename-engine';
 import { t } from '../i18n';
 
@@ -180,7 +180,8 @@ export class TagOperations {
     const tagToFind = tagName.startsWith('#') ? tagName : `#${tagName}`;
     const isInList = this.settings.exclusions.excludedTags.includes(tagToFind);
     const isInverted =
-      this.settings.exclusions.tagScopeStrategy === 'Exclude all except...';
+      this.settings.exclusions.tagScopeStrategy ===
+      EXCLUSION_STRATEGY.EXCLUDE_ALL_EXCEPT;
 
     if (isInList) {
       this.settings.exclusions.excludedTags =

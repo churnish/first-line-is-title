@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { CachedMetadata } from 'obsidian';
 import {
   normalizeTag,
   parseTagsFromYAML,
   stripFrontmatter,
   fileHasTargetTags,
+  getFrontmatterTagsFromCache,
 } from '../../src/utils/tag-utils';
 import {
   createTestSettings,
@@ -448,6 +450,64 @@ describe('tag-utils', () => {
 
       const result = fileHasTargetTags(file, settings, app);
       expect(result).toBe(true);
+    });
+
+    it('should match frontmatter tags case-insensitively', () => {
+      settings.exclusions.excludedTags = ['Work'];
+      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+        frontmatter: { tags: ['WORK'] },
+        tags: [],
+      });
+
+      const result = fileHasTargetTags(file, settings, app);
+      expect(result).toBe(true);
+    });
+
+    it('should match inline child tags case-insensitively', () => {
+      settings.exclusions.excludedTags = ['WORK'];
+      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+        frontmatter: null,
+        tags: [
+          {
+            tag: '#Work/Project',
+            position: {
+              start: { line: 0, col: 0, offset: 0 },
+              end: { line: 0, col: 13, offset: 13 },
+            },
+          },
+        ],
+      });
+
+      const result = fileHasTargetTags(file, settings, app);
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('getFrontmatterTagsFromCache', () => {
+    it('should return an empty array when there is no cache', () => {
+      expect(getFrontmatterTagsFromCache(null)).toEqual([]);
+    });
+
+    it('should return an empty array when frontmatter has no tags', () => {
+      expect(
+        getFrontmatterTagsFromCache({ frontmatter: {} } as CachedMetadata)
+      ).toEqual([]);
+    });
+
+    it('should wrap a single string tag in an array', () => {
+      expect(
+        getFrontmatterTagsFromCache({
+          frontmatter: { tags: 'work' },
+        } as unknown as CachedMetadata)
+      ).toEqual(['work']);
+    });
+
+    it('should stringify list entries', () => {
+      expect(
+        getFrontmatterTagsFromCache({
+          frontmatter: { tags: ['work', 2024] },
+        } as unknown as CachedMetadata)
+      ).toEqual(['work', '2024']);
     });
   });
 });

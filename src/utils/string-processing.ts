@@ -1,5 +1,5 @@
 import { PluginSettings } from '../types';
-import { CharKey } from '../types/char-replacement';
+import { CHAR_TO_SETTING_KEY } from '../types/char-replacement';
 import { UNIVERSAL_FORBIDDEN_CHARS, WINDOWS_ANDROID_CHARS } from '../constants';
 
 /**
@@ -11,6 +11,15 @@ export function filterNonEmpty(items: string[]): string[] {
 }
 
 /**
+ * FLIT stores the vault root as "/", while every path normalizer — Obsidian's
+ * `normalizePath` included — strips it to "". Folder path helpers short-circuit on
+ * this so a root rule survives normalization.
+ */
+export function isRootFolderPath(path: string): boolean {
+  return path.trim() === '/';
+}
+
+/**
  * Process forbidden characters in text according to settings
  * This is the shared logic used by both rename engine and link target generation
  */
@@ -19,24 +28,6 @@ export function processForbiddenChars(
   settings: PluginSettings,
   options?: { maxLength?: number }
 ): string {
-  const charMap: { [key: string]: string } = {
-    '/': settings.replaceCharacters.charReplacements.slash.replacement,
-    ':': settings.replaceCharacters.charReplacements.colon.replacement,
-    '|': settings.replaceCharacters.charReplacements.pipe.replacement,
-    '#': settings.replaceCharacters.charReplacements.hash.replacement,
-    '[': settings.replaceCharacters.charReplacements.leftBracket.replacement,
-    ']': settings.replaceCharacters.charReplacements.rightBracket.replacement,
-    '^': settings.replaceCharacters.charReplacements.caret.replacement,
-    '*': settings.replaceCharacters.charReplacements.asterisk.replacement,
-    '?': settings.replaceCharacters.charReplacements.question.replacement,
-    '<': settings.replaceCharacters.charReplacements.lessThan.replacement,
-    '>': settings.replaceCharacters.charReplacements.greaterThan.replacement,
-    '"': settings.replaceCharacters.charReplacements.quote.replacement,
-    [String.fromCharCode(92)]:
-      settings.replaceCharacters.charReplacements.backslash.replacement,
-    '.': settings.replaceCharacters.charReplacements.dot.replacement,
-  };
-
   // Forbidden chars - universal and Windows/Android chars are always forbidden
   const allForbiddenChars = [
     ...UNIVERSAL_FORBIDDEN_CHARS,
@@ -61,7 +52,8 @@ export function processForbiddenChars(
         settings.replaceCharacters.enableForbiddenCharReplacements &&
         settings.replaceCharacters.charReplacements.dot.enabled
       ) {
-        const replacement = charMap['.'] || '';
+        const replacement =
+          settings.replaceCharacters.charReplacements.dot.replacement;
         if (replacement !== '') {
           // Has replacement - use it at any position
           if (settings.replaceCharacters.charReplacements.dot.trimRight) {
@@ -86,72 +78,26 @@ export function processForbiddenChars(
 
       // Check if master toggle is on AND individual toggle is on
       if (settings.replaceCharacters.enableForbiddenCharReplacements) {
-        // Map character to setting key
-        let settingKey: CharKey | null = null;
-        switch (char) {
-          case '/':
-            settingKey = 'slash';
-            break;
-          case String.fromCharCode(92):
-            settingKey = 'backslash';
-            break;
-          case ':':
-            settingKey = 'colon';
-            break;
-          case '|':
-            settingKey = 'pipe';
-            break;
-          case '#':
-            settingKey = 'hash';
-            break;
-          case '[':
-            settingKey = 'leftBracket';
-            break;
-          case ']':
-            settingKey = 'rightBracket';
-            break;
-          case '^':
-            settingKey = 'caret';
-            break;
-          case '*':
-            settingKey = 'asterisk';
-            break;
-          case '?':
-            settingKey = 'question';
-            break;
-          case '<':
-            settingKey = 'lessThan';
-            break;
-          case '>':
-            settingKey = 'greaterThan';
-            break;
-          case '"':
-            settingKey = 'quote';
-            break;
-        }
+        // `.` never reaches here - it has its own branch above - so every forbidden char has a key
+        const settingKey = CHAR_TO_SETTING_KEY[char];
+        const charConfig = settingKey
+          ? settings.replaceCharacters.charReplacements[settingKey]
+          : undefined;
 
-        const canReplace =
-          settingKey &&
-          settings.replaceCharacters.charReplacements[settingKey].enabled;
-
-        if (canReplace && settingKey) {
+        if (charConfig?.enabled) {
           shouldReplace = true;
-          replacement = charMap[char] || '';
+          replacement = charConfig.replacement;
 
           // Check for whitespace trimming
           if (replacement !== '') {
             // Trim whitespace to the left
-            if (
-              settings.replaceCharacters.charReplacements[settingKey].trimLeft
-            ) {
+            if (charConfig.trimLeft) {
               // Remove trailing whitespace from result
               result = result.trimEnd();
             }
 
             // Check if we should trim whitespace to the right
-            if (
-              settings.replaceCharacters.charReplacements[settingKey].trimRight
-            ) {
+            if (charConfig.trimRight) {
               // Skip upcoming whitespace characters
               while (i + 1 < text.length && /\s/.test(text[i + 1])) {
                 i++;
@@ -198,23 +144,17 @@ export function reverseSafeLinkTarget(
 
   // Reverse forbidden character replacements if enabled
   if (settings.replaceCharacters.enableForbiddenCharReplacements) {
-    const mappings = {
-      '/': settings.replaceCharacters.charReplacements.slash,
-      ':': settings.replaceCharacters.charReplacements.colon,
-      '|': settings.replaceCharacters.charReplacements.pipe,
-      '\\': settings.replaceCharacters.charReplacements.backslash,
-      '#': settings.replaceCharacters.charReplacements.hash,
-      '[': settings.replaceCharacters.charReplacements.leftBracket,
-      ']': settings.replaceCharacters.charReplacements.rightBracket,
-      '^': settings.replaceCharacters.charReplacements.caret,
-      '*': settings.replaceCharacters.charReplacements.asterisk,
-      '?': settings.replaceCharacters.charReplacements.question,
-      '<': settings.replaceCharacters.charReplacements.lessThan,
-      '>': settings.replaceCharacters.charReplacements.greaterThan,
-      '"': settings.replaceCharacters.charReplacements.quote,
-    };
+    for (const [forbiddenChar, settingKey] of Object.entries(
+      CHAR_TO_SETTING_KEY
+    )) {
+      // `dot` is excluded deliberately: `.` is in neither forbidden-char set, and
+      // `generateSafeLinkTarget` only ever encodes it through the separate dot branch of
+      // `processForbiddenChars`. Reversing it here would rewrite `․` back to `.` inside
+      // link targets that were never encoded from a dot.
+      if (settingKey === 'dot') continue;
 
-    for (const [forbiddenChar, replacementConfig] of Object.entries(mappings)) {
+      const replacementConfig =
+        settings.replaceCharacters.charReplacements[settingKey];
       if (replacementConfig.enabled && replacementConfig.replacement) {
         result = result
           .split(replacementConfig.replacement)

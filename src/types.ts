@@ -29,10 +29,17 @@ export interface TitleRegionCache {
 
 export type OSPreset = 'macOS' | 'Windows' | 'Linux';
 export type NotificationMode = 'Always' | 'On title change' | 'Never';
-export type ExclusionStrategy = 'Only exclude...' | 'Exclude all except...';
-export type TagPropertyExclusionStrategy =
-  | 'Only exclude...'
-  | 'Exclude all except...';
+/**
+ * Canonical exclusion-strategy values. Persisted verbatim in data.json and used as
+ * settings-dropdown option keys — the literal text, including the trailing three-period
+ * ellipsis, must never change or every existing user's exclusion strategy silently resets.
+ */
+export const EXCLUSION_STRATEGY = {
+  ONLY_EXCLUDE: 'Only exclude...',
+  EXCLUDE_ALL_EXCEPT: 'Exclude all except...',
+} as const;
+export type ExclusionStrategy =
+  (typeof EXCLUSION_STRATEGY)[keyof typeof EXCLUSION_STRATEGY];
 export type TagMatchingMode =
   | 'In Properties and note body'
   | 'In Properties only'
@@ -78,7 +85,6 @@ export interface CoreSettings {
   debugEnabledTimestamp: string;
   hasShownFirstTimeNotice: boolean;
   hasSetupExclusions: boolean;
-  hasSetPropertyType: boolean;
   lastUsageDate: string;
   hasEnabledForbiddenChars: boolean;
   hasEnabledCustomReplacements: boolean;
@@ -115,15 +121,12 @@ export interface CoreSettings {
  */
 export interface ExclusionSettings {
   folderScopeStrategy: ExclusionStrategy;
-  tagScopeStrategy: TagPropertyExclusionStrategy;
-  propertyScopeStrategy: TagPropertyExclusionStrategy;
+  tagScopeStrategy: ExclusionStrategy;
+  propertyScopeStrategy: ExclusionStrategy;
   excludedFolders: string[];
   excludedTags: string[];
   excludedProperties: ExcludedProperty[];
   excludeSubfolders: boolean;
-  includeSubfolders: boolean;
-  includeBodyTags: boolean;
-  includeNestedTags: boolean;
   tagMatchingMode: TagMatchingMode;
   excludeChildTags: boolean;
   disableRenamingKey: string;
@@ -211,3 +214,17 @@ export interface PluginSettings {
   markupStripping: MarkupStrippingSettings;
   aliases: AliasSettings;
 }
+
+/**
+ * Recursive `Partial`. Settings are deeply nested, so a plain `Partial` would force a
+ * caller overriding one leaf to restate every sibling key of the branch it lives in.
+ *
+ * The object branch must not be narrowed to `Record<string, unknown>`: interfaces carry
+ * no implicit index signature, so `PluginSettings` would fail that check and the whole
+ * type would collapse back to `T`.
+ */
+export type DeepPartial<T> = T extends (infer _U)[]
+  ? T
+  : T extends object
+    ? { [K in keyof T]?: DeepPartial<T[K]> }
+    : T;

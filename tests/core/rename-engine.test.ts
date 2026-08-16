@@ -1,11 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RenameEngine } from '../../src/core/rename-engine';
+import { CacheManager } from '../../src/core/cache-manager';
 import {
   createMockFile,
+  createMockFolder,
   createMockApp,
   createTestSettings,
 } from '../testUtils';
-import { TFile, Editor, App } from '../mockObsidian';
+import { CustomReplacement } from '../../src/types';
+import { TFile, Editor } from '../mockObsidian';
 
 // Mock plugin for RenameEngine
 function createMockPlugin() {
@@ -22,6 +25,12 @@ function createMockPlugin() {
       releaseLock: vi.fn(),
       markPendingAliasRecheck: vi.fn(),
       hasPendingAliasRecheck: vi.fn().mockReturnValue(false),
+      getContent: vi.fn().mockReturnValue(undefined),
+      setContent: vi.fn(),
+      reservePath: vi.fn(),
+      releasePath: vi.fn(),
+      isPathReserved: vi.fn().mockReturnValue(false),
+      notifyFileRenamed: vi.fn(),
     },
     fileStateManager: {
       // Content tracking
@@ -98,6 +107,8 @@ function createMockPlugin() {
     aliasManager: {
       updateAliasIfNeeded: vi.fn().mockResolvedValue(false),
     },
+    outputDebugFileContent: vi.fn(),
+    recentlyRenamedPaths: new Set<string>(),
   } as any;
 }
 
@@ -484,6 +495,129 @@ describe('RenameEngine', () => {
     });
   });
 
+  describe('title pipeline', () => {
+    let noteInFolder: TFile;
+
+    const makeRule = (overrides: Partial<CustomReplacement> = {}) => ({
+      searchText: 'TODO',
+      replaceText: 'Archive/Done',
+      onlyAtStart: false,
+      onlyWholeLine: false,
+      enabled: true,
+      ...overrides,
+    });
+
+    // Drives the full rename path so the assertion is the path Obsidian is actually handed
+    const renameWith = async (firstLine: string) => {
+      await renameEngine.processFile(
+        noteInFolder,
+        false,
+        true,
+        `${firstLine}\n\nBody`
+      );
+
+      const call = (plugin.app.fileManager.renameFile as any).mock.calls[0];
+      return call ? (call[1] as string) : undefined;
+    };
+
+    beforeEach(() => {
+      noteInFolder = createMockFile('Notes/Source note.md');
+      noteInFolder.parent = createMockFolder('Notes');
+
+      // Only the note itself exists, so the conflict counter stays out of the asserted path
+      plugin.app.vault.getAbstractFileByPath = vi.fn((path: string) =>
+        path === noteInFolder.path ? noteInFolder : null
+      );
+      plugin.app.vault.getAllLoadedFiles = vi.fn().mockReturnValue([]);
+      plugin.app.vault.read = vi.fn().mockResolvedValue('');
+      plugin.settings.customRules.enableCustomReplacements = true;
+    });
+
+    describe('custom rule replacements containing a path separator', () => {
+      it('keeps the note in its folder when rules run after forbidden chars', async () => {
+        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = true;
+        plugin.settings.customRules.customReplacements = [makeRule()];
+
+        expect(await renameWith('# TODO item')).toBe(
+          'Notes/ArchiveDone item.md'
+        );
+      });
+
+      it('keeps the note in its folder when rules run after markup stripping', async () => {
+        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = false;
+        plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping = true;
+        plugin.settings.customRules.customReplacements = [makeRule()];
+
+        expect(await renameWith('# TODO item')).toBe(
+          'Notes/ArchiveDone item.md'
+        );
+      });
+
+      it('keeps the note in its folder when rules run first', async () => {
+        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = false;
+        plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping = false;
+        plugin.settings.customRules.customReplacements = [makeRule()];
+
+        expect(await renameWith('# TODO item')).toBe(
+          'Notes/ArchiveDone item.md'
+        );
+      });
+
+      it('truncates to the character limit after a rule lengthens the title', async () => {
+        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = true;
+        plugin.settings.core.charCount = 10;
+        plugin.settings.customRules.customReplacements = [
+          makeRule({ replaceText: 'Archive/Done and then some more text' }),
+        ];
+
+        expect(await renameWith('# TODO')).toBe('Notes/ArchiveDo….md');
+      });
+    });
+
+    describe('ordering', () => {
+      // A colon survives markup stripping but not forbidden-char processing,
+      // and the heading marker survives forbidden-char processing but not markup stripping.
+      // Between them the three orderings produce three distinguishable titles.
+      const colonRule = makeRule({ searchText: 'TODO:', replaceText: 'Done' });
+      const headingRule = makeRule({
+        searchText: '# TODO:',
+        replaceText: 'Done',
+        onlyAtStart: true,
+      });
+
+      it('runs rules after forbidden chars have eaten the colon', async () => {
+        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = true;
+        plugin.settings.customRules.customReplacements = [colonRule];
+
+        expect(await renameWith('# TODO: item')).toBe('Notes/TODO item.md');
+      });
+
+      it('runs rules before forbidden chars when rules follow markup stripping', async () => {
+        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = false;
+        plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping = true;
+        plugin.settings.customRules.customReplacements = [colonRule];
+
+        expect(await renameWith('# TODO: item')).toBe('Notes/Done item.md');
+      });
+
+      it('strips the heading marker before rules run when rules follow markup stripping', async () => {
+        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = false;
+        plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping = true;
+        plugin.settings.customRules.customReplacements = [headingRule];
+
+        expect(await renameWith('# TODO: item')).toBe('Notes/TODO item.md');
+      });
+
+      it('runs rules on the raw line when rules come first', async () => {
+        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = false;
+        plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping = false;
+        plugin.settings.customRules.customReplacements = [headingRule];
+
+        expect(await renameWith('# TODO: item')).toBe('Notes/Done item.md');
+      });
+    });
+  });
+
   describe('checkFileExistsCaseInsensitive', () => {
     it('should return false when file does not exist', () => {
       plugin.app.vault.getAbstractFileByPath = vi.fn().mockReturnValue(null);
@@ -558,6 +692,127 @@ describe('RenameEngine', () => {
       const result = renameEngine.checkFileExistsCaseInsensitive('TeSt.md');
 
       expect(result).toBe(true); // Found match
+    });
+  });
+
+  describe('destination conflicts', () => {
+    const SAME_TITLE = 'Same title\n\nBody';
+
+    /**
+     * Vault stub backed by a live index that only learns about a rename once
+     * renameFile resolves — the window the reservation set exists to cover.
+     * Renaming onto an occupied path rejects, as Obsidian's own does.
+     */
+    const installLiveVault = (files: TFile[]) => {
+      const index = new Map<string, TFile>();
+      for (const file of files) {
+        file.parent = createMockFolder('/');
+        index.set(file.path.toLowerCase(), file);
+      }
+
+      plugin.app.vault.getAbstractFileByPath = vi.fn(
+        (path: string) => index.get(path.toLowerCase()) ?? null
+      );
+      plugin.app.vault.getAllLoadedFiles = vi.fn(() => [...index.values()]);
+      plugin.app.vault.read = vi.fn().mockResolvedValue(SAME_TITLE);
+      plugin.app.vault.cachedRead = vi.fn().mockResolvedValue(SAME_TITLE);
+      plugin.app.fileManager.renameFile = vi.fn(
+        async (file: TFile, newPath: string) => {
+          await Promise.resolve();
+          if (index.has(newPath.toLowerCase())) {
+            throw new Error(`File already exists: ${newPath}`);
+          }
+          index.delete(file.path.toLowerCase());
+          file.path = newPath;
+          index.set(newPath.toLowerCase(), file);
+        }
+      );
+
+      return index;
+    };
+
+    // Mirrors the bulk modals: noDelay on, batch operation, content off disk
+    const renameInBatch = (file: TFile) =>
+      renameEngine.processFile(file, true, true, undefined, true);
+
+    beforeEach(() => {
+      // Reservations have to be real here: the vi.fn() stubs make every reserved
+      // path look free, which is precisely the defect this block guards. Locks
+      // still resolve through the mocked fileStateManager.
+      plugin.cacheManager = new CacheManager(plugin);
+    });
+
+    it('treats a reserved path with no file behind it as taken', async () => {
+      const note = createMockFile('Source note.md');
+      installLiveVault([note]);
+      plugin.cacheManager.reservePath('Same title.md');
+
+      await renameInBatch(note);
+
+      expect(plugin.app.fileManager.renameFile).toHaveBeenCalledWith(
+        note,
+        'Same title 1.md'
+      );
+    });
+
+    it('frees the path again once the reservation is released', async () => {
+      const note = createMockFile('Source note.md');
+      installLiveVault([note]);
+      plugin.cacheManager.reservePath('Same title.md');
+      plugin.cacheManager.releasePath('Same title.md');
+
+      await renameInBatch(note);
+
+      expect(plugin.app.fileManager.renameFile).toHaveBeenCalledWith(
+        note,
+        'Same title.md'
+      );
+    });
+
+    it('releases the reservation when the rename fails', async () => {
+      const note = createMockFile('Source note.md');
+      installLiveVault([note]);
+      plugin.app.fileManager.renameFile = vi
+        .fn()
+        .mockRejectedValue(new Error('rename failed'));
+
+      const result = await renameInBatch(note);
+
+      expect(result.success).toBe(false);
+      expect(plugin.cacheManager.isPathReserved('Same title.md')).toBe(false);
+    });
+
+    it('still counter-suffixes around notes renamed sequentially', async () => {
+      const first = createMockFile('First.md');
+      const second = createMockFile('Second.md');
+      const index = installLiveVault([first, second]);
+
+      expect((await renameInBatch(first)).success).toBe(true);
+      expect((await renameInBatch(second)).success).toBe(true);
+
+      expect([...index.keys()].sort()).toEqual([
+        'same title 1.md',
+        'same title.md',
+      ]);
+    });
+
+    // Regression guard for the silent drop: concurrently, the loser's rename
+    // used to reject into { success: false, reason: 'error' }, which the modals
+    // count as neither renamed nor errored
+    it('counter-suffixes the second of two same-titled notes in one chunk', async () => {
+      const first = createMockFile('First.md');
+      const second = createMockFile('Second.md');
+      const index = installLiveVault([first, second]);
+
+      const results = await Promise.all(
+        [first, second].map((file) => renameInBatch(file))
+      );
+
+      expect(results.map((result) => result.success)).toEqual([true, true]);
+      expect([...index.keys()].sort()).toEqual([
+        'same title 1.md',
+        'same title.md',
+      ]);
     });
   });
 

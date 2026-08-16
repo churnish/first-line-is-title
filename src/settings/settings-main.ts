@@ -7,17 +7,14 @@ import {
 } from 'obsidian';
 import { FirstLineIsTitlePlugin } from './settings-base';
 import { t } from '../i18n';
-import { deduplicateExclusions } from '../utils';
+import { normalizeExclusionLists } from '../utils';
 import { getPath, setPath } from './settings-paths';
-import {
-  PRIMARY_CHAR_KEYS,
-  WINDOWS_ANDROID_CHAR_KEYS,
-} from '../types/char-replacement';
+import { FIRST_ENABLE_CHAR_KEYS } from '../types/char-replacement';
 
 import {
   buildGeneralDefinitions,
   buildFooterDefinitions,
-  buildFeedbackGroup,
+  buildSupportGroup,
 } from './tab-general';
 import { buildExclusionsPage } from './tab-exclusions';
 import { buildCharacterReplacementsPage } from './tab-replace-characters';
@@ -41,7 +38,7 @@ const CASCADES: Record<string, (plugin: FirstLineIsTitlePlugin) => void> = {
     if (!settings.replaceCharacters.enableForbiddenCharReplacements) return;
     if (settings.core.hasEnabledForbiddenChars) return;
 
-    for (const key of [...PRIMARY_CHAR_KEYS, ...WINDOWS_ANDROID_CHAR_KEYS]) {
+    for (const key of FIRST_ENABLE_CHAR_KEYS) {
       settings.replaceCharacters.charReplacements[key].enabled = true;
     }
     settings.core.hasEnabledForbiddenChars = true;
@@ -160,14 +157,13 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
           buildOtherPage(this.plugin, this),
         ],
       },
-      buildFeedbackGroup(),
+      buildSupportGroup(),
     ];
   }
 
   hide(): void {
-    // Exclusion lists can accumulate duplicates and blank rows while being
-    // edited; collapse them once the modal closes.
-    if (deduplicateExclusions(this.plugin.settings)) {
+    // Deferred to close so half-finished rows are left alone while the modal is open
+    if (normalizeExclusionLists(this.plugin.settings)) {
       this.plugin.saveSettings().catch(() => {
         const notice = new Notice(t('settings.errors.saveFailed'));
         notice.containerEl.addClass('mod-warning');

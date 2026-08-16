@@ -1,6 +1,6 @@
 import { SettingDefinitionItem, SettingDefinitionPage } from 'obsidian';
-import { FirstLineIsTitlePlugin } from './settings-base';
-import { t, getCurrentLocale } from '../i18n';
+import { FirstLineIsTitlePlugin, quoteLabel } from './settings-base';
+import { t } from '../i18n';
 import { createPluginLink, buildPluginLinkRouterGroup } from './plugin-links';
 
 /**
@@ -60,7 +60,6 @@ function buildMultiPartDescription(descKey: string): DocumentFragment {
       return;
     }
 
-    const isRussian = getCurrentLocale() === 'ru';
     let index = 1;
     for (;;) {
       let foundAny = false;
@@ -84,11 +83,7 @@ function buildMultiPartDescription(descKey: string): DocumentFragment {
           const fullKey = `${descKey}.${termKey}`;
           const termValue = t(fullKey);
           if (termValue !== fullKey) {
-            if (isRussian) {
-              frag.appendText('«' + termValue + '»');
-            } else {
-              frag.createEl('strong', { text: termValue });
-            }
+            frag.appendText(quoteLabel(termValue));
             foundAny = true;
             break;
           }

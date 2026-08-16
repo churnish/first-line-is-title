@@ -1002,6 +1002,8 @@ export class RenameEngine {
       newTitle = extractTitle(newTitle, this.plugin.settings);
       applyForbiddenCharReplacement();
       applyCustomRules();
+      // A rule's replacement text can reintroduce path separators and blow past the char limit, so re-sanitize
+      applyForbiddenCharReplacement();
     } else {
       // Apply custom rules and markup stripping based on other setting, then forbidden chars
       if (
@@ -1077,7 +1079,7 @@ export class RenameEngine {
     }
 
     let counter: number = 0;
-    let fileExists: boolean = this.checkFileExistsCaseInsensitive(newPath);
+    let fileExists: boolean = this.isRenameTargetTaken(newPath);
 
     verboseLog(
       this.plugin,
@@ -1135,7 +1137,7 @@ export class RenameEngine {
         }
         counter += 1;
         newPath = `${parentPath}${newTitle} ${counter}.md`;
-        fileExists = this.checkFileExistsCaseInsensitive(newPath, false); // Don't log individual conflicts
+        fileExists = this.isRenameTargetTaken(newPath, false); // Don't log individual conflicts
       }
 
       // Check if we hit the safety limit
@@ -1177,6 +1179,9 @@ export class RenameEngine {
       return { success: false, reason: 'self-referential' };
     }
 
+    // Claims the destination for the window between here and the vault index
+    // catching up, so a sibling rename resolving to the same title inside the
+    // same batch takes a counter suffix instead of colliding.
     if (noDelay) {
       cacheManager?.reservePath(newPath);
     }
@@ -1237,9 +1242,42 @@ export class RenameEngine {
 
       return { success: true };
     } catch (error) {
+      // The rename never took the path and only notifyFileRenamed releases
+      // reservations, so keeping this one would wedge the title for the rest of
+      // the session in every flow that is not a modal batch.
+      if (noDelay) {
+        cacheManager?.releasePath(newPath);
+      }
       console.error(`Failed to rename file ${file.path} to ${newPath}:`, error);
       return { success: false, reason: 'error' };
     }
+  }
+
+  /**
+   * True when `path` is unavailable as a rename destination: a file already sits
+   * there, or a rename already in flight has reserved it.
+   *
+   * Reservations are checked alongside the vault scan rather than through
+   * cacheManager.hasPathConflict, whose existence half resolves against a path
+   * set rebuilt on a 5s timer that nothing repopulates on file creation — a note
+   * created since the last rebuild is invisible to it under a differing case.
+   */
+  private isRenameTargetTaken(
+    path: string,
+    logConflict: boolean = true
+  ): boolean {
+    if (this.checkFileExistsCaseInsensitive(path, logConflict)) {
+      return true;
+    }
+
+    if (this.plugin.cacheManager?.isPathReserved(path)) {
+      if (logConflict) {
+        verboseLog(this.plugin, `Reserved path conflict found: ${path}`);
+      }
+      return true;
+    }
+
+    return false;
   }
 
   checkFileExistsCaseInsensitive(

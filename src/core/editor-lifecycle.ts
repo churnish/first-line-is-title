@@ -310,8 +310,15 @@ export class EditorLifecycleManager {
       this.previousActiveFileCount = this.activeEditorFiles.size;
     }
 
-    // Handle rename-on-focus: detect when active file changes
-    if (this.settings.core.renameOnFocus && this.isFullyLoaded) {
+    // Handle rename-on-focus: detect when active file changes.
+    // Gated on renameAutomatically like every other automatic path, because the
+    // settings row is hidden when that is off — an ungated read would keep
+    // renaming with no surface left to stop it.
+    if (
+      this.settings.core.renameOnFocus &&
+      this.settings.core.renameAutomatically &&
+      this.isFullyLoaded
+    ) {
       const currentActiveFile = this.app.workspace.getActiveFile();
       if (currentActiveFile && currentActiveFile.extension === 'md') {
         const currentPath = currentActiveFile.path;

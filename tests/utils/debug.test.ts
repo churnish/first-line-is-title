@@ -306,7 +306,7 @@ describe('DebugUtils', () => {
       expect(() => {
         try {
           debugUtils.debugLog('circular', circularObj);
-        } catch (e) {
+        } catch {
           // Expected to throw
         }
       }).not.toThrow();

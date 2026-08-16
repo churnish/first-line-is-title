@@ -1,4 +1,10 @@
-import { TFile, App, getFrontMatterInfo, parseYaml } from 'obsidian';
+import {
+  TFile,
+  App,
+  CachedMetadata,
+  getFrontMatterInfo,
+  parseYaml,
+} from 'obsidian';
 import { PluginSettings } from '../types';
 import { filterNonEmpty } from './string-processing';
 
@@ -59,6 +65,23 @@ export function parseTagsFromYAML(content: string): string[] {
 }
 
 /**
+ * Read tag values out of a metadata cache entry's frontmatter, as raw strings.
+ * cache.tags is inline-only, so frontmatter tags have to be read separately.
+ */
+export function getFrontmatterTagsFromCache(
+  cache: CachedMetadata | null
+): string[] {
+  const frontmatterTags: unknown = cache?.frontmatter?.tags;
+  if (frontmatterTags === undefined || frontmatterTags === null) {
+    return [];
+  }
+  const rawTags: unknown[] = Array.isArray(frontmatterTags)
+    ? (frontmatterTags as unknown[])
+    : [frontmatterTags];
+  return rawTags.map((tag) => String(tag as string | number | boolean));
+}
+
+/**
  * Remove YAML frontmatter from content
  * Returns content after frontmatter
  */
@@ -101,23 +124,16 @@ export function fileHasTargetTags(
     // Parse tags from content if provided, otherwise use cache
     if (content) {
       fileTags = parseTagsFromYAML(content);
-    } else if (
-      fileCache &&
-      fileCache.frontmatter &&
-      fileCache.frontmatter.tags
-    ) {
-      const frontmatterTags: unknown = fileCache.frontmatter.tags;
-      fileTags = Array.isArray(frontmatterTags)
-        ? frontmatterTags.map(String)
-        : [String(frontmatterTags)];
+    } else {
+      fileTags = getFrontmatterTagsFromCache(fileCache);
     }
 
     for (const targetTag of nonEmptyTags) {
-      // Normalize both sides: remove # prefix for comparison
-      const normalizedTargetTag = normalizeTag(targetTag);
+      // Normalize both sides: remove # prefix and fold case for comparison
+      const normalizedTargetTag = normalizeTag(targetTag).toLowerCase();
 
       for (const fileTag of fileTags) {
-        const normalizedFileTag = normalizeTag(String(fileTag));
+        const normalizedFileTag = normalizeTag(String(fileTag)).toLowerCase();
 
         // Exact match
         if (normalizedFileTag === normalizedTargetTag) {
@@ -143,13 +159,13 @@ export function fileHasTargetTags(
     // Note: fileCache.tags only contains inline tags from Markdown body, never from frontmatter
     if (fileCache && fileCache.tags) {
       inlineTagsInContent = fileCache.tags.map((tagCache) =>
-        normalizeTag(tagCache.tag)
+        normalizeTag(tagCache.tag).toLowerCase()
       );
     }
 
     for (const targetTag of nonEmptyTags) {
-      // Normalize target tag: remove # prefix for comparison
-      const normalizedTargetTag = normalizeTag(targetTag);
+      // Normalize target tag: remove # prefix and fold case for comparison
+      const normalizedTargetTag = normalizeTag(targetTag).toLowerCase();
 
       for (const inlineTag of inlineTagsInContent) {
         // Exact match

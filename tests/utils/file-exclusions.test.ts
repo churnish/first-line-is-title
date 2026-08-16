@@ -3,7 +3,6 @@ import {
   isFileInConfiguredFolders,
   fileHasExcludedProperties,
   shouldProcessFile,
-  isFileExcluded,
 } from '../../src/utils/file-exclusions';
 import {
   createTestSettings,
@@ -11,7 +10,7 @@ import {
   createMockApp,
 } from '../testUtils';
 import { PluginSettings } from '../../src/types';
-import { TFile, App, TFolder } from '../mockObsidian';
+import { App, TFolder } from '../mockObsidian';
 
 describe('file-exclusions', () => {
   let settings: PluginSettings;
@@ -223,6 +222,43 @@ describe('file-exclusions', () => {
       const result = fileHasExcludedProperties(file, settings, app);
       expect(result).toBe(true);
     });
+
+    // Regression: the content path used to strip "#" for a `tags` rule while the cache
+    // path did not, so the same rule excluded a file in one path and not the other.
+    it('should match a bare tags rule against a frontmatter tag written with #', () => {
+      settings.exclusions.excludedProperties = [{ key: 'tags', value: 'foo' }];
+      const file = createMockFile('test.md');
+      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+        frontmatter: { tags: ['#foo'] },
+      });
+
+      const result = fileHasExcludedProperties(file, settings, app);
+      expect(result).toBe(true);
+    });
+
+    it('should match a tags rule written with # against a bare frontmatter tag', () => {
+      settings.exclusions.excludedProperties = [{ key: 'tags', value: '#foo' }];
+      const file = createMockFile('test.md');
+      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+        frontmatter: { tags: 'foo' },
+      });
+
+      const result = fileHasExcludedProperties(file, settings, app);
+      expect(result).toBe(true);
+    });
+
+    it('should not strip # for a property other than tags', () => {
+      settings.exclusions.excludedProperties = [
+        { key: 'status', value: 'draft' },
+      ];
+      const file = createMockFile('test.md');
+      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
+        frontmatter: { status: '#draft' },
+      });
+
+      const result = fileHasExcludedProperties(file, settings, app);
+      expect(result).toBe(false);
+    });
   });
 
   describe('shouldProcessFile', () => {
@@ -406,170 +442,6 @@ describe('file-exclusions', () => {
         const result = shouldProcessFile(file, settings, app);
         expect(result).toBe(false);
       });
-    });
-  });
-
-  describe('isFileExcluded', () => {
-    beforeEach(() => {
-      settings.exclusions.excludedFolders = [];
-      settings.exclusions.excludedTags = [];
-      settings.exclusions.excludedProperties = [];
-      settings.exclusions.tagMatchingMode = 'In Properties and note body';
-      settings.exclusions.excludeChildTags = true;
-    });
-
-    it('should return false when no exclusions configured', () => {
-      const file = createMockFile('test.md');
-      file.parent = new TFolder('Notes');
-
-      const result = isFileExcluded(file, settings, app);
-      expect(result).toBe(false);
-    });
-
-    it('should return true if file has excluded property', () => {
-      settings.exclusions.excludedProperties = [
-        { key: 'status', value: 'draft' },
-      ];
-      const file = createMockFile('test.md');
-      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
-        frontmatter: { status: 'draft' },
-      });
-
-      const result = isFileExcluded(file, settings, app);
-      expect(result).toBe(true);
-    });
-
-    it('should return true if file is in excluded folder', () => {
-      settings.exclusions.excludedFolders = ['Archive'];
-      const file = createMockFile('Archive/test.md');
-      file.parent = new TFolder('Archive');
-
-      const result = isFileExcluded(file, settings, app);
-      expect(result).toBe(true);
-    });
-
-    it('should return true if file has excluded tag in frontmatter', () => {
-      settings.exclusions.excludedTags = ['archived'];
-      const file = createMockFile('test.md');
-      file.parent = new TFolder('Notes');
-      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
-        frontmatter: { tags: ['archived'] },
-        tags: [],
-      });
-
-      const result = isFileExcluded(file, settings, app);
-      expect(result).toBe(true);
-    });
-
-    it('should return true if file has excluded tag inline', () => {
-      settings.exclusions.excludedTags = ['archived'];
-      const file = createMockFile('test.md');
-      file.parent = new TFolder('Notes');
-      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
-        frontmatter: null,
-        tags: [
-          {
-            tag: '#archived',
-            position: {
-              start: { line: 0, col: 0, offset: 0 },
-              end: { line: 0, col: 9, offset: 9 },
-            },
-          },
-        ],
-      });
-
-      const result = isFileExcluded(file, settings, app);
-      expect(result).toBe(true);
-    });
-
-    it('should match child tags when excludeChildTags is true', () => {
-      settings.exclusions.excludedTags = ['work'];
-      settings.exclusions.excludeChildTags = true;
-      const file = createMockFile('test.md');
-      file.parent = new TFolder('Notes');
-      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
-        frontmatter: { tags: ['work/project'] },
-        tags: [],
-      });
-
-      const result = isFileExcluded(file, settings, app);
-      expect(result).toBe(true);
-    });
-
-    it('should not match child tags when excludeChildTags is false', () => {
-      settings.exclusions.excludedTags = ['work'];
-      settings.exclusions.excludeChildTags = false;
-      const file = createMockFile('test.md');
-      file.parent = new TFolder('Notes');
-      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
-        frontmatter: { tags: ['work/project'] },
-        tags: [],
-      });
-
-      const result = isFileExcluded(file, settings, app);
-      expect(result).toBe(false);
-    });
-
-    it('should only check frontmatter tags when mode is "In Properties only"', () => {
-      settings.exclusions.tagMatchingMode = 'In Properties only';
-      settings.exclusions.excludedTags = ['archived'];
-      const file = createMockFile('test.md');
-      file.parent = new TFolder('Notes');
-      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
-        frontmatter: null,
-        tags: [
-          {
-            tag: '#archived',
-            position: {
-              start: { line: 0, col: 0, offset: 0 },
-              end: { line: 0, col: 9, offset: 9 },
-            },
-          },
-        ],
-      });
-
-      const result = isFileExcluded(file, settings, app);
-      expect(result).toBe(false); // Should not match inline tags
-    });
-
-    it('should only check inline tags when mode is "In note body only"', () => {
-      settings.exclusions.tagMatchingMode = 'In note body only';
-      settings.exclusions.excludedTags = ['archived'];
-      const file = createMockFile('test.md');
-      file.parent = new TFolder('Notes');
-      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
-        frontmatter: { tags: ['archived'] },
-        tags: [],
-      });
-
-      const result = isFileExcluded(file, settings, app);
-      expect(result).toBe(false); // Should not match frontmatter tags
-    });
-
-    it('should normalize tags with # prefix', () => {
-      settings.exclusions.excludedTags = ['#archived'];
-      const file = createMockFile('test.md');
-      file.parent = new TFolder('Notes');
-      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
-        frontmatter: { tags: ['archived'] },
-        tags: [],
-      });
-
-      const result = isFileExcluded(file, settings, app);
-      expect(result).toBe(true);
-    });
-
-    it('should handle tag as single string in frontmatter', () => {
-      settings.exclusions.excludedTags = ['archived'];
-      const file = createMockFile('test.md');
-      file.parent = new TFolder('Notes');
-      app.metadataCache.getFileCache = vi.fn().mockReturnValue({
-        frontmatter: { tags: 'archived' }, // Single string, not array
-        tags: [],
-      });
-
-      const result = isFileExcluded(file, settings, app);
-      expect(result).toBe(true);
     });
   });
 });

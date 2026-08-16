@@ -3,11 +3,12 @@ import {
   SettingDefinitionItem,
   SettingDefinitionGroup,
 } from 'obsidian';
-import { FirstLineIsTitlePlugin } from './settings-base';
+import { FirstLineIsTitlePlugin, quoteLabel } from './settings-base';
 import { RenameAllFilesModal } from '../modals';
-import { t, getCurrentLocale } from '../i18n';
+import { t } from '../i18n';
 
 const FEEDBACK_URL = 'https://github.com/churnish/first-line-is-title/issues';
+const HELP_URL = 'https://github.com/churnish/first-line-is-title/discussions';
 
 /**
  * Builds a description where one term is emphasized. Russian typography uses
@@ -20,11 +21,7 @@ function buildEmphasizedDescription(
 ): DocumentFragment {
   return createFragment((frag) => {
     frag.appendText(t(part1Key));
-    if (getCurrentLocale() === 'ru') {
-      frag.appendText('«' + t(emphasizedKey) + '»');
-    } else {
-      frag.createEl('strong', { text: t(emphasizedKey) });
-    }
+    frag.appendText(quoteLabel(t(emphasizedKey)));
     frag.appendText(t(part2Key));
   });
 }
@@ -129,7 +126,8 @@ export function buildGeneralDefinitions(
 
 /**
  * Vault-wide action that belongs below the everyday settings rather than inside
- * one of them. Appended after the sub-page links so it reads as a page footer.
+ * one of them. Closes out that first box, directly above the Advanced group —
+ * it is not the last thing on the page; `buildSupportGroup` is.
  */
 export function buildFooterDefinitions(
   plugin: FirstLineIsTitlePlugin
@@ -154,17 +152,34 @@ export function buildFooterDefinitions(
 }
 
 /**
- * Feedback sits alone in a headingless group below Advanced: it addresses the
- * plugin itself rather than any setting, so it gets its own box at the very
- * bottom instead of trailing the everyday settings.
+ * Support sits below Advanced: both rows address the plugin itself rather than
+ * any setting, so they get their own box at the very bottom instead of trailing
+ * the everyday settings.
+ *
+ * Help leads because it is the self-serve option — a user who finds an existing
+ * answer never needs the row below it.
  *
  * Stays in the settings search index — `searchable: false` would hide the only
  * route users have to report a bug when they search rather than scroll.
  */
-export function buildFeedbackGroup(): SettingDefinitionGroup {
+export function buildSupportGroup(): SettingDefinitionGroup {
   return {
     type: 'group',
+    heading: t('settings.tabs.supportGroup'),
     items: [
+      {
+        name: t('settings.general.help.name'),
+        desc: t('settings.general.help.desc'),
+        render: (setting) => {
+          setting.addButton((button) =>
+            button
+              .setButtonText(t('settings.general.help.button'))
+              .onClick(() => {
+                window.open(HELP_URL, '_blank');
+              })
+          );
+        },
+      },
       {
         name: t('settings.general.sendFeedback.name'),
         desc: t('settings.general.sendFeedback.desc'),

@@ -7,10 +7,12 @@ import {
   hasDisablePropertyInFile,
   containsFileNameExclusion,
   extractTitle,
-  deduplicateExclusions,
+  normalizeExclusionLists,
+  reverseCharacterReplacements,
 } from '../src/utils';
 import { createTestSettings, createMockFile, createMockApp } from './testUtils';
 import { PluginSettings, FileNameExclusion } from '../src/types';
+import { CharKey, CharReplacementConfig } from '../src/types/char-replacement';
 import { TFile, App, Platform } from './mockObsidian';
 
 describe('utils', () => {
@@ -698,9 +700,63 @@ describe('utils', () => {
         expect(extractTitle('\t1. ', settings)).toBe('1.');
       });
     });
+
+    describe('HTML and Obsidian comment stripping', () => {
+      it('should strip an HTML comment when htmlTags is enabled', () => {
+        expect(extractTitle('Before <!-- draft --> After', settings)).toBe(
+          'Before  After'
+        );
+      });
+
+      it('should return Untitled when the entire line is an HTML comment', () => {
+        expect(extractTitle('<!-- draft, do not publish -->', settings)).toBe(
+          'Untitled'
+        );
+      });
+
+      it('should leave an HTML comment untouched when htmlTags is disabled', () => {
+        settings.markupStripping.stripMarkupSettings.htmlTags = false;
+
+        expect(extractTitle('<!-- draft -->', settings)).toBe('<!-- draft -->');
+      });
+
+      it('should strip an HTML comment even when both %% comment toggles are off', () => {
+        settings.markupStripping.stripCommentsEntirely = false;
+        settings.markupStripping.stripMarkupSettings.comments = false;
+
+        expect(extractTitle('Before <!-- draft --> After', settings)).toBe(
+          'Before  After'
+        );
+      });
+
+      it('should leave an HTML comment untouched when htmlTags is off even if %% comment toggles are on', () => {
+        settings.markupStripping.stripMarkupSettings.htmlTags = false;
+        settings.markupStripping.stripCommentsEntirely = true;
+
+        expect(extractTitle('<!-- draft -->', settings)).toBe('<!-- draft -->');
+      });
+
+      it('should still strip %%…%% entirely regardless of the htmlTags toggle', () => {
+        settings.markupStripping.stripMarkupSettings.htmlTags = false;
+        settings.markupStripping.stripCommentsEntirely = true;
+
+        expect(extractTitle('Hello %%secret%% World', settings)).toBe(
+          'Hello  World'
+        );
+      });
+
+      it('should still keep %%…%% content when the markers-only toggle is on', () => {
+        settings.markupStripping.stripCommentsEntirely = false;
+        settings.markupStripping.stripMarkupSettings.comments = true;
+
+        expect(extractTitle('Hello %%secret%% World', settings)).toBe(
+          'Hello secret World'
+        );
+      });
+    });
   });
 
-  describe('deduplicateExclusions', () => {
+  describe('normalizeExclusionLists', () => {
     const makeFileNameExclusion = (
       overrides: Partial<FileNameExclusion> = {}
     ): FileNameExclusion => ({
@@ -723,21 +779,21 @@ describe('utils', () => {
       it('should remove blank folder entries', () => {
         settings.exclusions.excludedFolders = ['', 'Notes', ''];
 
-        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(normalizeExclusionLists(settings)).toBe(true);
         expect(settings.exclusions.excludedFolders).toEqual(['Notes']);
       });
 
       it('should remove whitespace-only folder entries', () => {
         settings.exclusions.excludedFolders = ['Notes', '   '];
 
-        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(normalizeExclusionLists(settings)).toBe(true);
         expect(settings.exclusions.excludedFolders).toEqual(['Notes']);
       });
 
       it('should remove blank tag entries', () => {
         settings.exclusions.excludedTags = ['', 'project', ''];
 
-        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(normalizeExclusionLists(settings)).toBe(true);
         expect(settings.exclusions.excludedTags).toEqual(['project']);
       });
 
@@ -747,7 +803,21 @@ describe('utils', () => {
           { key: 'status', value: 'draft' },
         ];
 
-        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(normalizeExclusionLists(settings)).toBe(true);
+        expect(settings.exclusions.excludedProperties).toEqual([
+          { key: 'status', value: 'draft' },
+        ]);
+      });
+
+      it('should remove property entries with a blank key but a value', () => {
+        // A blank key can never match a property, so the row would read as live but
+        // never fire
+        settings.exclusions.excludedProperties = [
+          { key: '', value: 'draft' },
+          { key: 'status', value: 'draft' },
+        ];
+
+        expect(normalizeExclusionLists(settings)).toBe(true);
         expect(settings.exclusions.excludedProperties).toEqual([
           { key: 'status', value: 'draft' },
         ]);
@@ -756,7 +826,7 @@ describe('utils', () => {
       it('should keep a property entry that has a key but a blank value', () => {
         settings.exclusions.excludedProperties = [{ key: 'status', value: '' }];
 
-        expect(deduplicateExclusions(settings)).toBe(false);
+        expect(normalizeExclusionLists(settings)).toBe(false);
         expect(settings.exclusions.excludedProperties).toEqual([
           { key: 'status', value: '' },
         ]);
@@ -769,7 +839,7 @@ describe('utils', () => {
           makeFileNameExclusion({ text: '  ' }),
         ];
 
-        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(normalizeExclusionLists(settings)).toBe(true);
         expect(settings.exclusions.fileNameExclusions).toEqual([
           makeFileNameExclusion({ text: 'draft' }),
         ]);
@@ -788,7 +858,7 @@ describe('utils', () => {
           kept,
         ];
 
-        deduplicateExclusions(settings);
+        normalizeExclusionLists(settings);
 
         expect(settings.exclusions.fileNameExclusions).toEqual([kept]);
       });
@@ -796,7 +866,7 @@ describe('utils', () => {
       it('should collapse an all-blank list to an empty array', () => {
         settings.exclusions.excludedFolders = ['', '  ', ''];
 
-        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(normalizeExclusionLists(settings)).toBe(true);
         expect(settings.exclusions.excludedFolders).toEqual([]);
       });
     });
@@ -805,7 +875,7 @@ describe('utils', () => {
       it('should keep the last occurrence of a duplicate folder', () => {
         settings.exclusions.excludedFolders = ['Notes', 'Archive', 'notes'];
 
-        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(normalizeExclusionLists(settings)).toBe(true);
         expect(settings.exclusions.excludedFolders).toEqual([
           'Archive',
           'notes',
@@ -815,14 +885,14 @@ describe('utils', () => {
       it('should treat folder paths as equal regardless of surrounding slashes', () => {
         settings.exclusions.excludedFolders = ['Notes', '/Notes/'];
 
-        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(normalizeExclusionLists(settings)).toBe(true);
         expect(settings.exclusions.excludedFolders).toEqual(['Notes']);
       });
 
       it('should keep the last occurrence of a duplicate tag', () => {
         settings.exclusions.excludedTags = ['Project', 'work', 'project'];
 
-        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(normalizeExclusionLists(settings)).toBe(true);
         expect(settings.exclusions.excludedTags).toEqual(['work', 'project']);
       });
 
@@ -833,7 +903,7 @@ describe('utils', () => {
           { key: 'Status', value: 'Draft' },
         ];
 
-        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(normalizeExclusionLists(settings)).toBe(true);
         expect(settings.exclusions.excludedProperties).toEqual([
           { key: 'status', value: 'final' },
           { key: 'Status', value: 'Draft' },
@@ -846,7 +916,7 @@ describe('utils', () => {
           makeFileNameExclusion({ text: 'draft', onlyAtStart: true }),
         ];
 
-        expect(deduplicateExclusions(settings)).toBe(false);
+        expect(normalizeExclusionLists(settings)).toBe(false);
         expect(settings.exclusions.fileNameExclusions).toHaveLength(2);
       });
     });
@@ -860,14 +930,144 @@ describe('utils', () => {
         ];
         settings.exclusions.fileNameExclusions = [makeFileNameExclusion()];
 
-        expect(deduplicateExclusions(settings)).toBe(false);
+        expect(normalizeExclusionLists(settings)).toBe(false);
       });
 
       it('should return true when an entry only needed trimming', () => {
         settings.exclusions.excludedTags = ['  project  '];
 
-        expect(deduplicateExclusions(settings)).toBe(true);
+        expect(normalizeExclusionLists(settings)).toBe(true);
         expect(settings.exclusions.excludedTags).toEqual(['project']);
+      });
+    });
+  });
+
+  describe('reverseCharacterReplacements', () => {
+    const enableChar = (
+      key: CharKey,
+      overrides: Partial<CharReplacementConfig> = {}
+    ) => {
+      const config = settings.replaceCharacters.charReplacements[key];
+      config.enabled = true;
+      Object.assign(config, overrides);
+      return config;
+    };
+
+    // Every shipped default replacement, reversed with plain substitution.
+    // `slash` and `quote` are multi-character, so a per-character advance corrupts them.
+    const shippedDefaults: Array<{
+      key: CharKey;
+      input: string;
+      expected: string;
+    }> = [
+      { key: 'slash', input: 'a ∕ b', expected: 'a/b' },
+      { key: 'colon', input: 'a։b', expected: 'a:b' },
+      { key: 'asterisk', input: 'a∗b', expected: 'a*b' },
+      { key: 'question', input: 'a？b', expected: 'a?b' },
+      { key: 'lessThan', input: 'a‹b', expected: 'a<b' },
+      { key: 'greaterThan', input: 'a›b', expected: 'a>b' },
+      { key: 'quote', input: "say ''hi''", expected: 'say "hi"' },
+      { key: 'pipe', input: 'a❘b', expected: 'a|b' },
+      { key: 'hash', input: 'a＃b', expected: 'a#b' },
+      { key: 'leftBracket', input: 'a［b', expected: 'a[b' },
+      { key: 'rightBracket', input: 'a］b', expected: 'a]b' },
+      { key: 'caret', input: 'aˆb', expected: 'a^b' },
+      { key: 'backslash', input: 'a⧵b', expected: 'a\\b' },
+      { key: 'dot', input: 'a․b', expected: 'a.b' },
+    ];
+
+    describe('shipped defaults without re-spacing', () => {
+      it.each(shippedDefaults)(
+        'reverses the default $key replacement',
+        ({ key, input, expected }) => {
+          enableChar(key);
+
+          expect(reverseCharacterReplacements(input, settings)).toBe(expected);
+        }
+      );
+
+      it('reverses repeated multi-character replacements in one string', () => {
+        enableChar('slash');
+
+        expect(reverseCharacterReplacements('a ∕ b ∕ c', settings)).toBe(
+          'a/b/c'
+        );
+      });
+
+      it('reverses several enabled characters in one string', () => {
+        enableChar('slash');
+        enableChar('quote');
+        enableChar('question');
+
+        expect(reverseCharacterReplacements("a ∕ b ''c'' d？", settings)).toBe(
+          'a/b "c" d?'
+        );
+      });
+
+      it('leaves text untouched when title conversion is off', () => {
+        settings.core.convertReplacementCharactersInTitle = false;
+        enableChar('slash');
+
+        expect(reverseCharacterReplacements('a ∕ b', settings)).toBe('a ∕ b');
+      });
+
+      // Guards the insert-filename command, which echoes a filename verbatim
+      it('ignores trim flags unless re-spacing is requested', () => {
+        enableChar('question');
+        enableChar('leftBracket');
+        enableChar('rightBracket');
+
+        expect(reverseCharacterReplacements('What？Now', settings)).toBe(
+          'What?Now'
+        );
+        expect(reverseCharacterReplacements('a［b］c', settings)).toBe('a[b]c');
+      });
+    });
+
+    describe('with re-spacing opted in', () => {
+      const respace = (text: string) =>
+        reverseCharacterReplacements(text, settings, undefined, {
+          restoreTrimmedSpacing: true,
+        });
+
+      it('reverses multi-character replacements that carry no trim flags', () => {
+        enableChar('slash');
+        enableChar('quote');
+
+        expect(respace('a ∕ b')).toBe('a/b');
+        expect(respace("say ''hi''")).toBe('say "hi"');
+      });
+
+      it('restores the space trimmed to the right of a question mark', () => {
+        enableChar('question');
+
+        expect(respace('What？Now')).toBe('What? Now');
+      });
+
+      it('adds no trailing space when a question mark ends the title', () => {
+        enableChar('question');
+
+        expect(respace('Really？')).toBe('Really?');
+      });
+
+      it('adds no trailing space before punctuation', () => {
+        enableChar('question');
+
+        expect(respace('Really？! Yes')).toBe('Really?! Yes');
+      });
+
+      it('restores spaces on both sides of bracket replacements', () => {
+        enableChar('leftBracket');
+        enableChar('rightBracket');
+
+        expect(respace('a［b］c')).toBe('a [ b ] c');
+      });
+
+      it('inspects the character past a multi-character replacement', () => {
+        // Reading one char past the start would land inside "''" and see punctuation
+        enableChar('quote', { trimRight: true });
+
+        expect(respace("say ''hi")).toBe('say " hi');
       });
     });
   });

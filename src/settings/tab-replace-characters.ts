@@ -4,9 +4,10 @@ import {
   buildDescRow,
   FirstLineIsTitlePlugin,
   mountLegacyHost,
+  quoteLabel,
 } from './settings-base';
 import { DEFAULT_SETTINGS } from '../constants';
-import { t, getCurrentLocale } from '../i18n';
+import { t } from '../i18n';
 import {
   CharKey,
   PRIMARY_CHAR_KEYS,
@@ -139,19 +140,35 @@ function renderCharacterRows(
       cls: 'flit-char-text-input-container',
     });
 
+    const defaultReplacement =
+      DEFAULT_SETTINGS.replaceCharacters.charReplacements[key].replacement;
+
     const restoreButton = inputContainer.createDiv({
       cls: 'clickable-icon extra-setting-button',
       attr: {
-        'aria-label': t('settings.replaceCharacters.restoreDefault'),
+        'aria-label': t('settings.common.restoreDefault'),
       },
     });
     setIcon(restoreButton, 'rotate-ccw');
+
+    // Mirrors Obsidian's own restore controls, which mark the button
+    // `aria-disabled` while the value already equals its default. The dimming
+    // comes from Obsidian's `.clickable-icon[aria-disabled='true']` rule, which
+    // sets no `pointer-events` — native deliberately leaves the button
+    // clickable, since restoring a value to what it already is does nothing.
+    const syncRestoreButtonState = () => {
+      restoreButton.setAttribute(
+        'aria-disabled',
+        String(charConfig.replacement === defaultReplacement)
+      );
+    };
+    syncRestoreButtonState();
+
     restoreButton.addEventListener('click', () => {
       void (async () => {
-        const defaultReplacement =
-          DEFAULT_SETTINGS.replaceCharacters.charReplacements[key].replacement;
         charConfig.replacement = defaultReplacement;
         textInput.value = defaultReplacement;
+        syncRestoreButtonState();
         await persistSettings(plugin);
       })();
     });
@@ -165,6 +182,7 @@ function renderCharacterRows(
     textInput.addEventListener('input', (e) => {
       void (async () => {
         charConfig.replacement = (e.target as HTMLInputElement).value;
+        syncRestoreButtonState();
         plugin.debugLog(
           `charReplacements.${String(key)}.replacement`,
           charConfig.replacement
@@ -217,13 +235,8 @@ function renderCharacterRows(
  * table's group.
  */
 function appendTrimNote(parent: HTMLElement | DocumentFragment): void {
-  const locale = getCurrentLocale();
   const appendEmphasis = (localeKey: string) => {
-    if (locale === 'ru') {
-      parent.appendText('«' + t(localeKey) + '»');
-    } else {
-      parent.createEl('strong', { text: t(localeKey) });
-    }
+    parent.appendText(quoteLabel(t(localeKey)));
   };
 
   parent.appendText(t('settings.replaceCharacters.trimNote.part1'));

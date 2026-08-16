@@ -2,6 +2,7 @@ import { App, SettingDefinitionRender, TFile } from 'obsidian';
 import { PluginSettings } from '../types';
 import { UNIVERSAL_FORBIDDEN_CHARS, WINDOWS_ANDROID_CHARS } from '../constants';
 import { detectOS } from '../utils';
+import { getCurrentLocale } from '../i18n';
 
 export interface FirstLineIsTitlePlugin {
   app: App;
@@ -24,10 +25,26 @@ export interface FirstLineIsTitlePlugin {
   getCurrentTimestamp?: () => string;
   outputAllSettings?: () => void;
   getTodayDateString?: () => string;
-  parsePropertyValue?: (value: string) => string | number | boolean;
   cacheManager?: {
     clearReservedPaths(): void;
   };
+}
+
+/**
+ * Localizes the default file-name exclusion example to the current locale.
+ * Only touches it while it's still the untouched default text, so a user's
+ * own edit to that entry is never overwritten. Shared by initial settings
+ * load and "Clear settings", the two places a fresh default can appear.
+ */
+export function applyLocalizedDefaults(settings: PluginSettings): void {
+  if (
+    settings.exclusions.fileNameExclusions.length > 0 &&
+    ['To do', 'Задачи'].includes(settings.exclusions.fileNameExclusions[0].text)
+  ) {
+    const locale = getCurrentLocale();
+    settings.exclusions.fileNameExclusions[0].text =
+      locale === 'ru' ? 'Задачи' : 'To do';
+  }
 }
 
 /**
@@ -129,6 +146,18 @@ export function mountLegacyHost(settingEl: HTMLElement): HTMLElement {
  * Appends a sequence of bare newline-separated lines (no bullet markup),
  * joined with `<br>` rather than a `<ul>`/`<li>` list.
  */
+/**
+ * Wraps a UI label quoted in running text, the way settings descriptions refer
+ * to controls elsewhere in the interface.
+ *
+ * Quotation marks rather than bold: bold competes with the row's own name for
+ * attention, and Russian typography quotes where English would embolden — so
+ * the two locales differ only in which pair of marks they use.
+ */
+export function quoteLabel(text: string): string {
+  return getCurrentLocale() === 'ru' ? `«${text}»` : `“${text}”`;
+}
+
 export function appendLines(
   parent: HTMLElement | DocumentFragment,
   lines: Array<(target: HTMLElement | DocumentFragment) => void>

@@ -12,8 +12,9 @@ import {
   buildDescRow,
   FirstLineIsTitlePlugin,
   mountLegacyHost,
+  quoteLabel,
 } from './settings-base';
-import { t, getCurrentLocale } from '../i18n';
+import { t } from '../i18n';
 import { CustomReplacement } from '../types';
 
 async function persistSettings(plugin: FirstLineIsTitlePlugin): Promise<void> {
@@ -33,11 +34,7 @@ function appendEmphasis(
   parent: HTMLElement | DocumentFragment,
   localeKey: string
 ): void {
-  if (getCurrentLocale() === 'ru') {
-    parent.appendText('«' + t(localeKey) + '»');
-  } else {
-    parent.createEl('strong', { text: t(localeKey) });
-  }
+  parent.appendText(quoteLabel(t(localeKey)));
 }
 
 /**

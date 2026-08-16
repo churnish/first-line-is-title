@@ -1,16 +1,24 @@
-import { TFile, App, normalizePath } from 'obsidian';
-import { PluginSettings } from '../types';
-import { filterNonEmpty } from './string-processing';
+import {
+  TFile,
+  App,
+  getFrontMatterInfo,
+  normalizePath,
+  parseYaml,
+} from 'obsidian';
+import {
+  EXCLUSION_STRATEGY,
+  ExclusionStrategy,
+  PluginSettings,
+} from '../types';
+import { filterNonEmpty, isRootFolderPath } from './string-processing';
 import { fileHasTargetTags, normalizeTag } from './tag-utils';
 
 /**
- * Normalize folder path, preserving root folder "/"
- * Obsidian's normalizePath strips leading/trailing slashes, turning "/" into ""
- * But FLIT stores root as "/", while Obsidian uses "" for root folder paths
+ * Normalize a configured folder path for path matching, preserving case.
+ * Distinct from `folderPathComparisonKey` in utils.ts, which folds case for equality.
  */
-function normalizeFolderPath(folder: string): string {
-  // Preserve root folder
-  if (folder === '/') {
+function normalizeFolderPathForMatching(folder: string): string {
+  if (isRootFolderPath(folder)) {
     return '/';
   }
   return normalizePath(folder);
@@ -24,16 +32,17 @@ export function isFileInConfiguredFolders(
   file: TFile,
   settings: PluginSettings
 ): boolean {
-  // Filter out empty strings and normalize paths
+  // Filter out empty strings, normalize paths, and fold case so "Notes" and "notes" match the same rule
   const nonEmptyFolders = filterNonEmpty(
     settings.exclusions.excludedFolders
-  ).map((folder) => normalizeFolderPath(folder));
+  ).map((folder) => normalizeFolderPathForMatching(folder).toLowerCase());
   if (nonEmptyFolders.length === 0) return false;
 
   // Obsidian uses "" for root folder, but FLIT stores it as "/"
-  const filePath =
-    file.parent?.path === '' ? '/' : (file.parent?.path as string);
-  if (nonEmptyFolders.includes(filePath)) {
+  const filePath = (
+    file.parent?.path === '' ? '/' : file.parent?.path
+  )?.toLowerCase();
+  if (filePath && nonEmptyFolders.includes(filePath)) {
     return true;
   }
 
@@ -53,46 +62,96 @@ export function isFileInConfiguredFolders(
 }
 
 /**
+ * Resolve the frontmatter to evaluate property exclusions against.
+ *
+ * Fails closed: callers can hand over partial editor content (rename-engine passes only the
+ * footnote text when a footnote definition is edited), so content without parseable
+ * frontmatter falls back to the metadata cache rather than concluding "no properties" and
+ * renaming a protected file. A genuinely empty new note has no cached frontmatter either,
+ * so the creation path still sees the live content.
+ */
+function resolveFrontmatterForExclusions(
+  file: TFile,
+  app: App,
+  content?: string
+): Record<string, unknown> | null {
+  if (content !== undefined) {
+    const frontmatterInfo = getFrontMatterInfo(content);
+    if (frontmatterInfo.exists) {
+      try {
+        const parsed = parseYaml(frontmatterInfo.frontmatter) as unknown;
+        if (parsed && typeof parsed === 'object') {
+          return parsed as Record<string, unknown>;
+        }
+      } catch {
+        // Malformed YAML - fall through to the cache
+      }
+    }
+  }
+
+  const cachedFrontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+  return cachedFrontmatter
+    ? (cachedFrontmatter as Record<string, unknown>)
+    : null;
+}
+
+/**
  * Check if file has any of the excluded properties
+ * @param content Optional file content (string) for real-time checking
  */
 export function fileHasExcludedProperties(
   file: TFile,
   settings: PluginSettings,
-  app: App
+  app: App,
+  content?: string
 ): boolean {
   const nonEmptyProperties = settings.exclusions.excludedProperties.filter(
     (prop) => prop.key.trim() !== ''
   );
   if (nonEmptyProperties.length === 0) return false;
 
-  const fileCache = app.metadataCache.getFileCache(file);
-  if (!fileCache || !fileCache.frontmatter) return false;
+  const frontmatter = resolveFrontmatterForExclusions(file, app, content);
+  if (!frontmatter) return false;
 
-  const frontmatter = fileCache.frontmatter;
+  // Property matching folds case, so resolve each configured key against the frontmatter's own casing
+  const frontmatterKeysByFoldedCase = new Map<string, string>();
+  for (const key of Object.keys(frontmatter)) {
+    const foldedKey = key.toLowerCase();
+    if (!frontmatterKeysByFoldedCase.has(foldedKey)) {
+      frontmatterKeysByFoldedCase.set(foldedKey, key);
+    }
+  }
 
   for (const excludedProp of nonEmptyProperties) {
-    const propKey = excludedProp.key.trim();
-    const propValue = excludedProp.value.trim();
+    const propKey = excludedProp.key.trim().toLowerCase();
 
-    if (propKey in frontmatter) {
-      if (propValue === '') {
+    // A `tags` rule is written with or without the leading "#" interchangeably, so both
+    // sides drop it. Without this, `{key: 'tags', value: 'foo'}` fails to match a note
+    // tagged `#foo` and the exclusion silently fails open.
+    const isTagsRule = propKey === 'tags';
+    const foldValue = (value: unknown): string => {
+      const folded = String(value as string | number | boolean).toLowerCase();
+      return isTagsRule ? normalizeTag(folded) : folded;
+    };
+
+    const rawPropValue = excludedProp.value.trim().toLowerCase();
+
+    const matchedKey = frontmatterKeysByFoldedCase.get(propKey);
+    if (matchedKey !== undefined) {
+      // A valueless rule matches the key alone, so this is tested before tag folding
+      if (rawPropValue === '') {
         return true;
       }
 
-      const frontmatterValue: unknown = frontmatter[propKey];
+      const propValue = isTagsRule ? normalizeTag(rawPropValue) : rawPropValue;
+      const frontmatterValue: unknown = frontmatter[matchedKey];
 
-      if (typeof frontmatterValue === 'string') {
-        if (frontmatterValue === propValue) {
-          return true;
-        }
-      } else if (Array.isArray(frontmatterValue)) {
-        if (frontmatterValue.some((val) => String(val) === propValue)) {
+      if (Array.isArray(frontmatterValue)) {
+        if (frontmatterValue.some((val) => foldValue(val) === propValue)) {
           return true;
         }
       } else if (frontmatterValue != null) {
-        if (
-          String(frontmatterValue as string | number | boolean) === propValue
-        ) {
+        if (foldValue(frontmatterValue) === propValue) {
           return true;
         }
       }
@@ -133,18 +192,14 @@ export function shouldProcessFile(
   },
   plugin?: { settings: PluginSettings }
 ): boolean {
-  const isInTargetFolders = isFileInConfiguredFolders(file, settings);
-  const hasTargetTags = fileHasTargetTags(file, settings, app, content);
-  const hasTargetProperties = fileHasExcludedProperties(file, settings, app);
-
   // Helper function to apply strategy logic for a single exclusion type
   // Returns TRUE if file should be EXCLUDED (don't process)
   const applyStrategy = (
     isTargeted: boolean,
     hasTargets: boolean,
-    strategy: string
+    strategy: ExclusionStrategy
   ): boolean => {
-    if (strategy === 'Only exclude...') {
+    if (strategy === EXCLUSION_STRATEGY.ONLY_EXCLUDE) {
       // Only exclude: exclude files matching the targets
       // If no targets specified, don't exclude anything (process all)
       return hasTargets ? isTargeted : false;
@@ -156,11 +211,13 @@ export function shouldProcessFile(
     }
   };
 
-  // Apply strategy for each exclusion type independently, respecting overrides
+  // Apply strategy for each exclusion type independently, respecting overrides.
+  // Each detector is called inside its branch, not hoisted: the bulk-rename path passes
+  // all three overrides, and each detector walks the metadata cache per file.
   const shouldExcludeFromFolders = exclusionOverrides?.ignoreFolder
     ? false
     : applyStrategy(
-        isInTargetFolders,
+        isFileInConfiguredFolders(file, settings),
         settings.exclusions.excludedFolders.some(
           (folder) => folder.trim() !== ''
         ),
@@ -170,7 +227,7 @@ export function shouldProcessFile(
   const shouldExcludeFromTags = exclusionOverrides?.ignoreTag
     ? false
     : applyStrategy(
-        hasTargetTags,
+        fileHasTargetTags(file, settings, app, content),
         settings.exclusions.excludedTags.some((tag) => tag.trim() !== ''),
         settings.exclusions.tagScopeStrategy
       );
@@ -178,7 +235,7 @@ export function shouldProcessFile(
   const shouldExcludeFromProperties = exclusionOverrides?.ignoreProperty
     ? false
     : applyStrategy(
-        hasTargetProperties,
+        fileHasExcludedProperties(file, settings, app, content),
         settings.exclusions.excludedProperties.some(
           (prop) => prop.key.trim() !== ''
         ),
@@ -207,97 +264,4 @@ export function shouldProcessFile(
     shouldExcludeFromTags ||
     shouldExcludeFromProperties
   );
-}
-
-export function isFileExcluded(
-  file: TFile,
-  settings: PluginSettings,
-  app: App,
-  _content?: string
-): boolean {
-  // Check property exclusions
-  if (fileHasExcludedProperties(file, settings, app)) {
-    return true;
-  }
-
-  // Check folder exclusions
-  if (isFileInConfiguredFolders(file, settings)) {
-    return true;
-  }
-
-  // Check tag exclusions
-  const nonEmptyTags = filterNonEmpty(settings.exclusions.excludedTags);
-  if (nonEmptyTags.length > 0) {
-    const fileCache = app.metadataCache.getFileCache(file);
-
-    // Check YAML frontmatter tags (unless mode is 'In note body only')
-    if (
-      settings.exclusions.tagMatchingMode !== 'In note body only' &&
-      fileCache &&
-      fileCache.frontmatter &&
-      fileCache.frontmatter.tags
-    ) {
-      const frontmatterTags: unknown = fileCache.frontmatter.tags;
-      // Handle both string arrays and single strings
-      const fileTags = Array.isArray(frontmatterTags)
-        ? frontmatterTags
-        : [frontmatterTags];
-      for (const excludedTag of nonEmptyTags) {
-        // Normalize both sides: remove # prefix for comparison
-        const normalizedExcludedTag = normalizeTag(excludedTag);
-
-        for (const fileTag of fileTags) {
-          const normalizedFileTag = normalizeTag(String(fileTag));
-
-          // Exact match
-          if (normalizedFileTag === normalizedExcludedTag) {
-            return true;
-          }
-
-          // Check child tags if enabled (default true)
-          if (settings.exclusions.excludeChildTags) {
-            // If file has child tag and excluded tag is parent
-            if (normalizedFileTag.startsWith(normalizedExcludedTag + '/')) {
-              return true;
-            }
-          }
-        }
-      }
-    }
-
-    // Check inline tags based on matching mode (using metadata cache to avoid false positives)
-    if (settings.exclusions.tagMatchingMode !== 'In Properties only') {
-      let inlineTagsInContent: string[] = [];
-
-      // Use metadata cache for accurate tag detection (avoids false positives from code blocks, YAML comments, etc.)
-      // Note: fileCache.tags only contains inline tags from Markdown body, never from frontmatter
-      if (fileCache && fileCache.tags) {
-        inlineTagsInContent = fileCache.tags.map((tagCache) =>
-          normalizeTag(tagCache.tag)
-        );
-      }
-
-      for (const excludedTag of nonEmptyTags) {
-        // Normalize excluded tag: remove # prefix for comparison
-        const normalizedExcludedTag = normalizeTag(excludedTag);
-
-        for (const inlineTag of inlineTagsInContent) {
-          // Exact match
-          if (inlineTag === normalizedExcludedTag) {
-            return true;
-          }
-
-          // Check child tags if enabled (default true)
-          if (settings.exclusions.excludeChildTags) {
-            // If file has child tag and excluded tag is parent
-            if (inlineTag.startsWith(normalizedExcludedTag + '/')) {
-              return true;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return false;
 }

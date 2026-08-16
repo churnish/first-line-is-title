@@ -4,6 +4,7 @@ import { verboseLog } from '../utils';
 import { RenameAllFilesModal } from '../modals';
 import FirstLineIsTitle from '../../main';
 import { FileCreationCoordinator } from './file-creation-coordinator';
+import { TIMING } from '../constants/timing';
 import { t } from '../i18n';
 
 /**
@@ -28,7 +29,9 @@ export class WorkspaceIntegration {
 
   // Track last title insertion to prevent mass insertions when canvas is active
   public lastTitleInsertionTime = 0;
-  public readonly TITLE_INSERTION_RATE_LIMIT_MS = 1000; // Only process 1 file per second
+  // Alias only: the value lives in TIMING, but the field stays public because tests/core/workspace-integration.test.ts asserts on it
+  public readonly TITLE_INSERTION_RATE_LIMIT_MS =
+    TIMING.TITLE_INSERTION_RATE_LIMIT_MS;
 
   constructor(plugin: FirstLineIsTitle) {
     this.plugin = plugin;
@@ -270,7 +273,7 @@ export class WorkspaceIntegration {
                       `Skipping cursor positioning - no view found (canvas): ${file.path}`
                     );
                   }
-                }, 200);
+                }, TIMING.RAF_CURSOR_POSITIONING_DELAY_MS);
               }
 
               // Rename file if automatic mode - respects newNoteDelay setting

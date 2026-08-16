@@ -5,6 +5,7 @@ import {
   SettingDefinitionItem,
   SettingDefinitionPage,
   SettingDefinitionRender,
+  setIcon,
 } from 'obsidian';
 import {
   updateDisabledRowsAccessibility,
@@ -13,10 +14,16 @@ import {
   FirstLineIsTitlePlugin,
   mountLegacyHost,
   buildDescRow,
+  quoteLabel,
 } from './settings-base';
-import { ExcludedProperty, FileNameExclusion } from '../types';
+import {
+  EXCLUSION_STRATEGY,
+  ExcludedProperty,
+  FileNameExclusion,
+} from '../types';
 import { FolderSuggest, TagSuggest } from '../suggests';
-import { t, getCurrentLocale } from '../i18n';
+import { t } from '../i18n';
+import { DEFAULT_SETTINGS } from '../constants';
 import { TIMING } from '../constants/timing';
 
 async function persistSettings(plugin: FirstLineIsTitlePlugin): Promise<void> {
@@ -36,11 +43,7 @@ function appendEmphasis(
   parent: HTMLElement | DocumentFragment,
   localeKey: string
 ): void {
-  if (getCurrentLocale() === 'ru') {
-    parent.appendText('«' + t(localeKey) + '»');
-  } else {
-    parent.createEl('strong', { text: t(localeKey) });
-  }
+  parent.appendText(quoteLabel(t(localeKey)));
 }
 
 /** The "any rule can exclude, none can re-include" caveat. */
@@ -143,10 +146,6 @@ function buildDisablePropertyIntro(): DocumentFragment {
           t('settings.exclusions.disableProperty.caseInsensitive')
         ),
     ]);
-    frag.createEl('br');
-    frag.createEl('small').createEl('strong', {
-      text: t('settings.exclusions.disableProperty.default'),
-    });
   });
 }
 
@@ -225,6 +224,8 @@ interface KeyValueRowOptions {
   getValue: () => string;
   setValue: (value: string) => void;
   debugLabel: string;
+  /** Opts the row into a restore button; omitted for rows with no fixed default. */
+  restoreDefault?: { key: string; value: string };
 }
 
 /** Renders a single key:value pair as two side-by-side text inputs. */
@@ -241,6 +242,7 @@ function buildKeyValueRow(
     getValue,
     setValue,
     debugLabel,
+    restoreDefault,
   } = options;
 
   return {
@@ -253,6 +255,17 @@ function buildKeyValueRow(
       const inputContainer = setting.controlEl.createDiv({
         cls: 'flit-property-container flit-display-flex flit-gap-10 flit-align-items-center',
       });
+
+      // Created before the inputs so it sits to their left. Obsidian builds a
+      // restore control automatically for `slider` and `color` controls only,
+      // so a text pair has to mount its own.
+      const restoreButton = restoreDefault
+        ? inputContainer.createDiv({
+            cls: 'clickable-icon extra-setting-button',
+            attr: { 'aria-label': t('settings.common.restoreDefault') },
+          })
+        : null;
+      if (restoreButton) setIcon(restoreButton, 'rotate-ccw');
 
       const keyInput = inputContainer.createEl('input', {
         type: 'text',
@@ -276,6 +289,33 @@ function buildKeyValueRow(
       );
       valueInput.value = getValue();
       valueInput.tabIndex = 0;
+
+      // Matches native, which dims a restore control through `aria-disabled`
+      // while the value already equals its default and leaves it clickable —
+      // restoring to the current value does nothing.
+      const syncRestoreState = () => {
+        if (!restoreButton || !restoreDefault) return;
+        restoreButton.setAttribute(
+          'aria-disabled',
+          String(
+            getKey() === restoreDefault.key &&
+              getValue() === restoreDefault.value
+          )
+        );
+      };
+      syncRestoreState();
+
+      restoreButton?.addEventListener('click', () => {
+        void (async () => {
+          if (!restoreDefault) return;
+          setKey(restoreDefault.key);
+          setValue(restoreDefault.value);
+          keyInput.value = restoreDefault.key;
+          valueInput.value = restoreDefault.value;
+          syncRestoreState();
+          await persistSettings(plugin);
+        })();
+      });
 
       // Tab moves between the key and value halves of the same pair rather
       // than jumping to the next row's control.
@@ -310,6 +350,7 @@ function buildKeyValueRow(
       keyInput.addEventListener('input', (e: Event) => {
         void (async () => {
           setKey((e.target as HTMLInputElement).value);
+          syncRestoreState();
           plugin.debugLog(debugLabel, getKey());
           await persistSettings(plugin);
         })();
@@ -318,6 +359,7 @@ function buildKeyValueRow(
       valueInput.addEventListener('input', (e: Event) => {
         void (async () => {
           setValue((e.target as HTMLInputElement).value);
+          syncRestoreState();
           plugin.debugLog(debugLabel, getValue());
           await persistSettings(plugin);
         })();
@@ -378,6 +420,10 @@ function buildDisablePropertyRow(
       exclusions().disableRenamingValue = value;
     },
     debugLabel: 'disableRenaming',
+    restoreDefault: {
+      key: DEFAULT_SETTINGS.exclusions.disableRenamingKey,
+      value: DEFAULT_SETTINGS.exclusions.disableRenamingValue,
+    },
   });
 }
 
@@ -624,10 +670,10 @@ export function buildExclusionsPage(
 ): SettingDefinitionPage {
   const exclusions = () => plugin.settings.exclusions;
   const exclusionModeOptions = {
-    'Only exclude...': t(
+    [EXCLUSION_STRATEGY.ONLY_EXCLUDE]: t(
       'settings.exclusions.folders.exclusionMode.onlyExclude'
     ),
-    'Exclude all except...': t(
+    [EXCLUSION_STRATEGY.EXCLUDE_ALL_EXCEPT]: t(
       'settings.exclusions.folders.exclusionMode.excludeAllExcept'
     ),
   };

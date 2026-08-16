@@ -6,6 +6,7 @@ import { t, tp } from '../i18n';
 import { MenuRenderer } from './menu-config';
 import { MenuDefinitions } from './menu-definitions';
 import { TIMING } from '../constants/timing';
+import { EXCLUSION_STRATEGY } from '../types';
 
 /**
  * Manages all context menu operations for the First Line is Title plugin.
@@ -48,7 +49,8 @@ export class ContextMenuManager {
 
     let result: boolean;
     if (
-      this.plugin.settings.exclusions.folderScopeStrategy === 'Only exclude...'
+      this.plugin.settings.exclusions.folderScopeStrategy ===
+      EXCLUSION_STRATEGY.ONLY_EXCLUDE
     ) {
       // Only exclude strategy: list contains DISABLED folders
       // folder in list (disabled) → show "enable" → return false
@@ -81,7 +83,8 @@ export class ContextMenuManager {
 
     let result: boolean;
     if (
-      this.plugin.settings.exclusions.tagScopeStrategy === 'Only exclude...'
+      this.plugin.settings.exclusions.tagScopeStrategy ===
+      EXCLUSION_STRATEGY.ONLY_EXCLUDE
     ) {
       // Only exclude strategy: list contains DISABLED tags
       // tag in list (disabled) → show "enable" → return false
@@ -110,7 +113,8 @@ export class ContextMenuManager {
    */
   getFolderMenuText(_folderPath: string): { disable: string; enable: string } {
     if (
-      this.plugin.settings.exclusions.folderScopeStrategy === 'Only exclude...'
+      this.plugin.settings.exclusions.folderScopeStrategy ===
+      EXCLUSION_STRATEGY.ONLY_EXCLUDE
     ) {
       // Only exclude strategy: list contains DISABLED folders
       return {
@@ -131,7 +135,8 @@ export class ContextMenuManager {
    */
   getTagMenuText(_tagName: string): { disable: string; enable: string } {
     if (
-      this.plugin.settings.exclusions.tagScopeStrategy === 'Only exclude...'
+      this.plugin.settings.exclusions.tagScopeStrategy ===
+      EXCLUSION_STRATEGY.ONLY_EXCLUDE
     ) {
       // Only exclude strategy: list contains DISABLED tags
       return {

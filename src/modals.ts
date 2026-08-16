@@ -2,6 +2,7 @@ import { Modal, App, TFile, TFolder, Notice } from 'obsidian';
 import { verboseLog, shouldProcessFile, normalizeTag } from './utils';
 import { t, getPluralForm, tpSplit } from './i18n';
 import { FirstLineIsTitlePlugin } from './settings/settings-base';
+import { setDisableRenamingProperty } from './utils/property-value';
 
 // External documentation URL - dynamic construction avoids false positive from hardcoded-config-path rule
 const OBSIDIAN_HELP_DOMAIN =
@@ -11,6 +12,30 @@ const OBSIDIAN_HELP_DOMAIN =
   String.fromCharCode(46) +
   'md';
 const OBSIDIAN_BACKUP_DOCS_URL = `https://${OBSIDIAN_HELP_DOMAIN}/backup`;
+
+// Deliberately small: enough concurrency to hide per-file await latency, not
+// enough to flood the vault adapter on mobile.
+const BULK_CHUNK_SIZE = 8;
+
+/**
+ * Runs `handler` over `items` in fixed-size concurrent chunks, awaiting each
+ * chunk before starting the next. `handler` must swallow its own failures so
+ * one bad item cannot abort the batch.
+ *
+ * Safe for the rename loops: RenameEngine reserves a destination before it
+ * awaits the rename and resolves conflicts against those reservations as well as
+ * the vault index, so two notes resolving to the same title inside one chunk
+ * still produce one plain title and one counter suffix. Which of the two takes
+ * the suffix follows completion order rather than the ctime sort.
+ */
+async function forEachInChunks<T>(
+  items: T[],
+  handler: (item: T) => Promise<void>
+): Promise<void> {
+  for (let start = 0; start < items.length; start += BULK_CHUNK_SIZE) {
+    await Promise.all(items.slice(start, start + BULK_CHUNK_SIZE).map(handler));
+  }
+}
 
 export class RenameAllFilesModal extends Modal {
   plugin: FirstLineIsTitlePlugin;
@@ -127,7 +152,7 @@ export class RenameAllFilesModal extends Modal {
     let renamedFileCount = 0;
     const errors: string[] = [];
     try {
-      for (const file of filesToRename) {
+      await forEachInChunks(filesToRename, async (file) => {
         try {
           const result = await this.plugin.renameEngine?.processFile(
             file,
@@ -146,7 +171,7 @@ export class RenameAllFilesModal extends Modal {
           errors.push(`Failed to rename ${file.path}: ${errorMessage}`);
           console.error(`Error renaming ${file.path}`, error);
         }
-      }
+      });
 
       if (errors.length > 0) {
         const errorMsg = t('notifications.renamedNotesWithErrors')
@@ -205,17 +230,13 @@ export class RenameFolderModal extends Modal {
 
     this.setTitle(t('modals.caution'));
 
-    const folderFiles = this.app.vault
-      .getAllLoadedFiles()
-      .filter(
-        (f: unknown): f is TFile => f instanceof TFile && f.extension === 'md'
-      )
+    const count = this.app.vault
+      .getMarkdownFiles()
       .filter(
         (f: TFile) =>
           f.path.startsWith(this.folder.path + '/') ||
           f.parent?.path === this.folder.path
-      );
-    const count = folderFiles.length;
+      ).length;
 
     const messagePara = contentEl.createEl('p');
     const parts = tpSplit('modals.processNNotes', count);
@@ -388,7 +409,7 @@ export class RenameFolderModal extends Modal {
         ignoreProperty: renameExcludedProperties,
       };
 
-      for (const file of directFolderFiles) {
+      await forEachInChunks(directFolderFiles, async (file) => {
         try {
           const result = await this.plugin.renameEngine?.processFile(
             file,
@@ -407,7 +428,7 @@ export class RenameFolderModal extends Modal {
           errors.push(`Failed to rename ${file.path}: ${errorMessage}`);
           console.error(`Error processing ${file.path}`, error);
         }
-      }
+      });
 
       // Process subfolder files - respect renameExcludedFolders checkbox for subfolders
       const subfolderOverrides = {
@@ -416,7 +437,7 @@ export class RenameFolderModal extends Modal {
         ignoreProperty: renameExcludedProperties,
       };
 
-      for (const file of subfolderFiles) {
+      await forEachInChunks(subfolderFiles, async (file) => {
         try {
           const result = await this.plugin.renameEngine?.processFile(
             file,
@@ -435,7 +456,7 @@ export class RenameFolderModal extends Modal {
           errors.push(`Failed to rename ${file.path}: ${errorMessage}`);
           console.error(`Error processing ${file.path}`, error);
         }
-      }
+      });
 
       if (errors.length > 0) {
         const errorMsg = t('notifications.renamedNotesWithErrors')
@@ -482,27 +503,48 @@ export class RenameMultipleFoldersModal extends Modal {
     this.folders = folders;
   }
 
+  // Shared by onOpen's preview and renameMultipleFolders' run so their counts cannot fork again — that fork was the actual bug.
+  private classifyFileAgainstFolders(file: TFile): {
+    isInFolder: boolean;
+    isInSubfolder: boolean;
+  } {
+    let isInFolder = false;
+    let isInSubfolder = false;
+
+    for (const folder of this.folders) {
+      // Direct child wins over nested-in-another-selected-folder so a file is never double-counted.
+      if (file.parent?.path === folder.path) {
+        isInFolder = true;
+        break;
+      }
+      if (file.path.startsWith(folder.path + '/')) {
+        isInSubfolder = true;
+      }
+    }
+
+    return { isInFolder, isInSubfolder };
+  }
+
+  // Same predicate renameMultipleFolders' totalFiles uses, kept separate from DOM rendering so it stays testable on its own.
+  private countTotalFiles(allFiles: TFile[]): number {
+    let total = 0;
+    for (const file of allFiles) {
+      const { isInFolder, isInSubfolder } =
+        this.classifyFileAgainstFolders(file);
+      if (isInFolder || isInSubfolder) {
+        total++;
+      }
+    }
+    return total;
+  }
+
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
 
     this.setTitle(t('modals.caution'));
 
-    // Count all files from all folders
-    let totalFiles = 0;
-    this.folders.forEach((folder) => {
-      const folderFiles = this.app.vault
-        .getAllLoadedFiles()
-        .filter(
-          (f: unknown): f is TFile => f instanceof TFile && f.extension === 'md'
-        )
-        .filter(
-          (f: TFile) =>
-            f.path.startsWith(folder.path + '/') ||
-            f.parent?.path === folder.path
-        );
-      totalFiles += folderFiles.length;
-    });
+    const totalFiles = this.countTotalFiles(this.app.vault.getMarkdownFiles());
 
     const messagePara = contentEl.createEl('p');
     const parts = tpSplit('modals.processNNotes', totalFiles);
@@ -633,39 +675,24 @@ export class RenameMultipleFoldersModal extends Modal {
     const allFiles = this.app.vault.getMarkdownFiles();
     const directFolderFiles: TFile[] = [];
     const subfolderFiles: TFile[] = [];
+    // Total counts every note under the selection regardless of the subfolder
+    // checkbox, so it accumulates alongside the two processing buckets.
+    let totalFiles = 0;
 
-    for (const folder of this.folders) {
-      for (const file of allFiles) {
-        const isInFolder = file.parent?.path === folder.path;
-        const isInSubfolder =
-          file.path.startsWith(folder.path + '/') &&
-          file.parent?.path !== folder.path;
+    for (const file of allFiles) {
+      const { isInFolder, isInSubfolder } =
+        this.classifyFileAgainstFolders(file);
 
-        if (isInFolder && !directFolderFiles.includes(file)) {
-          directFolderFiles.push(file);
-        } else if (
-          includeSubfolders &&
-          isInSubfolder &&
-          !subfolderFiles.includes(file)
-        ) {
-          subfolderFiles.push(file);
-        }
+      if (isInFolder) {
+        directFolderFiles.push(file);
+      } else if (includeSubfolders && isInSubfolder) {
+        subfolderFiles.push(file);
+      }
+      if (isInFolder || isInSubfolder) {
+        totalFiles++;
       }
     }
 
-    // Calculate total files in all folders (including all subfolders, regardless of checkbox)
-    const totalFilesSet = new Set<string>();
-    for (const folder of this.folders) {
-      allFiles.forEach((file) => {
-        if (
-          file.path.startsWith(folder.path + '/') ||
-          file.parent?.path === folder.path
-        ) {
-          totalFilesSet.add(file.path);
-        }
-      });
-    }
-    const totalFiles = totalFilesSet.size;
     directFolderFiles.sort((a, b) => a.stat.ctime - b.stat.ctime);
     subfolderFiles.sort((a, b) => a.stat.ctime - b.stat.ctime);
 
@@ -686,7 +713,7 @@ export class RenameMultipleFoldersModal extends Modal {
         ignoreProperty: renameExcludedProperties,
       };
 
-      for (const file of directFolderFiles) {
+      await forEachInChunks(directFolderFiles, async (file) => {
         try {
           const result = await this.plugin.renameEngine?.processFile(
             file,
@@ -705,7 +732,7 @@ export class RenameMultipleFoldersModal extends Modal {
           errors.push(`Failed to rename ${file.path}: ${errorMessage}`);
           console.error(`Error processing ${file.path}`, error);
         }
-      }
+      });
 
       // Process subfolder files - respect renameExcludedFolders checkbox for subfolders
       const subfolderOverrides = {
@@ -714,7 +741,7 @@ export class RenameMultipleFoldersModal extends Modal {
         ignoreProperty: renameExcludedProperties,
       };
 
-      for (const file of subfolderFiles) {
+      await forEachInChunks(subfolderFiles, async (file) => {
         try {
           const result = await this.plugin.renameEngine?.processFile(
             file,
@@ -733,7 +760,7 @@ export class RenameMultipleFoldersModal extends Modal {
           errors.push(`Failed to rename ${file.path}: ${errorMessage}`);
           console.error(`Error processing ${file.path}`, error);
         }
-      }
+      });
 
       if (errors.length > 0) {
         const errorMsg = t('notifications.renamedNotesWithErrors')
@@ -774,12 +801,49 @@ export class ProcessTagModal extends Modal {
   plugin: FirstLineIsTitlePlugin;
   tag: string;
   private normalizedTag: string;
+  // The preview count and the run repeat the same full-vault metadata scan, and
+  // the modal is too short-lived for the result to drift between them. Keyed by
+  // `includeChildTags` because the checkbox widens the match.
+  private matchingFilesCache = new Map<boolean, TFile[]>();
 
   constructor(app: App, plugin: FirstLineIsTitlePlugin, tag: string) {
     super(app);
     this.plugin = plugin;
     this.tag = tag;
     this.normalizedTag = normalizeTag(tag);
+  }
+
+  /** Every Markdown file carrying the tag, optionally widened to its subtags. */
+  private getMatchingFiles(includeChildTags: boolean): TFile[] {
+    const cached = this.matchingFilesCache.get(includeChildTags);
+    if (cached) return cached;
+
+    const matches = this.app.vault
+      .getMarkdownFiles()
+      .filter((file) => this.fileHasTag(file, includeChildTags));
+    this.matchingFilesCache.set(includeChildTags, matches);
+    return matches;
+  }
+
+  private fileHasTag(file: TFile, includeChildTags: boolean): boolean {
+    const cache = this.app.metadataCache.getFileCache(file);
+    const isMatch = (rawTag: string): boolean => {
+      const normalized = normalizeTag(rawTag);
+      return (
+        normalized === this.normalizedTag ||
+        (includeChildTags && normalized.startsWith(`${this.normalizedTag}/`))
+      );
+    };
+
+    if (cache?.frontmatter?.tags) {
+      const frontmatterTags = Array.isArray(cache.frontmatter.tags)
+        ? cache.frontmatter.tags
+        : [cache.frontmatter.tags];
+      if (frontmatterTags.some((tag) => isMatch(String(tag)))) return true;
+    }
+
+    // Body tags live in the metadata cache rather than the frontmatter block.
+    return cache?.tags?.some((tagCache) => isMatch(tagCache.tag)) ?? false;
   }
 
   onOpen() {
@@ -789,37 +853,7 @@ export class ProcessTagModal extends Modal {
     this.setTitle(t('modals.caution'));
 
     // Count files with exact tag match (base scope - checkboxes expand this)
-    const allFiles = this.app.vault.getMarkdownFiles();
-    let count = 0;
-    for (const file of allFiles) {
-      const cache = this.app.metadataCache.getFileCache(file);
-      let fileHasTag = false;
-
-      if (cache?.frontmatter?.tags) {
-        const frontmatterTags = Array.isArray(cache.frontmatter.tags)
-          ? cache.frontmatter.tags
-          : [cache.frontmatter.tags];
-        for (const tag of frontmatterTags) {
-          const normalizedTag = normalizeTag(String(tag));
-          if (normalizedTag === this.normalizedTag) {
-            fileHasTag = true;
-            break;
-          }
-        }
-      }
-      if (!fileHasTag && cache?.tags) {
-        for (const tagCache of cache.tags) {
-          const normalizedTag = normalizeTag(tagCache.tag);
-          if (normalizedTag === this.normalizedTag) {
-            fileHasTag = true;
-            break;
-          }
-        }
-      }
-      if (fileHasTag) {
-        count++;
-      }
-    }
+    const count = this.getMatchingFiles(false).length;
 
     const messagePara = contentEl.createEl('p');
     const parts = tpSplit('modals.processNotesMessage', count);
@@ -951,59 +985,8 @@ export class ProcessTagModal extends Modal {
       return;
     }
 
-    const filesToProcess: TFile[] = [];
-    const allFiles = this.app.vault.getMarkdownFiles();
-
-    for (const file of allFiles) {
-      let hasMatchingTag = false;
-
-      // Check YAML frontmatter tags
-      const cache = this.app.metadataCache.getFileCache(file);
-      if (cache?.frontmatter?.tags) {
-        const frontmatterTags = Array.isArray(cache.frontmatter.tags)
-          ? cache.frontmatter.tags
-          : [cache.frontmatter.tags];
-
-        for (const tag of frontmatterTags) {
-          const normalizedTag = normalizeTag(String(tag));
-          if (normalizedTag === this.normalizedTag) {
-            hasMatchingTag = true;
-            break;
-          }
-          if (
-            includeChildTags &&
-            normalizedTag.startsWith(`${this.normalizedTag}/`)
-          ) {
-            hasMatchingTag = true;
-            break;
-          }
-        }
-      }
-
-      // Check metadata cache tags (includes body tags)
-      if (!hasMatchingTag && cache?.tags) {
-        for (const tagCache of cache.tags) {
-          const normalizedTag = normalizeTag(tagCache.tag);
-          if (normalizedTag === this.normalizedTag) {
-            hasMatchingTag = true;
-            break;
-          }
-          if (
-            includeChildTags &&
-            normalizedTag.startsWith(`${this.normalizedTag}/`)
-          ) {
-            hasMatchingTag = true;
-            break;
-          }
-        }
-      }
-
-      if (!hasMatchingTag) {
-        continue;
-      }
-
-      filesToProcess.push(file);
-    }
+    // Copied because the sort below would otherwise reorder the cached list.
+    const filesToProcess = [...this.getMatchingFiles(includeChildTags)];
 
     if (filesToProcess.length === 0) {
       verboseLog(this.plugin, `No notes found with ${this.tag}`);
@@ -1034,7 +1017,7 @@ export class ProcessTagModal extends Modal {
     };
 
     try {
-      for (const file of filesToProcess) {
+      await forEachInChunks(filesToProcess, async (file) => {
         try {
           const result = await this.plugin.renameEngine?.processFile(
             file,
@@ -1053,7 +1036,7 @@ export class ProcessTagModal extends Modal {
           errors.push(`Failed to rename ${file.path}: ${errorMessage}`);
           console.error(`Error processing ${file.path}`, error);
         }
-      }
+      });
 
       if (errors.length > 0) {
         const errorMsg = t('notifications.renamedNotesWithErrors')
@@ -1238,7 +1221,7 @@ export class RenameModal extends Modal {
     let renamedFileCount = 0;
     const errors: string[] = [];
     try {
-      for (const file of filesToProcess) {
+      await forEachInChunks(filesToProcess, async (file) => {
         try {
           const result = await this.plugin.renameEngine?.processFile(
             file,
@@ -1257,7 +1240,7 @@ export class RenameModal extends Modal {
           errors.push(`Failed to rename ${file.path}: ${errorMessage}`);
           console.error(`Error processing ${file.path}`, error);
         }
-      }
+      });
 
       if (errors.length > 0) {
         const errorMsg = t('notifications.renamedNotesWithErrors')
@@ -1395,29 +1378,30 @@ export class DisableEnableModal extends Modal {
       await this.plugin.propertyManager.ensurePropertyTypeIsCheckbox();
     }
 
-    verboseLog(this.plugin, `Renaming ${filesToProcess.length} notes...`);
-    const renamingMsg = t('notifications.renamingNNotes').replace(
+    verboseLog(this.plugin, `Processing ${filesToProcess.length} notes...`);
+    // This operation only writes a property, so it must not claim to rename.
+    const processingMsg = t('notifications.processingNNotes').replace(
       '{{count}}',
       String(filesToProcess.length)
     );
-    const pleaseWaitNotice = new Notice(renamingMsg, 0);
+    const pleaseWaitNotice = new Notice(processingMsg, 0);
 
     let processedCount = 0;
     const errors: string[] = [];
-    const key = this.plugin.settings.exclusions.disableRenamingKey;
-    const value = this.plugin.settings.exclusions.disableRenamingValue;
 
     try {
-      for (const file of filesToProcess) {
+      // Safe to chunk: processFrontMatter is atomic per file and these writes
+      // have no cross-file coupling.
+      await forEachInChunks(filesToProcess, async (file) => {
         try {
           await this.app.fileManager.processFrontMatter(
             file,
             (frontmatter: Record<string, unknown>) => {
-              if (this.action === 'disable') {
-                frontmatter[key] = value;
-              } else {
-                delete frontmatter[key];
-              }
+              setDisableRenamingProperty(
+                frontmatter,
+                this.plugin.settings,
+                this.action === 'enable'
+              );
             }
           );
           processedCount++;
@@ -1427,7 +1411,7 @@ export class DisableEnableModal extends Modal {
           errors.push(`Failed to process ${file.path}: ${errorMessage}`);
           console.error(`Error processing ${file.path}`, error);
         }
-      }
+      });
     } finally {
       pleaseWaitNotice.hide();
     }
@@ -1435,8 +1419,8 @@ export class DisableEnableModal extends Modal {
     // Report exactly one outcome. Reporting success alongside errors contradicts
     // itself and misreports a total failure as "…for 0 notes" (Issue #6).
     if (errors.length > 0) {
-      const errorMsg = t('notifications.renamedNotesWithErrors')
-        .replace('{{renamed}}', String(processedCount))
+      const errorMsg = t('notifications.processedNotesWithErrors')
+        .replace('{{processed}}', String(processedCount))
         .replace('{{total}}', String(filesToProcess.length))
         .replace('{{errors}}', String(errors.length));
       const errorNotice = new Notice(errorMsg, 0);

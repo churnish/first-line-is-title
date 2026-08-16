@@ -4,6 +4,7 @@ import {
   verboseLog,
   shouldProcessFile,
   hasDisablePropertyInFile,
+  reverseCharacterReplacements,
 } from '../utils';
 import { t } from '../i18n';
 import { readFileContent } from '../utils/content-reader';
@@ -41,112 +42,13 @@ export class FileOperations {
         return false;
       }
 
-      let cleanTitle = file.basename;
-      if (this.settings.core.convertReplacementCharactersInTitle) {
-        const charMap: Record<string, string> = {
-          '/': 'slash',
-          ':': 'colon',
-          '*': 'asterisk',
-          '?': 'question',
-          '<': 'lessThan',
-          '>': 'greaterThan',
-          '"': 'quote',
-          '|': 'pipe',
-          '#': 'hash',
-          '[': 'leftBracket',
-          ']': 'rightBracket',
-          '^': 'caret',
-          '\\': 'backslash',
-          '.': 'dot',
-        };
-
-        // Punctuation characters that should not have space added before them
-        const punctuation = ',.?;:!"\'""\'\'»«¡¿‽';
-        const replacementCounts = new Map<string, number>();
-        const enabledReplacements: string[] = [];
-        for (const settingKey of Object.values(charMap)) {
-          const replacement =
-            this.settings.replaceCharacters.charReplacements[
-              settingKey as keyof typeof this.settings.replaceCharacters.charReplacements
-            ];
-          if (replacement.enabled && replacement.replacement) {
-            replacementCounts.set(
-              replacement.replacement,
-              (replacementCounts.get(replacement.replacement) || 0) + 1
-            );
-            enabledReplacements.push(
-              `${settingKey}="${replacement.replacement}"`
-            );
-          }
-        }
-
-        verboseLog(
-          this.plugin,
-          `[TITLE-REVERSAL] "${cleanTitle}" with replacements: [${enabledReplacements.join(', ')}]`
-        );
-
-        for (const [originalChar, settingKey] of Object.entries(charMap)) {
-          const charConfig =
-            this.settings.replaceCharacters.charReplacements[
-              settingKey as keyof typeof this.settings.replaceCharacters.charReplacements
-            ];
-
-          // Skip if not enabled or no replacement defined
-          if (!charConfig.enabled || !charConfig.replacement) continue;
-
-          const replacementChar = charConfig.replacement;
-
-          if (!cleanTitle.includes(replacementChar)) continue;
-
-          // Skip if this replacement string is used by multiple enabled characters (ambiguous)
-          const count = replacementCounts.get(replacementChar) || 0;
-          if (count > 1) {
-            verboseLog(
-              this.plugin,
-              `[TITLE-REVERSAL] Skipping "${replacementChar}" → "${originalChar}" (duplicate, count=${count})`
-            );
-            continue;
-          }
-
-          const trimLeft = charConfig.trimLeft;
-          const trimRight = charConfig.trimRight;
-
-          let result = '';
-          let remaining = cleanTitle;
-          while (remaining.includes(replacementChar)) {
-            const index = remaining.indexOf(replacementChar);
-
-            result += remaining.substring(0, index);
-            let replacement = originalChar;
-
-            if (trimLeft) {
-              replacement = ' ' + replacement;
-            }
-
-            // Add right space if trimRight enabled and right char is not punctuation
-            if (trimRight) {
-              const charToRight =
-                remaining.length > index + 1 ? remaining[index + 1] : '';
-              if (!punctuation.includes(charToRight)) {
-                replacement = replacement + ' ';
-              }
-            }
-
-            result += replacement;
-            remaining = remaining.substring(index + 1);
-          }
-
-          result += remaining;
-          cleanTitle = result;
-        }
-
-        if (cleanTitle !== file.basename) {
-          verboseLog(
-            this.plugin,
-            `[TITLE-REVERSAL] Result: "${file.basename}" → "${cleanTitle}"`
-          );
-        }
-      }
+      // Title goes into the note body, so restore the spacing the trim flags stripped from the filename
+      const cleanTitle = reverseCharacterReplacements(
+        file.basename,
+        this.settings,
+        this.plugin,
+        { restoreTrimmedSpacing: true }
+      );
 
       // Note: addHeadingToTitle setting will be applied conditionally below
       // (skipped if heading pattern already exists in template)
@@ -592,16 +494,17 @@ export class FileOperations {
   /**
    * Check if file is excluded from processing (folder/tag/property exclusions + disable property)
    * Uses real-time content checking for tags if content provided
-   * @param skipFolderCheck - If true, ignore folder exclusions (only check tags/properties)
+   * @param exclusionOverrides - Per-caller opt-outs; callers own which exclusion types apply
    */
   isFileExcludedForCursorPositioning(
     file: TFile,
     content?: string,
-    skipFolderCheck: boolean = false
+    exclusionOverrides?: {
+      ignoreFolder?: boolean;
+      ignoreTag?: boolean;
+      ignoreProperty?: boolean;
+    }
   ): boolean {
-    const exclusionOverrides = skipFolderCheck
-      ? { ignoreFolder: true }
-      : undefined;
     if (
       !shouldProcessFile(
         file,
@@ -637,7 +540,9 @@ export class FileOperations {
   }
 
   /**
-   * Check for disable property and excluded properties by parsing YAML directly from content
+   * Check for the disable-renaming property by parsing YAML directly from content.
+   * Excluded properties are deliberately NOT checked here: shouldProcessFile now reads the
+   * same real-time content, so duplicating the rules would fork the matcher again.
    */
   private checkDisablePropertyInContent(content: string): boolean {
     const frontmatterInfo = getFrontMatterInfo(content);
@@ -656,71 +561,28 @@ export class FileOperations {
 
     if (!frontmatter || typeof frontmatter !== 'object') return false;
 
-    const disableKey = this.settings.exclusions.disableRenamingKey;
+    // Property matching folds case on both the key and the value
+    const disableKey =
+      this.settings.exclusions.disableRenamingKey.toLowerCase();
     const disableValue =
       this.settings.exclusions.disableRenamingValue.toLowerCase();
 
-    const nonEmptyExcludedProps =
-      this.settings.exclusions.excludedProperties.filter(
-        (prop) => prop.key.trim() !== ''
-      );
-
-    // Helper to normalize tag values (remove # prefix)
-    const normalizeTag = (val: string): string => {
-      return val.startsWith('#') ? val.substring(1) : val;
-    };
-
-    const checkValue = (key: string, value: unknown): boolean => {
-      const valueStr = String(value);
-
-      if (key === disableKey && valueStr.toLowerCase() === disableValue) {
-        verboseLog(this.plugin, `Found disable property: ${key}: ${valueStr}`);
-        return true;
-      }
-
-      for (const excludedProp of nonEmptyExcludedProps) {
-        const propKey = excludedProp.key.trim();
-        const propValue = excludedProp.value.trim();
-
-        if (key === propKey) {
-          // For tags property, normalize both sides (remove #)
-          if (propKey === 'tags') {
-            const normalizedPropValue = normalizeTag(propValue);
-            const normalizedValue = normalizeTag(valueStr);
-            if (propValue === '' || normalizedValue === normalizedPropValue) {
-              verboseLog(
-                this.plugin,
-                `Found excluded tag: ${propKey}: ${valueStr}`
-              );
-              return true;
-            }
-          } else {
-            // For other properties, exact match or empty value (any value)
-            if (propValue === '' || valueStr === propValue) {
-              verboseLog(
-                this.plugin,
-                `Found excluded property: ${propKey}: ${valueStr}`
-              );
-              return true;
-            }
-          }
-        }
-      }
-
-      return false;
-    };
+    const matchesDisableValue = (value: unknown): boolean =>
+      String(value).toLowerCase() === disableValue;
 
     for (const [key, value] of Object.entries(frontmatter)) {
-      if (Array.isArray(value)) {
-        for (const item of value) {
-          if (checkValue(key, item)) {
-            return true;
-          }
-        }
-      } else if (value !== null && value !== undefined) {
-        if (checkValue(key, value)) {
-          return true;
-        }
+      if (key.toLowerCase() !== disableKey) continue;
+
+      const matched = Array.isArray(value)
+        ? value.some(matchesDisableValue)
+        : value !== null && value !== undefined && matchesDisableValue(value);
+
+      if (matched) {
+        verboseLog(
+          this.plugin,
+          `Found disable property: ${key}: ${String(value)}`
+        );
+        return true;
       }
     }
 

@@ -9,55 +9,19 @@
  * - Edge cases: ENOENT, concurrent calls, special characters
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, Mock } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AliasManager } from '../../src/core/alias-manager';
-import {
-  createMockFile,
-  createMockApp,
-  createTestSettings,
-} from '../testUtils';
-import {
-  TFile,
-  App,
-  Editor,
-  MarkdownView,
-  getFrontMatterInfo,
-  parseYaml,
-  Workspace,
-} from '../mockObsidian';
-import { PluginSettings } from '../../src/types';
+import { createMockFile, createMockApp } from '../testUtils';
+import { TFile, Editor, MarkdownView } from '../mockObsidian';
+import { DeepPartial, PluginSettings } from '../../src/types';
 import { DEFAULT_SETTINGS } from '../../src/constants';
-
-// Settings overrides are nested, so a shallow Partial would demand every sibling
-// key of any branch being overridden.
-type DeepPartial<T> = T extends (infer _U)[]
-  ? T
-  : T extends Record<string, any>
-    ? { [K in keyof T]?: DeepPartial<T[K]> }
-    : T;
-
-// Deep merge for nested settings
-function deepMerge<T extends Record<string, any>>(
-  target: T,
-  source: DeepPartial<T>
-): T {
-  const result: Record<string, any> = { ...target };
-  for (const [key, value] of Object.entries(source)) {
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      result[key] = deepMerge(result[key] as Record<string, any>, value);
-    } else {
-      result[key] = value;
-    }
-  }
-  return result as T;
-}
+import { deepMerge } from '../../src/utils/deep-merge';
 
 // Create mock plugin for AliasManager
 function createMockPlugin(settingsOverrides: DeepPartial<PluginSettings> = {}) {
   const app = createMockApp();
-  // Clone the base first: deepMerge only copies branches it touches, so untouched
-  // branches would stay shared references into DEFAULT_SETTINGS.
-  const settings = deepMerge(structuredClone(DEFAULT_SETTINGS), {
+  // deepMerge deep-clones its defaults, so untouched branches never alias DEFAULT_SETTINGS
+  const settings = deepMerge(DEFAULT_SETTINGS, {
     aliases: {
       enableAliases: true,
       truncateAlias: false,
@@ -312,7 +276,6 @@ describe('AliasManager', () => {
 
       await aliasManager.addAliasToFile(file, title, 'filename', content);
 
-      const zwsp = '\u200B';
       expect(capturedFrontmatter.aliases[0]).toContain('DONE: Fix this');
     });
 
@@ -489,7 +452,7 @@ describe('AliasManager', () => {
       const content = title + '\nBody';
 
       plugin.app.fileManager.processFrontMatter = vi.fn(
-        async (f: TFile, callback: (fm: any) => void) => {
+        async (_file: TFile, callback: (fm: any) => void) => {
           const fm: Record<string, any> = {};
           callback(fm);
         }
@@ -749,7 +712,7 @@ describe('AliasManager', () => {
       const zwsp = '\u200B';
 
       plugin.app.fileManager.processFrontMatter = vi.fn(
-        async (f: TFile, callback: (fm: any) => void) => {
+        async (_file: TFile, callback: (fm: any) => void) => {
           const fm: Record<string, any> = { aliases: [`${zwsp}Plugin${zwsp}`] };
           callback(fm);
         }
@@ -880,7 +843,6 @@ describe('AliasManager', () => {
         veryLongTitle + '\nBody'
       );
 
-      const zwsp = '\u200B';
       expect(capturedFrontmatter.aliases[0]).toContain('A'.repeat(1000));
     });
 
@@ -903,7 +865,6 @@ describe('AliasManager', () => {
         title + '\nBody'
       );
 
-      const zwsp = '\u200B';
       expect(capturedFrontmatter.aliases[0]).toContain('\u{1F680}');
       expect(capturedFrontmatter.aliases[0]).toContain('\u00A9\u00AE\u2122');
     });

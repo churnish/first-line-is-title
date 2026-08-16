@@ -41,10 +41,9 @@ describe('createTestSettings', () => {
     );
   });
 
-  it('should keep top-level overrides as a shallow merge that replaces the whole branch', () => {
+  it('should merge overrides per leaf, keeping untouched siblings at their defaults', () => {
     const settings = createTestSettings({
       core: {
-        ...DEFAULT_SETTINGS.core,
         insertTitleOnCreation: true,
       },
     });
@@ -53,6 +52,20 @@ describe('createTestSettings', () => {
     expect(settings.core.renameAutomatically).toBe(
       DEFAULT_SETTINGS.core.renameAutomatically
     );
+    expect(settings.core.charCount).toBe(DEFAULT_SETTINGS.core.charCount);
     expect(settings.exclusions).not.toBe(DEFAULT_SETTINGS.exclusions);
+  });
+
+  it('should replace arrays wholesale rather than merging them item by item', () => {
+    const settings = createTestSettings({
+      exclusions: {
+        excludedFolders: ['Notes', 'Archive'],
+      },
+    });
+
+    expect(settings.exclusions.excludedFolders).toEqual(['Notes', 'Archive']);
+    expect(settings.exclusions.excludeSubfolders).toBe(
+      DEFAULT_SETTINGS.exclusions.excludeSubfolders
+    );
   });
 });

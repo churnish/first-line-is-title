@@ -3,13 +3,16 @@ import {
   SettingDefinitionItem,
   SettingDefinitionPage,
   Notice,
+  TextComponent,
 } from 'obsidian';
 import {
   FirstLineIsTitlePlugin,
   appendLines,
   buildDescRow,
+  quoteLabel,
 } from './settings-base';
-import { t, getCurrentLocale } from '../i18n';
+import { t } from '../i18n';
+import { DEFAULT_SETTINGS } from '../constants';
 import { createPluginLink, buildPluginLinkRouterGroup } from './plugin-links';
 
 // Plugin names (proper nouns, not subject to sentence case)
@@ -32,13 +35,8 @@ function buildLimitationsNote(): DocumentFragment {
   });
 }
 
-/** Russian typography uses guillemets where English bolds a UI label. */
 function appendEmphasisedTerm(frag: DocumentFragment, text: string): void {
-  if (getCurrentLocale() === 'ru') {
-    frag.appendText('«' + text + '»');
-  } else {
-    frag.createEl('strong', { text });
-  }
+  frag.appendText(quoteLabel(text));
 }
 
 /**
@@ -68,11 +66,6 @@ function buildAliasPropertyKeyDescription(): DocumentFragment {
     notes.appendText(t('settings.alias.aliasPropertyName.quickSwitcher'));
     notes.createEl('br');
     notes.appendText(t('settings.alias.aliasPropertyName.multipleProperties'));
-
-    frag.createEl('br');
-    frag.createEl('small').createEl('strong', {
-      text: t('settings.alias.aliasPropertyName.default'),
-    });
   });
 }
 
@@ -113,25 +106,64 @@ export function buildAliasPage(
       name: t('settings.alias.aliasPropertyName.name'),
       desc: buildAliasPropertyKeyDescription(),
       render: (setting) => {
-        setting.addText((text) =>
+        const defaultKey = DEFAULT_SETTINGS.aliases.aliasPropertyKey;
+        let textComponent: TextComponent | null = null;
+        let syncRestoreState = () => {};
+
+        const persist = async () => {
+          plugin.debugLog(
+            'aliasPropertyKey',
+            plugin.settings.aliases.aliasPropertyKey
+          );
+          try {
+            await plugin.saveSettings();
+          } catch {
+            const notice = new Notice(t('settings.errors.saveFailed'));
+            notice.containerEl.addClass('mod-warning');
+          }
+        };
+
+        // Added before the text field so it renders to its left, the order
+        // Obsidian itself uses for the restore control on slider rows.
+        setting.addExtraButton((button) => {
+          button
+            .setIcon('rotate-ccw')
+            .setTooltip(t('settings.common.restoreDefault'))
+            .onClick(() => {
+              void (async () => {
+                plugin.settings.aliases.aliasPropertyKey = defaultKey;
+                textComponent?.setValue(defaultKey);
+                syncRestoreState();
+                await persist();
+              })();
+            });
+
+          // Native dims through `aria-disabled` and leaves the button
+          // clickable, since restoring to the current value does nothing.
+          syncRestoreState = () => {
+            button.extraSettingsEl.setAttribute(
+              'aria-disabled',
+              String(plugin.settings.aliases.aliasPropertyKey === defaultKey)
+            );
+          };
+        });
+
+        setting.addText((text) => {
+          textComponent = text;
           text
             .setPlaceholder(t('settings.replaceCharacters.emptyPlaceholder'))
             .setValue(plugin.settings.aliases.aliasPropertyKey)
             .onChange(async (value) => {
+              // Empty falls back to the default rather than being rejected,
+              // so the button dims on an empty field too.
               plugin.settings.aliases.aliasPropertyKey =
-                value.trim() || 'aliases';
-              plugin.debugLog(
-                'aliasPropertyKey',
-                plugin.settings.aliases.aliasPropertyKey
-              );
-              try {
-                await plugin.saveSettings();
-              } catch {
-                const notice = new Notice(t('settings.errors.saveFailed'));
-                notice.containerEl.addClass('mod-warning');
-              }
-            })
-        );
+                value.trim() || defaultKey;
+              syncRestoreState();
+              await persist();
+            });
+        });
+
+        syncRestoreState();
       },
     },
     {

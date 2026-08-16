@@ -1,6 +1,6 @@
 import { App, Notice, TFile, TFolder, normalizePath } from 'obsidian';
 import { verboseLog } from '../utils';
-import { PluginSettings } from '../types';
+import { EXCLUSION_STRATEGY, PluginSettings } from '../types';
 import { RenameEngine } from '../core/rename-engine';
 import { t } from '../i18n';
 
@@ -120,7 +120,8 @@ export class FolderOperations {
     const isInList =
       this.settings.exclusions.excludedFolders.includes(folderPath);
     const isInverted =
-      this.settings.exclusions.folderScopeStrategy === 'Exclude all except...';
+      this.settings.exclusions.folderScopeStrategy ===
+      EXCLUSION_STRATEGY.EXCLUDE_ALL_EXCEPT;
 
     if (isInList) {
       this.settings.exclusions.excludedFolders =
@@ -285,14 +286,13 @@ export class FolderOperations {
   getAllMarkdownFilesInFolder(folder: TFolder): TFile[] {
     const files: TFile[] = [];
 
+    // Always recurse: the removed exclusions.includeSubfolders key was permanently true, and
+    // reusing excludeSubfolders here would let an Exclusions setting govern folder-menu bulk renames
     const processFolder = (currentFolder: TFolder) => {
       currentFolder.children.forEach((child) => {
         if (child instanceof TFile && child.extension === 'md') {
           files.push(child);
-        } else if (
-          child instanceof TFolder &&
-          this.settings.exclusions.includeSubfolders
-        ) {
+        } else if (child instanceof TFolder) {
           processFolder(child);
         }
       });

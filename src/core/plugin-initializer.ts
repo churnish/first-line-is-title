@@ -1,6 +1,6 @@
 import { verboseLog } from '../utils';
 import { FirstLineIsTitlePlugin } from '../settings/settings-base';
-import { PRIMARY_CHAR_KEYS } from '../types/char-replacement';
+import { FIRST_ENABLE_CHAR_KEYS } from '../types/char-replacement';
 
 /**
  * PluginInitializer
@@ -47,10 +47,7 @@ export class PluginInitializer {
       this.settings.replaceCharacters.enableForbiddenCharReplacements &&
       !this.settings.core.hasEnabledForbiddenChars
     ) {
-      const autoEnableKeys = PRIMARY_CHAR_KEYS.filter(
-        (key) => key !== 'backslash'
-      );
-      autoEnableKeys.forEach((key) => {
+      FIRST_ENABLE_CHAR_KEYS.forEach((key) => {
         this.settings.replaceCharacters.charReplacements[key].enabled = true;
       });
       this.settings.core.hasEnabledForbiddenChars = true;
@@ -98,107 +95,82 @@ export class PluginInitializer {
     }
 
     // Check for Templates and Templater folders
-    if (this.settings.core.verboseLogging)
-      console.debug('Checking for template plugin folders to auto-exclude');
+    verboseLog(
+      this.plugin,
+      'Checking for template plugin folders to auto-exclude'
+    );
     const adapter = this.plugin.app.vault.adapter;
     const configDir = this.plugin.app.vault.configDir;
-    if (this.settings.core.verboseLogging)
-      console.debug('Vault config directory is:', configDir);
+    verboseLog(this.plugin, 'Vault config directory is:', configDir);
     let templatesFolder: string | null = null;
     let templaterFolder: string | null = null;
 
-    // Check core Templates plugin - only if enabled
-    try {
-      const corePluginsPath = `${configDir}/core-plugins.json`;
-      if (this.settings.core.verboseLogging)
-        console.debug(
-          'Reading core plugins configuration from:',
-          corePluginsPath
+    // A missing or malformed config file just means the feature is unused, so
+    // every read degrades to null rather than aborting the whole setup pass.
+    const readJsonConfig = async (
+      path: string
+    ): Promise<Record<string, unknown> | null> => {
+      verboseLog(this.plugin, 'Reading configuration from:', path);
+      try {
+        return JSON.parse(await adapter.read(path)) as Record<string, unknown>;
+      } catch (error) {
+        // Interpolated rather than passed as data: catch variables type as
+        // `any` here (no strict mode), which trips no-unsafe-assignment when
+        // spread into an object literal.
+        verboseLog(
+          this.plugin,
+          `Could not read configuration from: ${path} — ${error}`
         );
-      const corePluginsData = await adapter.read(corePluginsPath);
-      const corePlugins = JSON.parse(corePluginsData) as Record<
-        string,
-        unknown
-      >;
-      if (this.settings.core.verboseLogging)
-        console.debug(
-          'Core Templates plugin enabled status:',
-          corePlugins.templates
-        );
-
-      if (corePlugins.templates === true) {
-        if (this.settings.core.verboseLogging)
-          console.debug(
-            'Core Templates plugin is enabled, checking for templates folder'
-          );
-        const templatesDataPath = `${configDir}/templates.json`;
-        if (this.settings.core.verboseLogging)
-          console.debug(
-            'Reading templates configuration from:',
-            templatesDataPath
-          );
-        const templatesData = await adapter.read(templatesDataPath);
-        const templatesConfig = JSON.parse(templatesData) as Record<
-          string,
-          unknown
-        >;
-        templatesFolder = (templatesConfig.folder as string) ?? null;
-        if (this.settings.core.verboseLogging)
-          console.debug(
-            'Core Templates folder configured as:',
-            templatesFolder
-          );
-      } else {
-        if (this.settings.core.verboseLogging)
-          console.debug('Core Templates plugin is disabled, skipping');
+        return null;
       }
-    } catch (error) {
-      if (this.settings.core.verboseLogging)
-        console.debug(
-          'Could not read core Templates plugin configuration:',
-          error
-        );
-    }
+    };
 
     // Check Templater plugin
-    if (this.settings.core.verboseLogging)
-      console.debug('Checking for Templater community plugin');
+    verboseLog(this.plugin, 'Checking for Templater community plugin');
     const templaterPlugin = this.plugin.app.plugins.getPlugin(
       'templater-obsidian'
     ) as { _loaded?: boolean } | null;
-    if (this.settings.core.verboseLogging)
-      console.debug(
-        'Templater plugin found:',
-        !!templaterPlugin,
-        '| loaded:',
-        templaterPlugin?._loaded
+    verboseLog(this.plugin, 'Templater plugin found:', {
+      found: !!templaterPlugin,
+      loaded: templaterPlugin?._loaded,
+    });
+
+    // templates.json is fetched unconditionally so all three reads overlap;
+    // one extra small read beats serializing them behind the enabled check.
+    const [corePlugins, templatesConfig, templaterConfig] = await Promise.all([
+      readJsonConfig(`${configDir}/core-plugins.json`),
+      readJsonConfig(`${configDir}/templates.json`),
+      templaterPlugin?._loaded
+        ? readJsonConfig(`${configDir}/plugins/templater-obsidian/data.json`)
+        : Promise.resolve(null),
+    ]);
+
+    // Check core Templates plugin - only if enabled
+    verboseLog(
+      this.plugin,
+      'Core Templates plugin enabled status:',
+      corePlugins?.templates
+    );
+    if (corePlugins?.templates === true) {
+      templatesFolder = (templatesConfig?.folder as string) ?? null;
+      verboseLog(
+        this.plugin,
+        'Core Templates folder configured as:',
+        templatesFolder
       );
-    if (templaterPlugin && templaterPlugin._loaded) {
-      try {
-        const templaterDataPath = `${configDir}/plugins/templater-obsidian/data.json`;
-        if (this.settings.core.verboseLogging)
-          console.debug(
-            'Reading Templater configuration from:',
-            templaterDataPath
-          );
-        const templaterData = await adapter.read(templaterDataPath);
-        const templaterConfig = JSON.parse(templaterData) as Record<
-          string,
-          unknown
-        >;
-        templaterFolder = (templaterConfig.templates_folder as string) ?? null;
-        if (this.settings.core.verboseLogging)
-          console.debug('Templater folder configured as:', templaterFolder);
-      } catch (error) {
-        if (this.settings.core.verboseLogging)
-          console.debug(
-            'Could not read Templater plugin configuration:',
-            error
-          );
-      }
     } else {
-      if (this.settings.core.verboseLogging)
-        console.debug('Templater plugin not loaded, skipping');
+      verboseLog(this.plugin, 'Core Templates plugin is disabled, skipping');
+    }
+
+    if (templaterPlugin?._loaded) {
+      templaterFolder = (templaterConfig?.templates_folder as string) ?? null;
+      verboseLog(
+        this.plugin,
+        'Templater folder configured as:',
+        templaterFolder
+      );
+    } else {
+      verboseLog(this.plugin, 'Templater plugin not loaded, skipping');
     }
 
     // Collect folders to add
@@ -206,45 +178,46 @@ export class PluginInitializer {
 
     if (templatesFolder && templatesFolder.trim() !== '') {
       foldersToAdd.push(templatesFolder);
-      if (this.settings.core.verboseLogging)
-        console.debug(
-          'Queued core Templates folder for exclusion:',
-          templatesFolder
-        );
+      verboseLog(
+        this.plugin,
+        'Queued core Templates folder for exclusion:',
+        templatesFolder
+      );
     } else {
-      if (this.settings.core.verboseLogging)
-        console.debug('No valid core Templates folder to add');
+      verboseLog(this.plugin, 'No valid core Templates folder to add');
     }
 
     // Only add templater folder if it differs from templates folder
     if (templaterFolder && templaterFolder.trim() !== '') {
       if (templaterFolder !== templatesFolder) {
         foldersToAdd.push(templaterFolder);
-        if (this.settings.core.verboseLogging)
-          console.debug(
-            'Queued Templater folder for exclusion:',
-            templaterFolder
-          );
+        verboseLog(
+          this.plugin,
+          'Queued Templater folder for exclusion:',
+          templaterFolder
+        );
       } else {
-        if (this.settings.core.verboseLogging)
-          console.debug(
-            'Templater folder matches core Templates folder (' +
-              templaterFolder +
-              '), will not add duplicate'
-          );
+        verboseLog(
+          this.plugin,
+          'Templater folder matches core Templates folder (' +
+            templaterFolder +
+            '), will not add duplicate'
+        );
       }
     } else {
-      if (this.settings.core.verboseLogging)
-        console.debug('No valid Templater folder to add');
+      verboseLog(this.plugin, 'No valid Templater folder to add');
     }
 
-    if (this.settings.core.verboseLogging)
-      console.debug('Total folders to add to exclusions:', foldersToAdd);
-    if (this.settings.core.verboseLogging)
-      console.debug(
-        'Current excluded folders before processing:',
-        this.settings.exclusions.excludedFolders
-      );
+    verboseLog(
+      this.plugin,
+      'Total folders to add to exclusions:',
+      foldersToAdd
+    );
+    verboseLog(
+      this.plugin,
+      'Current excluded folders before processing:',
+      this.settings.exclusions.excludedFolders
+    );
 
     // Add folders if they don't already exist
     for (const folder of foldersToAdd) {
@@ -259,37 +232,42 @@ export class PluginInitializer {
           this.settings.exclusions.excludedFolders[0].trim() === ''
         ) {
           this.settings.exclusions.excludedFolders = [];
-          if (this.settings.core.verboseLogging)
-            console.debug(
-              'Removed default empty string entry from excluded folders'
-            );
+          verboseLog(
+            this.plugin,
+            'Removed default empty string entry from excluded folders'
+          );
         }
 
         this.settings.exclusions.excludedFolders.push(folder);
-        if (this.settings.core.verboseLogging)
-          console.debug('Successfully added folder to exclusions:', folder);
+        verboseLog(
+          this.plugin,
+          'Successfully added folder to exclusions:',
+          folder
+        );
       } else {
-        if (this.settings.core.verboseLogging)
-          console.debug('Folder already in exclusions list, skipping:', folder);
+        verboseLog(
+          this.plugin,
+          'Folder already in exclusions list, skipping:',
+          folder
+        );
       }
     }
 
     // Save if any folders were added
     if (foldersToAdd.length > 0) {
       await this.plugin.saveSettings();
-      if (this.settings.core.verboseLogging)
-        console.debug(
-          'Saved settings after adding template folders to exclusions'
-        );
-    } else {
-      if (this.settings.core.verboseLogging)
-        console.debug('No folders were added, skipping settings save');
-    }
-    if (this.settings.core.verboseLogging)
-      console.debug(
-        'Final excluded folders after processing:',
-        this.settings.exclusions.excludedFolders
+      verboseLog(
+        this.plugin,
+        'Saved settings after adding template folders to exclusions'
       );
+    } else {
+      verboseLog(this.plugin, 'No folders were added, skipping settings save');
+    }
+    verboseLog(
+      this.plugin,
+      'Final excluded folders after processing:',
+      this.settings.exclusions.excludedFolders
+    );
 
     // Mark as setup complete
     this.settings.core.hasSetupExclusions = true;

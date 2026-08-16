@@ -3,6 +3,7 @@ import { MenuConfig } from './menu-config';
 import FirstLineIsTitlePlugin from '../../main';
 import { ProcessTagModal, RenameFolderModal } from '../modals';
 import { t } from '../i18n';
+import { setDisableRenamingProperty } from '../utils/property-value';
 
 /**
  * Declarative Menu Definitions
@@ -233,10 +234,10 @@ export class MenuDefinitions {
               await this.plugin.app.fileManager.processFrontMatter(
                 fileContext.file,
                 (frontmatter: Record<string, unknown>) => {
-                  frontmatter[
-                    this.plugin.settings.exclusions.disableRenamingKey
-                  ] = this.plugin.parsePropertyValue(
-                    this.plugin.settings.exclusions.disableRenamingValue
+                  setDisableRenamingProperty(
+                    frontmatter,
+                    this.plugin.settings,
+                    false
                   );
                 }
               );
@@ -282,9 +283,11 @@ export class MenuDefinitions {
               await this.plugin.app.fileManager.processFrontMatter(
                 fileContext.file,
                 (frontmatter: Record<string, unknown>) => {
-                  delete frontmatter[
-                    this.plugin.settings.exclusions.disableRenamingKey
-                  ];
+                  setDisableRenamingProperty(
+                    frontmatter,
+                    this.plugin.settings,
+                    true
+                  );
                 }
               );
               new Notice(

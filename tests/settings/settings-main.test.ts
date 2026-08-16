@@ -14,7 +14,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { App } from '../mockObsidian';
 import { DEFAULT_SETTINGS } from '../../src/constants';
+import { processForbiddenChars } from '../../src/utils/string-processing';
 import type { PluginSettings } from '../../src/types';
+import type { CharKey } from '../../src/types/char-replacement';
 
 vi.mock('../../src/i18n', () => ({
   t: vi.fn((key: string) => key),
@@ -22,7 +24,7 @@ vi.mock('../../src/i18n', () => ({
 }));
 
 vi.mock('../../src/utils', () => ({
-  deduplicateExclusions: vi.fn(() => false),
+  normalizeExclusionLists: vi.fn(() => false),
   detectOS: vi.fn(() => 'macOS'),
   verboseLog: vi.fn(),
 }));
@@ -33,7 +35,7 @@ vi.mock('../../src/settings/tab-general', () => ({
   buildFooterDefinitions: vi.fn(() => [
     { name: 'settings.general.renameAllNotes.name', render: vi.fn() },
   ]),
-  buildFeedbackGroup: vi.fn(() => ({
+  buildSupportGroup: vi.fn(() => ({
     type: 'group',
     items: [{ name: 'settings.general.sendFeedback.name', render: vi.fn() }],
   })),
@@ -67,7 +69,9 @@ vi.mock('../../src/settings/tab-other', () => ({
 }));
 
 import { FirstLineIsTitleSettings } from '../../src/settings/settings-main';
-import { deduplicateExclusions } from '../../src/utils';
+import { PluginInitializer } from '../../src/core/plugin-initializer';
+import { normalizeExclusionLists } from '../../src/utils';
+import { buildSupportGroup } from '../../src/settings/tab-general';
 
 interface TestPlugin {
   app: App;
@@ -115,14 +119,19 @@ describe('FirstLineIsTitleSettings', () => {
         .map((def) => (def as { name?: string }).name);
 
     // Matched by heading, not by type — feedback occupies a second group.
-    const advancedGroup = () =>
+    const ADVANCED_HEADING = 'settings.tabs.advancedGroup';
+
+    const advancedGroupIndex = () =>
       tab
         .getSettingDefinitions()
-        .find(
-          (def) =>
-            (def as { heading?: string }).heading ===
-            'settings.tabs.advancedGroup'
-        ) as { heading?: string; items?: { name?: string }[] } | undefined;
+        .findIndex(
+          (def) => (def as { heading?: string }).heading === ADVANCED_HEADING
+        );
+
+    const advancedGroup = () =>
+      tab.getSettingDefinitions()[advancedGroupIndex()] as
+        | { heading?: string; items?: { name?: string }[] }
+        | undefined;
 
     it('keeps only Exclusions as a top-level page', () => {
       expect(topLevel()).toEqual(['Exclusions']);
@@ -130,7 +139,7 @@ describe('FirstLineIsTitleSettings', () => {
 
     it('nests the remaining six sections under the Advanced group', () => {
       const group = advancedGroup();
-      expect(group?.heading).toBe('settings.tabs.advancedGroup');
+      expect(group?.heading).toBe(ADVANCED_HEADING);
       expect(group?.items?.map((i) => i.name)).toEqual([
         'Alias',
         'Character replacements',
@@ -143,28 +152,20 @@ describe('FirstLineIsTitleSettings', () => {
 
     it('places the page-level action directly above the Advanced group', () => {
       const defs = tab.getSettingDefinitions();
-      const groupIndex = defs.findIndex(
-        (def) =>
-          (def as { heading?: string }).heading ===
-          'settings.tabs.advancedGroup'
-      );
-      expect((defs[groupIndex - 1] as { name?: string }).name).toBe(
+      expect((defs[advancedGroupIndex() - 1] as { name?: string }).name).toBe(
         'settings.general.renameAllNotes.name'
       );
     });
 
-    it('puts feedback last, alone in a group with no heading', () => {
+    it('puts the feedback group last', () => {
       const defs = tab.getSettingDefinitions();
-      const last = defs[defs.length - 1] as {
-        type?: string;
-        heading?: string;
-        items?: { name?: string }[];
-      };
-      expect(last.type).toBe('group');
-      expect(last.heading).toBeUndefined();
-      expect(last.items?.map((i) => i.name)).toEqual([
-        'settings.general.sendFeedback.name',
-      ]);
+      // tab-general is mocked here, so asserting the group's shape would only
+      // re-read this file's own fixture. Placement is the one thing
+      // settings-main actually decides; the shape is pinned in
+      // tab-general.test.ts against the real builder.
+      expect(defs[defs.length - 1]).toBe(
+        vi.mocked(buildSupportGroup).mock.results[0].value
+      );
     });
   });
 
@@ -278,6 +279,66 @@ describe('FirstLineIsTitleSettings', () => {
     });
   });
 
+  describe('first-enable cascade parity', () => {
+    // The same cascade also runs at plugin load, and both latch on
+    // core.hasEnabledForbiddenChars — whichever fires first permanently locks
+    // the other out, so the two must enable an identical key set.
+    const enabledCharKeys = (settings: PluginSettings): CharKey[] => {
+      const { charReplacements } = settings.replaceCharacters;
+      return (Object.keys(charReplacements) as CharKey[])
+        .filter((key) => charReplacements[key].enabled)
+        .sort();
+    };
+
+    async function afterSettingsToggle(): Promise<PluginSettings> {
+      const fresh = makePlugin();
+      const freshTab = new FirstLineIsTitleSettings(
+        fresh.app as never,
+        fresh as never
+      );
+      await freshTab.setControlValue(
+        'replaceCharacters.enableForbiddenCharReplacements',
+        true
+      );
+      return fresh.settings;
+    }
+
+    async function afterPluginLoad(): Promise<PluginSettings> {
+      const fresh = makePlugin();
+      fresh.settings.replaceCharacters.enableForbiddenCharReplacements = true;
+      await new PluginInitializer(fresh as never).initializeFirstEnableLogic();
+      return fresh.settings;
+    }
+
+    it('enables the same characters from either entry point', async () => {
+      expect(enabledCharKeys(await afterSettingsToggle())).toEqual(
+        enabledCharKeys(await afterPluginLoad())
+      );
+    });
+
+    it('leaves backslash off from either entry point', async () => {
+      for (const settings of [
+        await afterSettingsToggle(),
+        await afterPluginLoad(),
+      ]) {
+        expect(
+          settings.replaceCharacters.charReplacements.backslash.enabled
+        ).toBe(false);
+      }
+    });
+
+    it('replaces rather than drops ? from either entry point', async () => {
+      // A forbidden char whose toggle is off is deleted outright, so trimming
+      // the Windows/Android keys out of the cascade would lose them silently.
+      for (const settings of [
+        await afterSettingsToggle(),
+        await afterPluginLoad(),
+      ]) {
+        expect(processForbiddenChars('What? Yes', settings)).toBe('What？Yes');
+      }
+    });
+  });
+
   describe('side-effect cascades', () => {
     it('refreshes property visibility when the hiding mode changes', async () => {
       await tab.setControlValue('aliases.hideAliasProperty', 'always');
@@ -300,7 +361,7 @@ describe('FirstLineIsTitleSettings', () => {
 
   describe('hide', () => {
     it('saves and rebuilds the definitions when exclusions were pruned', () => {
-      vi.mocked(deduplicateExclusions).mockReturnValueOnce(true);
+      vi.mocked(normalizeExclusionLists).mockReturnValueOnce(true);
 
       tab.hide();
 
@@ -311,7 +372,7 @@ describe('FirstLineIsTitleSettings', () => {
     });
 
     it('does nothing when the exclusion lists were already clean', () => {
-      vi.mocked(deduplicateExclusions).mockReturnValueOnce(false);
+      vi.mocked(normalizeExclusionLists).mockReturnValueOnce(false);
 
       tab.hide();
 

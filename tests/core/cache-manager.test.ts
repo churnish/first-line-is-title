@@ -4,7 +4,7 @@ import {
   DEFAULT_CACHE_CONFIG,
 } from '../../src/core/cache-manager';
 import { createMockApp } from '../testUtils';
-import { App, TFile } from '../mockObsidian';
+import { TFile } from '../mockObsidian';
 
 // Create a minimal mock plugin for CacheManager
 function createMockPlugin() {

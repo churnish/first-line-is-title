@@ -4,8 +4,11 @@
 
 import { vi, type MockedFunction } from 'vitest';
 import { TFile, TFolder, App } from './mockObsidian';
-import { PluginSettings } from '../src/types';
+import { DeepPartial, PluginSettings } from '../src/types';
 import { DEFAULT_SETTINGS } from '../src/constants';
+// Imported from the leaf module, not the utils barrel: several suites `vi.mock` the
+// barrel, which would strip deepMerge out from under every fixture built here.
+import { deepMerge } from '../src/utils/deep-merge';
 
 /**
  * Create a mock TFile for testing
@@ -32,17 +35,13 @@ export function createMockApp(): App {
  * Create test settings with optional overrides
  */
 export function createTestSettings(
-  overrides: Partial<PluginSettings> = {}
+  overrides: DeepPartial<PluginSettings> = {}
 ): PluginSettings {
-  // Deep-clone the base: a shallow spread would leave nested branches (exclusions,
-  // core, ...) pointing at DEFAULT_SETTINGS' own objects, so one test mutating
-  // settings.exclusions.excludedFolders would leak into every later test.
-  // Overrides stay a top-level shallow merge — callers pass whole sub-objects and
-  // rely on them replacing the branch outright.
-  return {
-    ...structuredClone(DEFAULT_SETTINGS),
-    ...overrides,
-  };
+  // deepMerge deep-clones its defaults, so no nested branch (exclusions, core, ...) ever
+  // aliases DEFAULT_SETTINGS — one test mutating settings.exclusions.excludedFolders
+  // cannot leak into another. Overrides merge per leaf, so a caller can name a single
+  // key without restating its siblings.
+  return deepMerge(DEFAULT_SETTINGS, overrides);
 }
 
 /**

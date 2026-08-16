@@ -1,4 +1,4 @@
-import { PluginSettings, TagMatchingMode } from './types';
+import { EXCLUSION_STRATEGY, PluginSettings, TagMatchingMode } from './types';
 
 export const DEFAULT_SETTINGS: PluginSettings = {
   core: {
@@ -14,6 +14,9 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     fileReadMethod: 'Editor',
 
     // New file handling
+    // On by default: a fresh install does nothing visible otherwise. Existing
+    // users keep a stored `false` — main.ts merges loaded data over these, so
+    // only keys absent from data.json pick up a changed default.
     insertTitleOnCreation: true,
     convertReplacementCharactersInTitle: true,
     moveCursorToFirstLine: true,
@@ -35,7 +38,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     debugEnabledTimestamp: '',
     hasShownFirstTimeNotice: false,
     hasSetupExclusions: false,
-    hasSetPropertyType: false,
     lastUsageDate: '',
     hasEnabledForbiddenChars: false,
     hasEnabledCustomReplacements: false,
@@ -67,16 +69,16 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     },
   },
   exclusions: {
-    folderScopeStrategy: 'Only exclude...',
-    tagScopeStrategy: 'Only exclude...',
-    propertyScopeStrategy: 'Only exclude...',
-    excludedFolders: [''],
-    excludedTags: [''],
+    folderScopeStrategy: EXCLUSION_STRATEGY.ONLY_EXCLUDE,
+    tagScopeStrategy: EXCLUSION_STRATEGY.ONLY_EXCLUDE,
+    propertyScopeStrategy: EXCLUSION_STRATEGY.ONLY_EXCLUDE,
+    // Empty, not a seeded blank row: deepMerge replaces arrays wholesale, so a seeded
+    // entry would materialise a dead rule on every fresh install. The lists render
+    // their own empty state.
+    excludedFolders: [],
+    excludedTags: [],
     excludedProperties: [],
     excludeSubfolders: true,
-    includeSubfolders: true,
-    includeBodyTags: true,
-    includeNestedTags: true,
     tagMatchingMode: 'In Properties and note body' as TagMatchingMode,
     excludeChildTags: true,
     disableRenamingKey: 'no rename',
@@ -258,21 +260,3 @@ export const UNIVERSAL_FORBIDDEN_CHARS = [
   '^',
 ];
 export const WINDOWS_ANDROID_CHARS = ['*', '?', '<', '>', '"'];
-
-// Character reversal mapping for title insertion (reverse forbidden char replacements)
-export const TITLE_CHAR_REVERSAL_MAP: Record<string, string> = {
-  '∕': '/', // Unicode: \u2215 -> slash
-  '։': ':', // Unicode: \u0589 -> colon
-  '∗': '*', // Unicode: \u2217 -> asterisk
-  '？': '?', // Unicode: \uFF1F -> question
-  '‹': '<', // Unicode: \u2039 -> lessThan
-  '›': '>', // Unicode: \u203A -> greaterThan
-  '＂': '"', // Unicode: \uFF02 -> quote
-  '❘': '|', // Unicode: \u2758 -> pipe
-  '＃': '#', // Unicode: \uFF03 -> hash
-  '［': '[', // Unicode: \uFF3B -> leftBracket
-  '］': ']', // Unicode: \uFF3D -> rightBracket
-  ˆ: '^', // Unicode: \u02C6 -> caret
-  '⧵': '\\', // Unicode: \u29F5 -> backslash
-  '․': '.', // Unicode: \u2024 -> dot
-};

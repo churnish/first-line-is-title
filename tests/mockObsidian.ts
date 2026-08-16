@@ -481,7 +481,8 @@ export class SettingGroup {
 // Helper to create mock component with basic properties
 function createMockComponent() {
   let value: any = '';
-  let disabled = false;
+  // Tracked but never read back — setDisabled only needs to be a spy callers can assert against.
+  let _disabled = false;
   const component: any = {
     setValue: vi.fn((v: any) => {
       value = v;
@@ -489,7 +490,7 @@ function createMockComponent() {
     }),
     getValue: vi.fn(() => value),
     setDisabled: vi.fn((d: boolean) => {
-      disabled = d;
+      _disabled = d;
       return component;
     }),
   };
@@ -651,7 +652,7 @@ export class Menu {
 }
 
 // Mock AbstractInputSuggest class
-export class AbstractInputSuggest<T> {
+export class AbstractInputSuggest {
   app: App;
   inputEl: HTMLInputElement | HTMLDivElement;
   limit: number = 100;
@@ -689,6 +690,30 @@ export const getFrontMatterInfo = vi.fn(() => {
     to: 0,
     contentStart: 0,
   };
+});
+
+// Mirrors Obsidian's getAllTags: frontmatter + inline tags combined, each with a leading '#'
+export const getAllTags = vi.fn((cache: any): string[] | null => {
+  if (!cache) return null;
+
+  const withHash = (tag: unknown): string => {
+    const value = String(tag);
+    return value.startsWith('#') ? value : `#${value}`;
+  };
+
+  const frontmatterTags = cache.frontmatter?.tags;
+  const propertyTags =
+    frontmatterTags === undefined || frontmatterTags === null
+      ? []
+      : (Array.isArray(frontmatterTags)
+          ? frontmatterTags
+          : [frontmatterTags]
+        ).map(withHash);
+  const inlineTags = (cache.tags ?? []).map((tagCache: any) =>
+    withHash(tagCache.tag)
+  );
+
+  return [...propertyTags, ...inlineTags];
 });
 
 export const parseYaml = vi.fn((yaml: string) => {

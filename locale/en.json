@@ -44,6 +44,8 @@
     "renamingNNotes": "Renaming {{count}} notes...",
     "renamedNotes": "Renamed {{renamed}}/{{total}} notes",
     "renamedNotesWithErrors": "Renamed {{renamed}}/{{total}} notes with {{errors}} errors. Check console for details.",
+    "processingNNotes": "Processing {{count}} notes...",
+    "processedNotesWithErrors": "Processed {{processed}}/{{total}} notes with {{errors}} errors. Check console for details.",
     "noNotesFoundWithTag": "No notes found with #{{tag}}",
     "noNotesFoundInFolders": "No notes found in selected folders",
     "disabledRenamingFor": "Disabled renaming for: {{filename}}",
@@ -131,6 +133,9 @@
     }
   },
   "settings": {
+    "common": {
+      "restoreDefault": "Restore default"
+    },
     "tabs": {
       "exclusions": "Exclusions",
       "replaceCharacters": "Character replacements",
@@ -139,12 +144,13 @@
       "alias": "Alias",
       "commands": "Commands",
       "other": "Other",
-      "advancedGroup": "Advanced"
+      "advancedGroup": "Advanced",
+      "supportGroup": "Support"
     },
     "general": {
       "renameAutomatically": {
         "name": "Rename automatically",
-        "desc": "Rename notes automatically when they're open and edited. Turn this off to only rename via command."
+        "desc": "Rename open notes automatically when edited. Turn this off to only rename via command."
       },
       "renameOnFocus": {
         "name": "Rename on focus",
@@ -188,18 +194,23 @@
       },
       "renameAllNotes": {
         "name": "Rename all notes",
-        "desc": "Rename every note in the vault. Can also be run from the Command palette or the ribbon.",
+        "desc": "Rename every note in the vault. Can also be run from Command palette or the ribbon.",
         "button": "Rename"
       },
       "sendFeedback": {
         "name": "Send feedback",
-        "desc": "Request features or report bugs.",
+        "desc": "Request improvements or report issues.",
+        "button": "Open"
+      },
+      "help": {
+        "name": "Help",
+        "desc": "View discussions or ask a question.",
         "button": "Open"
       }
     },
     "exclusions": {
       "desc": "Set how notes should be excluded from renaming.",
-      "note": "A note is skipped if any rule excludes it, even if another rule includes it. For example, a note in an excluded folder but with an included tag will not be renamed.",
+      "note": "Note: A file is skipped if any rule excludes it, even if another rule includes it. For example, a note in an excluded folder but with an included tag will not be renamed.",
       "folders": {
         "title": "Folders",
         "renamedWarning": "Renamed, moved or deleted folders are not reflected below. Update manually if paths change.",
@@ -272,8 +283,7 @@
         "title": "Property to disable renaming",
         "alwaysRespected": "Always respected — cannot get overridden by any command.",
         "caseInsensitive": "Case-insensitive.",
-        "updateWarning": "Changing this will not automatically update properties that have been previously added to notes. Update manually after changing.",
-        "default": "Default: no rename:true"
+        "updateWarning": "Changing this will not automatically update properties that have been previously added to notes. Update manually after changing."
       },
       "fileNames": {
         "title": "File name matches",
@@ -297,9 +307,8 @@
       "aliasPropertyName": {
         "name": "Alias property name",
         "desc": "Set the property name in which to insert the alias.",
-        "quickSwitcher": "Use 'aliases' to make the alias searchable in the Quick switcher and link suggester.",
-        "multipleProperties": "To populate multiple properties, separate by comma (e.g., 'aliases, title').",
-        "default": "Default: aliases"
+        "quickSwitcher": "Use “aliases” to make the alias searchable in Quick switcher and link suggestions.",
+        "multipleProperties": "To populate multiple properties, separate by comma (e.g., “aliases, title”)."
       },
       "onlyAddIfDiffers": {
         "name": "Only add alias if first line differs from title",
@@ -356,13 +365,13 @@
           "part1": "First line alias will not update when editing in page preview or Canvas. Using ",
           "part2": " is recommended."
         },
-        "bullet2": "Due to Obsidian bug, 'modified externally' notifications may occasionally appear when updating alias."
+        "bullet2": "Due to Obsidian bug, “modified externally” notifications may occasionally appear when updating alias."
       }
     },
     "replaceCharacters": {
       "name": "Replace forbidden characters",
       "desc": "Replace forbidden file name characters with safe alternatives.",
-      "toggleDesc": "Replace characters forbidden in Obsidian file names with safe alternatives. Turn this off to strip them entirely.",
+      "toggleDesc": "Replace characters not allowed in Obsidian file names with safe alternatives. Turn this off to strip them entirely.",
       "trimNote": {
         "part1": "Enable ",
         "trimLeft": "Trim left",
@@ -395,15 +404,14 @@
         "forwardSlash": "Forward slash /",
         "colon": "Colon :",
         "dot": "Dot .",
-        "dotNote": "Note: the dot is forbidden at file name start only.",
+        "dotNote": "Note: The dot is forbidden at file name start only.",
         "asterisk": "Asterisk *",
         "quote": "Quote \"",
         "lessThan": "Less than <",
         "greaterThan": "Greater than >",
         "questionMark": "Question mark ?"
       },
-      "emptyPlaceholder": "Empty",
-      "restoreDefault": "Restore default"
+      "emptyPlaceholder": "Empty"
     },
     "customRules": {
       "name": "Enable custom rules",
@@ -631,7 +639,7 @@
       },
       "commentsEntirely": {
         "name": "Strip comments entirely",
-        "desc": "Also strip comment content in title."
+        "desc": "Omit comment content in title."
       },
       "stripTableMarkup": {
         "name": "Strip table markup",
@@ -660,7 +668,7 @@
         }
       },
       "htmlTags": {
-        "name": "Strip HTML tags",
+        "name": "Strip HTML markup",
         "desc": {
           "part1": "For example, turn ",
           "example1": "<u>Hello</u>",
@@ -670,7 +678,7 @@
         }
       },
       "templater": {
-        "name": "Strip Templater syntax",
+        "name": "Strip Templater markup",
         "desc": {
           "part1": "Omit ",
           "part2": " syntax like ",
@@ -702,8 +710,7 @@
       "desc": "Fine-tune, troubleshoot, and manage settings.",
       "charCount": {
         "name": "Character count",
-        "desc": "The maximum number of characters to put in file name.",
-        "default": "Default: 100"
+        "desc": "The maximum number of characters to put in file name."
       },
       "notificationMode": {
         "name": "Show notification when renaming manually",
@@ -722,21 +729,18 @@
       },
       "newNoteDelay": {
         "name": "New note delay",
-        "desc": "Delay processing new notes by this amount in milliseconds. May resolve issues on note creation.",
-        "default": "Default: 0"
+        "desc": "Delay processing new notes by this amount in milliseconds. May resolve issues on note creation."
       },
       "contentReadMethod": {
         "name": "Content read method",
         "desc": "Set how the plugin reads note content. Cache or file read may resolve issues but will be slower.",
-        "default": "Default: Editor",
-        "editor": "Editor",
+        "editor": "Editor (default)",
         "cache": "Cache",
         "file": "File"
       },
       "checkInterval": {
         "name": "Check interval",
-        "desc": "Interval in milliseconds for checking first-line changes. Increase in case of issues.",
-        "default": "Default: 0"
+        "desc": "Interval in milliseconds for checking first-line changes. Increase in case of issues."
       },
       "debug": {
         "name": "Debug",

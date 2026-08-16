@@ -16,6 +16,6 @@
     "skipLibCheck": true,
     "lib": ["DOM", "ES5", "ES6", "ES7", "ES2021"]
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "eslint.config.js"],
   "exclude": ["node_modules/**"]
 }

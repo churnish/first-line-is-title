@@ -2,15 +2,16 @@ import { Notice, Plugin, TFile, TFolder } from 'obsidian';
 import { around } from 'monkey-around';
 import { PluginSettings } from './src/types';
 import { DEFAULT_SETTINGS } from './src/constants';
-import { initI18n, t, getCurrentLocale } from './src/i18n';
+import { initI18n, t } from './src/i18n';
 import {
   verboseLog,
   detectOS,
   hasDisablePropertyInFile,
   deepMerge,
-  deduplicateExclusions,
+  normalizeExclusionLists,
 } from './src/utils';
 import { FirstLineIsTitleSettings } from './src/settings/settings-main';
+import { applyLocalizedDefaults } from './src/settings/settings-base';
 import { RenameEngine } from './src/core/rename-engine';
 import { ContextMenuManager } from './src/ui/context-menus';
 import { FolderOperations } from './src/operations/folder-operations';
@@ -18,6 +19,7 @@ import { TagOperations } from './src/operations/tag-operations';
 import { AliasManager } from './src/core/alias-manager';
 import { FileOperations } from './src/operations/file-operations';
 import { PropertyVisibility } from './src/ui/property-visibility';
+import { setDisableRenamingProperty } from './src/utils/property-value';
 
 // High-performance cache system replaces all global variables
 import { CacheManager } from './src/core/cache-manager';
@@ -26,7 +28,6 @@ import { WorkspaceIntegration } from './src/core/workspace-integration';
 import { PropertyManager } from './src/core/property-manager';
 import { PluginInitializer } from './src/core/plugin-initializer';
 import { CommandRegistrar } from './src/core/command-registrar';
-import { TitleInsertion } from './src/core/title-insertion';
 import { LinkManager } from './src/core/link-manager';
 import { EventHandlerManager } from './src/core/event-handler-manager';
 import { FileStateManager } from './src/core/file-state-manager';
@@ -53,7 +54,6 @@ export default class FirstLineIsTitle extends Plugin {
   editorLifecycle: EditorLifecycleManager;
   workspaceIntegration: WorkspaceIntegration;
   propertyManager: PropertyManager;
-  titleInsertion: TitleInsertion;
   eventHandlerManager: EventHandlerManager;
 
   private _folderOperations?: FolderOperations;
@@ -260,10 +260,6 @@ export default class FirstLineIsTitle extends Plugin {
     }
   }
 
-  async insertTitleOnCreation(file: TFile): Promise<void> {
-    return this.titleInsertion.insertTitleOnCreation(file);
-  }
-
   getSelectedFolders(): TFolder[] {
     return this.folderOperations.getSelectedFolders();
   }
@@ -338,21 +334,6 @@ export default class FirstLineIsTitle extends Plugin {
     }
   }
 
-  public parsePropertyValue(value: string): string | number | boolean {
-    // Try to parse as boolean
-    const lowerValue = value.toLowerCase().trim();
-    if (lowerValue === 'true') return true;
-    if (lowerValue === 'false') return false;
-
-    // Try to parse as number
-    if (!isNaN(Number(value)) && value.trim() !== '') {
-      return Number(value);
-    }
-
-    // Return as string
-    return value;
-  }
-
   async disableRenamingForNote(): Promise<void> {
     const activeFile = this.app.workspace.getActiveFile();
     if (!activeFile || activeFile.extension !== 'md') {
@@ -376,10 +357,7 @@ export default class FirstLineIsTitle extends Plugin {
         await this.app.fileManager.processFrontMatter(
           activeFile,
           (frontmatter: Record<string, unknown>) => {
-            frontmatter[this.settings.exclusions.disableRenamingKey] =
-              this.parsePropertyValue(
-                this.settings.exclusions.disableRenamingValue
-              );
+            setDisableRenamingProperty(frontmatter, this.settings, false);
           }
         );
       }
@@ -415,7 +393,7 @@ export default class FirstLineIsTitle extends Plugin {
         await this.app.fileManager.processFrontMatter(
           activeFile,
           (frontmatter: Record<string, unknown>) => {
-            delete frontmatter[this.settings.exclusions.disableRenamingKey];
+            setDisableRenamingProperty(frontmatter, this.settings, true);
           }
         );
       }
@@ -576,9 +554,6 @@ export default class FirstLineIsTitle extends Plugin {
 
     // Initialize property manager
     this.propertyManager = new PropertyManager(this);
-
-    // Initialize title insertion manager
-    this.titleInsertion = new TitleInsertion(this);
 
     // Initialize event handler manager
     this.eventHandlerManager = new EventHandlerManager(this);
@@ -759,34 +734,27 @@ export default class FirstLineIsTitle extends Plugin {
       delete rawCore.renameNotes;
     }
 
+    // Settings dropped from the type and defaults must be deleted before the merge:
+    // deepMerge copies stored keys the defaults lack, which would write them back forever.
+    delete rawCore?.preserveModificationDate;
+    delete rawCore?.hasSetPropertyType;
+
+    const rawExclusions = loadedData.exclusions as
+      | (Record<string, unknown> & Partial<PluginSettings['exclusions']>)
+      | undefined;
+    delete rawExclusions?.includeSubfolders;
+    delete rawExclusions?.includeBodyTags;
+    delete rawExclusions?.includeNestedTags;
+
     // Use deep merge to preserve nested properties
     this.settings = deepMerge(DEFAULT_SETTINGS, loadedData);
 
-    if (this.settings.exclusions.excludedFolders.length === 0) {
-      this.settings.exclusions.excludedFolders.push('');
-    }
-    if (this.settings.exclusions.excludedTags.length === 0) {
-      this.settings.exclusions.excludedTags.push('');
-    }
-
     // Localize default file name exclusion example (only while it's still the
     // untouched default, so a user's own edit is never overwritten)
-    if (
-      this.settings.exclusions.fileNameExclusions.length > 0 &&
-      ['To do', 'Задачи'].includes(
-        this.settings.exclusions.fileNameExclusions[0].text
-      )
-    ) {
-      const locale = getCurrentLocale();
-      if (locale === 'ru') {
-        this.settings.exclusions.fileNameExclusions[0].text = 'Задачи';
-      } else {
-        this.settings.exclusions.fileNameExclusions[0].text = 'To do';
-      }
-    }
+    applyLocalizedDefaults(this.settings);
 
-    // Deduplicate exclusion lists on load
-    const hasChanges = deduplicateExclusions(this.settings);
+    // Stored lists can predate the current normalization rules, so clean them on load
+    const hasChanges = normalizeExclusionLists(this.settings);
     if (hasChanges) {
       await this.saveSettings();
     }

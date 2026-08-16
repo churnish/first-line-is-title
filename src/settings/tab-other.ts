@@ -4,32 +4,20 @@ import {
   PluginSettingTab,
   SettingDefinitionPage,
 } from 'obsidian';
-import { FirstLineIsTitlePlugin } from './settings-base';
+import {
+  applyLocalizedDefaults,
+  FirstLineIsTitlePlugin,
+} from './settings-base';
 import { PluginSettings } from '../types';
 import { DEFAULT_SETTINGS } from '../constants';
-import { verboseLog } from '../utils';
-import { t, getCurrentLocale } from '../i18n';
+import { deepMerge, verboseLog } from '../utils';
+import { t } from '../i18n';
 import { PluginInitializer } from '../core/plugin-initializer';
 import { createPluginLink, buildPluginLinkRouterGroup } from './plugin-links';
 
 // Plugin names (proper nouns, not subject to sentence case)
 const PLUGIN_AUTO_CARD_LINK = 'Auto Card Link';
 const PLUGIN_LINK_EMBED = 'Link Embed';
-
-/**
- * Description followed by a small bold "default: …" footnote, matching the
- * pre-migration rendering of the scalar settings that had restore buttons.
- */
-function descriptionWithDefault(
-  descKey: string,
-  defaultKey: string
-): DocumentFragment {
-  return createFragment((frag) => {
-    frag.appendText(t(descKey));
-    frag.createEl('br');
-    frag.createEl('small').createEl('strong', { text: t(defaultKey) });
-  });
-}
 
 /**
  * Card link description interleaves two plugin links with three text fragments.
@@ -113,7 +101,8 @@ function importSettingsFromFile(
         }
 
         if (importedJson) {
-          const newSettings = Object.assign({}, DEFAULT_SETTINGS);
+          // Pre-filter before merging: deepMerge writes a non-object source value straight over an object default, so an entry like {"exclusions": "x"} would survive and throw on every downstream read
+          const compatibleOverrides: Record<string, unknown> = {};
           for (const setting in plugin.settings) {
             if (setting in importedJson) {
               const importedValue = importedJson[setting];
@@ -121,8 +110,7 @@ function importSettingsFromFile(
                 plugin.settings[setting as keyof typeof plugin.settings];
               // Basic type check to prevent corruption from malformed imports
               if (typeof importedValue === typeof existingValue) {
-                // @ts-ignore
-                newSettings[setting] = importedValue;
+                compatibleOverrides[setting] = importedValue;
               } else {
                 console.warn(
                   `Import: skipping ${setting} due to type mismatch (expected ${typeof existingValue}, got ${typeof importedValue})`
@@ -130,6 +118,12 @@ function importSettingsFromFile(
               }
             }
           }
+
+          // Merge rather than assign whole branches, so keys an older export predates keep their defaults instead of going undefined
+          const newSettings = deepMerge(
+            DEFAULT_SETTINGS,
+            compatibleOverrides as Partial<PluginSettings>
+          );
 
           // Deep copy for rollback (reference would be unsafe if settings were modified in-place)
           const previousSettings = cloneSettings(plugin.settings);
@@ -217,12 +211,7 @@ async function resetAllSettings(
   const previousSettings = cloneSettings(plugin.settings);
   const newSettings = cloneSettings(DEFAULT_SETTINGS);
 
-  const locale = getCurrentLocale();
-  if (locale === 'ru') {
-    newSettings.exclusions.fileNameExclusions[0].text = 'Задачи';
-  } else {
-    newSettings.exclusions.fileNameExclusions[0].text = 'To do';
-  }
+  applyLocalizedDefaults(newSettings);
 
   newSettings.core.hasShownFirstTimeNotice = true;
   newSettings.core.lastUsageDate = plugin.getTodayDateString?.() || '';
@@ -259,16 +248,14 @@ export function buildOtherPage(
     items: [
       {
         name: t('settings.other.charCount.name'),
-        desc: descriptionWithDefault(
-          'settings.other.charCount.desc',
-          'settings.other.charCount.default'
-        ),
+        desc: t('settings.other.charCount.desc'),
         control: {
           type: 'slider',
           key: 'core.charCount',
           min: 1,
           max: 252,
           step: 1,
+          defaultValue: DEFAULT_SETTINGS.core.charCount,
         },
       },
       {
@@ -309,24 +296,19 @@ export function buildOtherPage(
       },
       {
         name: t('settings.other.newNoteDelay.name'),
-        desc: descriptionWithDefault(
-          'settings.other.newNoteDelay.desc',
-          'settings.other.newNoteDelay.default'
-        ),
+        desc: t('settings.other.newNoteDelay.desc'),
         control: {
           type: 'slider',
           key: 'core.newNoteDelay',
           min: 0,
           max: 5000,
           step: 50,
+          defaultValue: DEFAULT_SETTINGS.core.newNoteDelay,
         },
       },
       {
         name: t('settings.other.contentReadMethod.name'),
-        desc: descriptionWithDefault(
-          'settings.other.contentReadMethod.desc',
-          'settings.other.contentReadMethod.default'
-        ),
+        desc: t('settings.other.contentReadMethod.desc'),
         control: {
           type: 'dropdown',
           key: 'core.fileReadMethod',
@@ -339,10 +321,7 @@ export function buildOtherPage(
       },
       {
         name: t('settings.other.checkInterval.name'),
-        desc: descriptionWithDefault(
-          'settings.other.checkInterval.desc',
-          'settings.other.checkInterval.default'
-        ),
+        desc: t('settings.other.checkInterval.desc'),
         visible: () =>
           plugin.settings.core.renameAutomatically &&
           plugin.settings.core.fileReadMethod === 'Editor',
@@ -352,6 +331,7 @@ export function buildOtherPage(
           min: 0,
           max: 5000,
           step: 50,
+          defaultValue: DEFAULT_SETTINGS.core.checkInterval,
         },
       },
       {

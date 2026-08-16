@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { App, TFile, MarkdownView } from '../mockObsidian';
+import { App } from '../mockObsidian';
 import { createTestSettings } from '../testUtils';
 
 // Mock the i18n module
