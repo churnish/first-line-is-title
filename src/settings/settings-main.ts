@@ -13,6 +13,7 @@ import { FIRST_ENABLE_CHAR_KEYS } from '../types/char-replacement';
 
 import {
   buildGeneralDefinitions,
+  buildNoteCreationGroup,
   buildFooterDefinitions,
   buildSupportGroup,
 } from './tab-general';
@@ -142,9 +143,10 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
       // General settings stay at the top level with no heading, per Obsidian's
       // convention that a tab's primary section is unlabelled.
       ...buildGeneralDefinitions(this.plugin, this),
-      buildExclusionsPage(this.plugin, this),
-      // Page-level action closes out the everyday settings, above Advanced.
+      // Page-level action closes out the everyday settings, above the Exclusions row.
       ...buildFooterDefinitions(this.plugin),
+      buildExclusionsPage(this.plugin, this),
+      buildNoteCreationGroup(this.plugin),
       {
         type: 'group',
         heading: t('settings.tabs.advancedGroup'),

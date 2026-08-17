@@ -6,15 +6,29 @@
  * only re-reads its own fixture — the shape has to be pinned here or nowhere.
  */
 
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 
 vi.mock('../../src/i18n', () => ({
   t: vi.fn((key: string) => key),
   getCurrentLocale: vi.fn(() => 'en'),
 }));
 
+// Obsidian injects both helpers at runtime and jsdom has neither, so a builder
+// whose `desc` is a fragment cannot be called at all without them.
+beforeAll(() => {
+  globalThis.createFragment = (callback?: (frag: DocumentFragment) => void) => {
+    const fragment = document.createDocumentFragment();
+    fragment.appendText = (text: string) => {
+      fragment.appendChild(document.createTextNode(text));
+    };
+    callback?.(fragment);
+    return fragment;
+  };
+});
+
 import {
   buildFooterDefinitions,
+  buildNoteCreationGroup,
   buildSupportGroup,
 } from '../../src/settings/tab-general';
 
@@ -95,6 +109,25 @@ describe('buildSupportGroup', () => {
       'https://github.com/churnish/first-line-is-title/issues',
       '_blank'
     );
+  });
+});
+
+describe('buildNoteCreationGroup', () => {
+  it('groups the five creation-time settings under the Note creation heading', () => {
+    // `visible` predicates are lazy, so no settings are read at build time
+    const group = buildNoteCreationGroup({} as never);
+
+    expect(group.type).toBe('group');
+    expect(group.heading).toBe('settings.tabs.noteCreationGroup');
+    expect(
+      (group.items as unknown as { name?: string }[]).map((item) => item.name)
+    ).toEqual([
+      'settings.general.moveCursorToFirstLine.name',
+      'settings.general.placeCursorAtLineEnd.name',
+      'settings.general.insertTitleOnCreation.name',
+      'settings.general.convertReplacementCharactersInTitle.name',
+      'settings.general.formatAsHeading.name',
+    ]);
   });
 });
 

@@ -145,6 +145,7 @@
       "commands": "Commands",
       "other": "Other",
       "advancedGroup": "Advanced",
+      "noteCreationGroup": "Note creation",
       "supportGroup": "Support"
     },
     "general": {
@@ -169,7 +170,7 @@
         "desc": "When moving the cursor to a first line with content, place it at the end of the line instead of the start."
       },
       "insertTitleOnCreation": {
-        "name": "Insert title on note creation",
+        "name": "Insert title",
         "desc": {
           "part1": "Place the file name in the first line when creating a new empty note (unless ",
           "untitled": "Untitled",
@@ -181,7 +182,7 @@
         "desc": {
           "part1": "When inserting title on note creation, convert forbidden character replacements back to their original forms, as set in ",
           "replaceCharacters": "Character replacements",
-          "part2": "."
+          "part2": " settings."
         }
       },
       "formatAsHeading": {
@@ -329,7 +330,7 @@
         "desc": {
           "part1": "Apply custom text replacements to alias, as set in ",
           "customRules": "Custom rules",
-          "part2": "."
+          "part2": " settings."
         }
       },
       "stripMarkup": {
@@ -337,7 +338,7 @@
         "desc": {
           "part1": "Omit markup syntax in alias, as set in ",
           "stripMarkup": "Markup stripping",
-          "part2": "."
+          "part2": " settings."
         }
       },
       "keepEmptyProperty": {
@@ -447,13 +448,13 @@
         "asSetInReplace": {
           "part1": "As set in ",
           "replaceCharacters": "Character replacements",
-          "part2": "."
+          "part2": " settings."
         },
         "applyAfterMarkup": "Apply after markup stripping",
         "asSetInStrip": {
           "part1": "As set in ",
           "stripMarkup": "Markup stripping",
-          "part2": "."
+          "part2": " settings."
         }
       },
       "emptyState": "No custom rules.",

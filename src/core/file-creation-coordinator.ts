@@ -7,7 +7,7 @@ import {
 } from 'obsidian';
 import FirstLineIsTitlePlugin from '../../main';
 import { TIMING } from '../constants/timing';
-import { verboseLog } from '../utils';
+import { containsFileNameExclusion, verboseLog } from '../utils';
 // Leaf modules, not the '../utils' barrel: the coordinator suite mocks the barrel down to verboseLog
 import { shouldProcessFile } from '../utils/file-exclusions';
 import {
@@ -59,6 +59,7 @@ export interface FileCreationActions {
  * - 1  Either feature enabled? No → do nothing.
  * - 2  Folder excluded? Yes → do nothing.
  * - 2b Tag/property/disable-renaming excluded, judged on real-time content? Yes → do nothing.
+ * - 2c File name excluded? Yes → do nothing.
  * - 3  Any tag or property exclusions configured? No → settings hub.
  * - 4  Templater installed? No → settings hub.
  * - 5  Templater's trigger on file creation on? No → settings hub.
@@ -127,6 +128,17 @@ export class FileCreationCoordinator {
       return this.noActions('1Y → 2N → 2bY');
     }
     this.recordDecision('2b', 'N');
+
+    // Node 2c: Is the file name excluded? Runs after 2b so decision labels stay in sequence order; the extra content-gate evaluation is paid only by name-excluded files.
+    if (this.isFileNameExcluded(file)) {
+      this.recordDecisionAndLogOutcome(
+        '2c',
+        'Y',
+        'Do nothing (file name excluded)'
+      );
+      return this.noActions('1Y → 2N → 2bN → 2cY');
+    }
+    this.recordDecision('2c', 'N');
 
     // Node 3: Are there exclusions configured?
     if (this.hasExclusions()) {
@@ -382,6 +394,13 @@ export class FileCreationCoordinator {
       // Node 2 already ran this same folder check through this same gate: an optimization, not a semantic difference
       { ignoreFolder: true }
     );
+  }
+
+  /**
+   * Node 2c: file-name exclusions, which the rename path enforces in rename-engine.ts.
+   */
+  private isFileNameExcluded(file: TFile): boolean {
+    return containsFileNameExclusion(file.name, this.plugin.settings);
   }
 
   /**

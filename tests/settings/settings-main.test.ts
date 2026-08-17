@@ -32,6 +32,11 @@ vi.mock('../../src/utils', () => ({
 // Page builders are covered by their own tabs; stub them to isolate the shell.
 vi.mock('../../src/settings/tab-general', () => ({
   buildGeneralDefinitions: vi.fn(() => []),
+  buildNoteCreationGroup: vi.fn(() => ({
+    type: 'group',
+    heading: 'settings.tabs.noteCreationGroup',
+    items: [{ name: 'settings.general.insertTitleOnCreation.name' }],
+  })),
   buildFooterDefinitions: vi.fn(() => [
     { name: 'settings.general.renameAllNotes.name', render: vi.fn() },
   ]),
@@ -150,9 +155,15 @@ describe('FirstLineIsTitleSettings', () => {
       ]);
     });
 
-    it('places the page-level action directly above the Advanced group', () => {
+    it('orders the page-level action, Exclusions and Note creation between General and Advanced', () => {
       const defs = tab.getSettingDefinitions();
-      expect((defs[advancedGroupIndex() - 1] as { name?: string }).name).toBe(
+      const advanced = advancedGroupIndex();
+
+      expect((defs[advanced - 1] as { heading?: string }).heading).toBe(
+        'settings.tabs.noteCreationGroup'
+      );
+      expect((defs[advanced - 2] as { name?: string }).name).toBe('Exclusions');
+      expect((defs[advanced - 3] as { name?: string }).name).toBe(
         'settings.general.renameAllNotes.name'
       );
     });

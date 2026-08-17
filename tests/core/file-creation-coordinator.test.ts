@@ -98,7 +98,9 @@ describe('FileCreationCoordinator', () => {
     expect(result.shouldMoveCursor).toBe(true);
     expect(result.placeCursorAtEnd).toBe(true);
     // Sole breadcrumb assertion in the suite, kept as a smoke check that the tree still walks the expected nodes
-    expect(result.decisionPath).toBe('1Y → 2N → 2bN → 3N → 14C → 17Y → 18N');
+    expect(result.decisionPath).toBe(
+      '1Y → 2N → 2bN → 2cN → 3N → 14C → 17Y → 18N'
+    );
   });
 
   it('does nothing when content-excluded (tag/property/disable-renaming)', async () => {
@@ -297,6 +299,36 @@ describe('FileCreationCoordinator', () => {
     expect(result.shouldMoveCursor).toBe(false);
     expect(result.placeCursorAtEnd).toBe(false);
     expect(mockExclusionGate).toHaveBeenCalledTimes(0);
+  });
+
+  it('does nothing when the file name matches an enabled file-name exclusion (Node 2c)', async () => {
+    mockPlugin.settings = createTestSettings({
+      core: {
+        ...structuredClone(DEFAULT_SETTINGS.core),
+        insertTitleOnCreation: true,
+        moveCursorToFirstLine: true,
+      },
+      exclusions: {
+        // DEFAULT_SETTINGS ships its one entry disabled, so the fixture supplies its own
+        fileNameExclusions: [
+          {
+            text: 'test',
+            onlyAtStart: false,
+            onlyWholeLine: false,
+            enabled: true,
+            caseSensitive: false,
+          },
+        ],
+      },
+    });
+
+    const result = await determineActions('');
+
+    expect(result.shouldInsertTitle).toBe(false);
+    expect(result.shouldMoveCursor).toBe(false);
+    expect(result.placeCursorAtEnd).toBe(false);
+    // One, not zero: 2c runs after 2b, so the content gate has already fired — this pins that ordering
+    expect(mockExclusionGate).toHaveBeenCalledTimes(1);
   });
 
   it('proceeds to settings hub when content not excluded, no Templater, and no exclusions configured (Node 3N regression baseline)', async () => {
