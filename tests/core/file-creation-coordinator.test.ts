@@ -331,6 +331,34 @@ describe('FileCreationCoordinator', () => {
     expect(mockExclusionGate).toHaveBeenCalledTimes(1);
   });
 
+  // Every other fixture is `test.md`, whose name, basename and path all match the exclusion text alike, so a `file.name` → `file.path` swap here would stay green while silently diverging from the rename path, which matches on the name only
+  it('proceeds for a file inside an excluded-sounding folder, pinning Node 2c to the file name rather than the path', async () => {
+    file = createMockFile('excluded-term/note.md');
+    mockPlugin.settings = createTestSettings({
+      core: {
+        ...structuredClone(DEFAULT_SETTINGS.core),
+        insertTitleOnCreation: true,
+        moveCursorToFirstLine: true,
+      },
+      exclusions: {
+        fileNameExclusions: [
+          {
+            text: 'excluded-term',
+            onlyAtStart: false,
+            onlyWholeLine: false,
+            enabled: true,
+            caseSensitive: false,
+          },
+        ],
+      },
+    });
+
+    const result = await determineActions('');
+
+    expect(result.shouldInsertTitle).toBe(true);
+    expect(result.shouldMoveCursor).toBe(true);
+  });
+
   it('proceeds to settings hub when content not excluded, no Templater, and no exclusions configured (Node 3N regression baseline)', async () => {
     const result = await determineActions('');
 

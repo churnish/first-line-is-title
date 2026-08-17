@@ -142,7 +142,7 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
     return [
       // General settings stay at the top level with no heading, per Obsidian's
       // convention that a tab's primary section is unlabelled.
-      ...buildGeneralDefinitions(this.plugin, this),
+      ...buildGeneralDefinitions(this.plugin),
       // Page-level action closes out the everyday settings, above the Exclusions row.
       ...buildFooterDefinitions(this.plugin),
       buildExclusionsPage(this.plugin, this),

@@ -7,9 +7,12 @@ import {
 } from 'obsidian';
 import FirstLineIsTitlePlugin from '../../main';
 import { TIMING } from '../constants/timing';
-import { containsFileNameExclusion, verboseLog } from '../utils';
+import { verboseLog } from '../utils';
 // Leaf modules, not the '../utils' barrel: the coordinator suite mocks the barrel down to verboseLog
-import { shouldProcessFile } from '../utils/file-exclusions';
+import {
+  containsFileNameExclusion,
+  shouldProcessFile,
+} from '../utils/file-exclusions';
 import {
   fileHasTargetTags,
   getFrontmatterTagsFromCache,
@@ -43,7 +46,7 @@ export interface FileCreationActions {
   shouldMoveCursor: boolean;
   shouldInsertTitle: boolean;
   placeCursorAtEnd: boolean;
-  decisionPath: string; // e.g., "1Y → 2N → 3N → 14A → 15N"
+  decisionPath: string; // e.g., "1Y → 2N → 2bN → 2cN → 3N → 14A → 15N"
 }
 
 /**
@@ -397,7 +400,7 @@ export class FileCreationCoordinator {
   }
 
   /**
-   * Node 2c: file-name exclusions, which the rename path enforces in rename-engine.ts.
+   * Node 2c: Check file-name exclusions, the same ones the rename path enforces in rename-engine.ts.
    */
   private isFileNameExcluded(file: TFile): boolean {
     return containsFileNameExclusion(file.name, this.plugin.settings);

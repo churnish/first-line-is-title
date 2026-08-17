@@ -123,7 +123,7 @@ describe('FirstLineIsTitleSettings', () => {
         .filter((def) => (def as { type?: string }).type === 'page')
         .map((def) => (def as { name?: string }).name);
 
-    // Matched by heading, not by type — feedback occupies a second group.
+    // Matched by heading, not by type — other groups sit alongside this one.
     const ADVANCED_HEADING = 'settings.tabs.advancedGroup';
 
     const advancedGroupIndex = () =>

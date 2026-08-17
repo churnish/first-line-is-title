@@ -1,8 +1,4 @@
-import {
-  PluginSettingTab,
-  SettingDefinitionItem,
-  SettingDefinitionGroup,
-} from 'obsidian';
+import { SettingDefinitionItem, SettingDefinitionGroup } from 'obsidian';
 import { FirstLineIsTitlePlugin, quoteLabel } from './settings-base';
 import { RenameAllFilesModal } from '../modals';
 import { t } from '../i18n';
@@ -31,8 +27,7 @@ function buildEmphasizedDescription(
  * no page wrapper and no heading, per Obsidian's convention.
  */
 export function buildGeneralDefinitions(
-  plugin: FirstLineIsTitlePlugin,
-  tab: PluginSettingTab
+  plugin: FirstLineIsTitlePlugin
 ): SettingDefinitionItem[] {
   return [
     {
@@ -141,8 +136,7 @@ export function buildNoteCreationGroup(
 
 /**
  * Vault-wide action that belongs below the everyday settings rather than inside
- * one of them. Closes out that first box, directly above the Exclusions page row
- * — everything from Note creation down sits in its own box below it.
+ * one of them. Last of the everyday settings, directly above the Exclusions page row.
  */
 export function buildFooterDefinitions(
   plugin: FirstLineIsTitlePlugin

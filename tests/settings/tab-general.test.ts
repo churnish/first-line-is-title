@@ -6,25 +6,12 @@
  * only re-reads its own fixture — the shape has to be pinned here or nowhere.
  */
 
-import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 
 vi.mock('../../src/i18n', () => ({
   t: vi.fn((key: string) => key),
   getCurrentLocale: vi.fn(() => 'en'),
 }));
-
-// Obsidian injects both helpers at runtime and jsdom has neither, so a builder
-// whose `desc` is a fragment cannot be called at all without them.
-beforeAll(() => {
-  globalThis.createFragment = (callback?: (frag: DocumentFragment) => void) => {
-    const fragment = document.createDocumentFragment();
-    fragment.appendText = (text: string) => {
-      fragment.appendChild(document.createTextNode(text));
-    };
-    callback?.(fragment);
-    return fragment;
-  };
-});
 
 import {
   buildFooterDefinitions,

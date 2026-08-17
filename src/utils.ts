@@ -29,6 +29,7 @@ export {
   isFileInConfiguredFolders,
   fileHasExcludedProperties,
   shouldProcessFile,
+  containsFileNameExclusion,
 } from './utils/file-exclusions';
 
 // Re-export from PropertyManager (wrapped to avoid unbound-method warning)
@@ -173,6 +174,7 @@ export function canModifyFile(
 // - isFileInConfiguredFolders → utils/file-exclusions.ts
 // - fileHasExcludedProperties → utils/file-exclusions.ts
 // - shouldProcessFile → utils/file-exclusions.ts
+// - containsFileNameExclusion → utils/file-exclusions.ts
 // - deepMerge → utils/deep-merge.ts
 
 export function hasDisablePropertyInFile(
@@ -237,50 +239,6 @@ export function hasDisablePropertyInFile(
   } catch {
     return false;
   }
-}
-
-export function containsFileNameExclusion(
-  filename: string,
-  settings: PluginSettings
-): boolean {
-  // Get filename without extension for comparison
-  const filenameWithoutExt = filename.replace(/\.md$/, '');
-
-  for (const exclusion of settings.exclusions.fileNameExclusions) {
-    if (!exclusion.enabled || !exclusion.text) continue;
-
-    // Check against both full filename and filename without extension
-    const compareFullFilename = exclusion.caseSensitive
-      ? filename
-      : filename.toLowerCase();
-    const compareFilenameWithoutExt = exclusion.caseSensitive
-      ? filenameWithoutExt
-      : filenameWithoutExt.toLowerCase();
-    const compareText = exclusion.caseSensitive
-      ? exclusion.text
-      : exclusion.text.toLowerCase();
-
-    for (const compareFilename of [
-      compareFullFilename,
-      compareFilenameWithoutExt,
-    ]) {
-      if (exclusion.onlyWholeLine) {
-        // Only match if the entire filename matches
-        if (compareFilename.trim() === compareText.trim()) {
-          return true;
-        }
-      } else if (exclusion.onlyAtStart) {
-        if (compareFilename.startsWith(compareText)) {
-          return true;
-        }
-      } else {
-        if (compareFilename.includes(compareText)) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
 }
 
 export function extractTitle(
