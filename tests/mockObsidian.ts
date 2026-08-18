@@ -181,6 +181,7 @@ export class Workspace {
   getMostRecentLeaf = vi.fn().mockReturnValue(null);
   on = vi.fn();
   off = vi.fn();
+  offref = vi.fn();
   trigger = vi.fn();
   revealLeaf = vi.fn();
   setActiveLeaf = vi.fn();

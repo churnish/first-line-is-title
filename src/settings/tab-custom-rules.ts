@@ -12,7 +12,7 @@ import {
   buildDescRow,
   FirstLineIsTitlePlugin,
   mountLegacyHost,
-  quoteLabel,
+  appendEmphasis,
 } from './settings-base';
 import { t } from '../i18n';
 import { CustomReplacement } from '../types';
@@ -24,17 +24,6 @@ async function persistSettings(plugin: FirstLineIsTitlePlugin): Promise<void> {
     const notice = new Notice(t('settings.errors.saveFailed'));
     notice.containerEl.addClass('mod-warning');
   }
-}
-
-/**
- * Appends a locale-aware emphasised fragment. Russian uses guillemets rather
- * than bold.
- */
-function appendEmphasis(
-  parent: HTMLElement | DocumentFragment,
-  localeKey: string
-): void {
-  parent.appendText(quoteLabel(t(localeKey)));
 }
 
 /**

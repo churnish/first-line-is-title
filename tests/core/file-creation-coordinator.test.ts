@@ -398,6 +398,61 @@ describe('FileCreationCoordinator', () => {
     expect(result.placeCursorAtEnd).toBe(false);
   });
 
+  it('does nothing when Templater renames the note into a file-name exclusion after Node 2c cleared it (Node 13b)', async () => {
+    file = createMockFile('notes/test.md');
+    file.parent = createMockFolder('notes');
+    mockPlugin.settings = createTestSettings({
+      core: {
+        ...structuredClone(DEFAULT_SETTINGS.core),
+        insertTitleOnCreation: true,
+        moveCursorToFirstLine: true,
+      },
+      exclusions: {
+        // A configured tag rule is what sends the walk down the Templater branch at Node 3
+        excludedTags: ['exclude-me'],
+        fileNameExclusions: [
+          {
+            text: 'daily',
+            onlyAtStart: false,
+            onlyWholeLine: false,
+            enabled: true,
+            caseSensitive: false,
+          },
+        ],
+      },
+    });
+    mockApp.plugins.plugins['templater-obsidian'] = {
+      settings: {
+        trigger_on_file_creation: true,
+        templates_folder: 'Templates',
+        enable_folder_templates: true,
+        folder_templates: [{ folder: 'notes', template: 'Templates/daily.md' }],
+      },
+    };
+    // The rename lands during the Node 12 wait, so the name Node 2c cleared is stale by Node 13.
+    // Deferred rather than fired inline: the coordinator's own `eventRef` is still in its temporal dead zone while `on` is running.
+    const fireTemplaterEvent = (
+      _name: string,
+      callback: (data: { file: TFile }) => void
+    ) => {
+      window.setTimeout(() => {
+        file.name = 'daily.md';
+        callback({ file });
+      }, 0);
+      return {};
+    };
+    // Cast because the mock exposes Obsidian's overloaded `on`, which no single implementation signature satisfies
+    mockApp.workspace.on =
+      fireTemplaterEvent as unknown as typeof mockApp.workspace.on;
+
+    const result = await determineActions('');
+
+    expect(result.shouldInsertTitle).toBe(false);
+    expect(result.shouldMoveCursor).toBe(false);
+    expect(result.placeCursorAtEnd).toBe(false);
+    expect(result.decisionPath).toContain('13bY');
+  });
+
   it('proceeds to settings hub when content not excluded, tag rules configured, and Templater not installed (Node 4N regression baseline)', async () => {
     mockPlugin.settings = createTestSettings({
       core: {

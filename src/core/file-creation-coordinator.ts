@@ -73,6 +73,7 @@ export interface FileCreationActions {
  * - 11 A file regex matches this path? Yes → Templater wait, No → settings hub.
  * - 12 Templater event arrived within the timeout? No → settings hub.
  * - 13 Template carries an excluded tag/property? Yes → do nothing, No → settings hub.
+ * - 13b File name excluded once the template has run? Yes → do nothing.
  *
  * Settings hub (nodes 14-18) then maps the enabled features onto the final
  * actions: 14A title only, 14B cursor only, 14C both, with nodes 15/18 checking
@@ -105,7 +106,7 @@ export class FileCreationCoordinator {
         'N',
         'Do nothing (both features disabled)'
       );
-      return this.noActions('1N');
+      return this.noActions(this.pathString());
     }
     this.recordDecision('1', 'Y');
 
@@ -117,7 +118,7 @@ export class FileCreationCoordinator {
         'Y',
         'Do nothing (folder excluded)'
       );
-      return this.noActions('1Y → 2Y');
+      return this.noActions(this.pathString());
     }
     this.recordDecision('2', 'N');
 
@@ -128,7 +129,7 @@ export class FileCreationCoordinator {
         'Y',
         'Do nothing (tag/property/disable-renaming excluded)'
       );
-      return this.noActions('1Y → 2N → 2bY');
+      return this.noActions(this.pathString());
     }
     this.recordDecision('2b', 'N');
 
@@ -139,7 +140,7 @@ export class FileCreationCoordinator {
         'Y',
         'Do nothing (file name excluded)'
       );
-      return this.noActions('1Y → 2N → 2bN → 2cY');
+      return this.noActions(this.pathString());
     }
     this.recordDecision('2c', 'N');
 
@@ -248,7 +249,23 @@ export class FileCreationCoordinator {
     }
     this.recordDecision('13', 'N');
 
-    return this.proceedToSettingsHub(file, context, pathSoFar + ' → 12Y → 13N');
+    // Node 13b: Templater can rename across the exclusion boundary during the node-12 wait, so the name Node 2c cleared may no longer be the file's.
+    // Not folded into 13Y: captured debug paths have to keep telling the two causes apart. The mirror case — excluded at creation, cleared by the template — is deliberately not re-opened, since Node 2c returns before the wait ever starts.
+    if (this.isFileNameExcluded(file)) {
+      this.recordDecisionAndLogOutcome(
+        '13b',
+        'Y',
+        'Do nothing (file name excluded after template)'
+      );
+      return this.noActions(pathSoFar + ' → 12Y → 13N → 13bY');
+    }
+    this.recordDecision('13b', 'N');
+
+    return this.proceedToSettingsHub(
+      file,
+      context,
+      pathSoFar + ' → 12Y → 13N → 13bN'
+    );
   }
 
   /**
@@ -400,7 +417,7 @@ export class FileCreationCoordinator {
   }
 
   /**
-   * Node 2c: Check file-name exclusions, the same ones the rename path enforces in rename-engine.ts.
+   * Nodes 2c, 13b: Check file-name exclusions, the same ones the rename path enforces in rename-engine.ts.
    */
   private isFileNameExcluded(file: TFile): boolean {
     return containsFileNameExclusion(file.name, this.plugin.settings);

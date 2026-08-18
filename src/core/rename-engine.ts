@@ -616,6 +616,34 @@ export class RenameEngine {
     // Reuse contentForRateLimit instead of reading again
     const initialContent = contentForRateLimit;
 
+    // Runs before the content gate: this rule reads only the name, so paying for shouldProcessFile's YAML parses first would be wasted work. A file both name- and strategy-excluded therefore reports 'file-name-exclusion'.
+    // Check if filename matches any file name exclusions and skip if enabled (always respected)
+    if (containsFileNameExclusion(file.name, this.plugin.settings)) {
+      if (showNotices && !isBatchOperation) {
+        // Rate limit: show notice max once per 2 seconds per file
+        if (
+          this.plugin.fileStateManager.canShowFileNameExclusionNotice(file.path)
+        ) {
+          verboseLog(
+            this.plugin,
+            `Showing notice: Excluded file name prevented rename of: ${file.basename}`
+          );
+          new Notice(
+            t('notifications.fileNameExclusionPreventedRename').replace(
+              '{{filename}}',
+              file.basename
+            )
+          );
+          this.plugin.fileStateManager.setFileNameExclusionNotice(file.path);
+        }
+      }
+      verboseLog(
+        this.plugin,
+        `Skipping file with excluded file name: ${file.path}`
+      );
+      return { success: false, reason: 'file-name-exclusion' };
+    }
+
     // Pass exclusionOverrides to skip checks for manual single-file commands
     if (
       !shouldProcessFile(
@@ -645,33 +673,6 @@ export class RenameEngine {
       providedEditor: editor, // Use editor from manual command
       searchWorkspace: showNotices, // Manual commands search for popover editors
     });
-
-    // Check if filename matches any file name exclusions and skip if enabled (always respected)
-    if (containsFileNameExclusion(file.name, this.plugin.settings)) {
-      if (showNotices && !isBatchOperation) {
-        // Rate limit: show notice max once per 2 seconds per file
-        if (
-          this.plugin.fileStateManager.canShowFileNameExclusionNotice(file.path)
-        ) {
-          verboseLog(
-            this.plugin,
-            `Showing notice: Excluded file name prevented rename of: ${file.basename}`
-          );
-          new Notice(
-            t('notifications.fileNameExclusionPreventedRename').replace(
-              '{{filename}}',
-              file.basename
-            )
-          );
-          this.plugin.fileStateManager.setFileNameExclusionNotice(file.path);
-        }
-      }
-      verboseLog(
-        this.plugin,
-        `Skipping file with excluded file name: ${file.path}`
-      );
-      return { success: false, reason: 'file-name-exclusion' };
-    }
 
     const currentName = file.basename;
     const contentWithoutFrontmatter = this.stripFrontmatterFromContent(

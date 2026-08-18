@@ -9,7 +9,7 @@ import {
   FirstLineIsTitlePlugin,
   appendLines,
   buildDescRow,
-  quoteLabel,
+  appendEmphasisedTerm,
 } from './settings-base';
 import { t } from '../i18n';
 import { DEFAULT_SETTINGS } from '../constants';
@@ -33,10 +33,6 @@ function buildLimitationsNote(): DocumentFragment {
       (target) => target.appendText(t('settings.alias.limitations.bullet2')),
     ]);
   });
-}
-
-function appendEmphasisedTerm(frag: DocumentFragment, text: string): void {
-  frag.appendText(quoteLabel(text));
 }
 
 /**

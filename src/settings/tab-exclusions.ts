@@ -14,7 +14,7 @@ import {
   FirstLineIsTitlePlugin,
   mountLegacyHost,
   buildDescRow,
-  quoteLabel,
+  appendEmphasis,
 } from './settings-base';
 import {
   EXCLUSION_STRATEGY,
@@ -33,17 +33,6 @@ async function persistSettings(plugin: FirstLineIsTitlePlugin): Promise<void> {
     const notice = new Notice(t('settings.errors.saveFailed'));
     notice.containerEl.addClass('mod-warning');
   }
-}
-
-/**
- * Appends a locale-aware emphasised fragment. Russian uses guillemets rather
- * than bold.
- */
-function appendEmphasis(
-  parent: HTMLElement | DocumentFragment,
-  localeKey: string
-): void {
-  parent.appendText(quoteLabel(t(localeKey)));
 }
 
 /** The "any rule can exclude, none can re-include" caveat. */

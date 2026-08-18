@@ -2,7 +2,7 @@ import { App, SettingDefinitionRender, TFile } from 'obsidian';
 import { PluginSettings } from '../types';
 import { UNIVERSAL_FORBIDDEN_CHARS, WINDOWS_ANDROID_CHARS } from '../constants';
 import { detectOS } from '../utils';
-import { getCurrentLocale } from '../i18n';
+import { getCurrentLocale, t } from '../i18n';
 
 export interface FirstLineIsTitlePlugin {
   app: App;
@@ -143,10 +143,6 @@ export function mountLegacyHost(settingEl: HTMLElement): HTMLElement {
 }
 
 /**
- * Appends a sequence of bare newline-separated lines (no bullet markup),
- * joined with `<br>` rather than a `<ul>`/`<li>` list.
- */
-/**
  * Wraps a UI label quoted in running text, the way settings descriptions refer
  * to controls elsewhere in the interface.
  *
@@ -158,6 +154,31 @@ export function quoteLabel(text: string): string {
   return getCurrentLocale() === 'ru' ? `«${text}»` : `“${text}”`;
 }
 
+/**
+ * Appends a UI label quoted per locale; see `quoteLabel`.
+ */
+export function appendEmphasis(
+  parent: HTMLElement | DocumentFragment,
+  localeKey: string
+): void {
+  parent.appendText(quoteLabel(t(localeKey)));
+}
+
+/**
+ * Appends an already-resolved term quoted per locale; see `quoteLabel`. The
+ * counterpart to `appendEmphasis` for text that is not itself a locale key.
+ */
+export function appendEmphasisedTerm(
+  parent: HTMLElement | DocumentFragment,
+  text: string
+): void {
+  parent.appendText(quoteLabel(text));
+}
+
+/**
+ * Appends a sequence of bare newline-separated lines (no bullet markup),
+ * joined with `<br>` rather than a `<ul>`/`<li>` list.
+ */
 export function appendLines(
   parent: HTMLElement | DocumentFragment,
   lines: Array<(target: HTMLElement | DocumentFragment) => void>

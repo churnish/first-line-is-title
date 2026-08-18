@@ -37,6 +37,9 @@ function captureButton(render: (setting: never) => void) {
     },
   };
   const setting = {
+    // Owned by the main document, so the button's `getOwnerWindow` call lands
+    // on `window` and the spy below sees the opened URL.
+    settingEl: document.createElement('div'),
     addButton(cb: (b: typeof button) => unknown) {
       cb(button);
       return setting;

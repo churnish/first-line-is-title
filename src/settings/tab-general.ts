@@ -1,14 +1,15 @@
 import { SettingDefinitionItem, SettingDefinitionGroup } from 'obsidian';
-import { FirstLineIsTitlePlugin, quoteLabel } from './settings-base';
+import { FirstLineIsTitlePlugin, appendEmphasis } from './settings-base';
 import { RenameAllFilesModal } from '../modals';
+import { getOwnerWindow } from '../utils/owner-window';
 import { t } from '../i18n';
 
 const FEEDBACK_URL = 'https://github.com/churnish/first-line-is-title/issues';
 const HELP_URL = 'https://github.com/churnish/first-line-is-title/discussions';
 
 /**
- * Builds a description where one term is emphasized. Russian typography uses
- * guillemets instead of bold, matching the pre-migration rendering.
+ * Builds a description where one term is quoted as a UI label; see
+ * `appendEmphasis` for the per-locale marks.
  */
 function buildEmphasizedDescription(
   part1Key: string,
@@ -17,7 +18,7 @@ function buildEmphasizedDescription(
 ): DocumentFragment {
   return createFragment((frag) => {
     frag.appendText(t(part1Key));
-    frag.appendText(quoteLabel(t(emphasizedKey)));
+    appendEmphasis(frag, emphasizedKey);
     frag.appendText(t(part2Key));
   });
 }
@@ -184,7 +185,7 @@ export function buildSupportGroup(): SettingDefinitionGroup {
             button
               .setButtonText(t('settings.general.help.button'))
               .onClick(() => {
-                window.open(HELP_URL, '_blank');
+                getOwnerWindow(setting.settingEl).open(HELP_URL, '_blank');
               })
           );
         },
@@ -197,7 +198,7 @@ export function buildSupportGroup(): SettingDefinitionGroup {
             button
               .setButtonText(t('settings.general.sendFeedback.button'))
               .onClick(() => {
-                window.open(FEEDBACK_URL, '_blank');
+                getOwnerWindow(setting.settingEl).open(FEEDBACK_URL, '_blank');
               })
           );
         },
