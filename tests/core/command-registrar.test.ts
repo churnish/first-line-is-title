@@ -40,8 +40,8 @@ describe('CommandRegistrar', () => {
         processFile: vi.fn().mockResolvedValue(undefined),
       },
       addSafeInternalLink: vi.fn(),
-      addSafeInternalLinkWithCaption: vi.fn(),
-      addInternalLinkWithCaptionAndCustomTarget: vi.fn(),
+      addSafeInternalLinkWithDisplayText: vi.fn(),
+      addInternalLinkWithDisplayTextAndCustomTarget: vi.fn(),
       saveSettings: vi.fn().mockResolvedValue(undefined),
       disableRenamingForNote: vi.fn().mockResolvedValue(undefined),
       enableRenamingForNote: vi.fn().mockResolvedValue(undefined),
@@ -131,7 +131,7 @@ describe('CommandRegistrar', () => {
       expect(command[0].icon).toBe('link');
     });
 
-    it('should register add-safe-internal-link-with-caption command', async () => {
+    it('should register add-safe-internal-link-with-display-text command', async () => {
       const { CommandRegistrar } =
         await import('../../src/core/command-registrar');
       const registrar = new CommandRegistrar(mockPlugin);
@@ -139,13 +139,13 @@ describe('CommandRegistrar', () => {
       registrar.registerCommands();
 
       const command = mockPlugin.addCommand.mock.calls.find(
-        (call: any[]) => call[0].id === 'add-safe-internal-link-with-caption'
+        (call: any[]) => call[0].id === 'add-safe-internal-link-with-display-text'
       );
       expect(command).toBeDefined();
       expect(command[0].icon).toBe('link');
     });
 
-    it('should register add-internal-link-with-caption-and-custom-target command', async () => {
+    it('should register add-internal-link-with-display-text-and-custom-target command', async () => {
       const { CommandRegistrar } =
         await import('../../src/core/command-registrar');
       const registrar = new CommandRegistrar(mockPlugin);
@@ -154,7 +154,7 @@ describe('CommandRegistrar', () => {
 
       const command = mockPlugin.addCommand.mock.calls.find(
         (call: any[]) =>
-          call[0].id === 'add-internal-link-with-caption-and-custom-target'
+          call[0].id === 'add-internal-link-with-display-text-and-custom-target'
       );
       expect(command).toBeDefined();
       expect(command[0].icon).toBe('link');
@@ -177,7 +177,7 @@ describe('CommandRegistrar', () => {
       expect(mockPlugin.addSafeInternalLink).toHaveBeenCalled();
     });
 
-    it('should call plugin.addSafeInternalLinkWithCaption when command executed', async () => {
+    it('should call plugin.addSafeInternalLinkWithDisplayText when command executed', async () => {
       const { CommandRegistrar } =
         await import('../../src/core/command-registrar');
       const registrar = new CommandRegistrar(mockPlugin);
@@ -185,15 +185,15 @@ describe('CommandRegistrar', () => {
       registrar.registerCommands();
 
       const command = mockPlugin.addCommand.mock.calls.find(
-        (call: any[]) => call[0].id === 'add-safe-internal-link-with-caption'
+        (call: any[]) => call[0].id === 'add-safe-internal-link-with-display-text'
       );
 
       command[0].editorCallback({}, {});
 
-      expect(mockPlugin.addSafeInternalLinkWithCaption).toHaveBeenCalled();
+      expect(mockPlugin.addSafeInternalLinkWithDisplayText).toHaveBeenCalled();
     });
 
-    it('should call plugin.addInternalLinkWithCaptionAndCustomTarget when command executed', async () => {
+    it('should call plugin.addInternalLinkWithDisplayTextAndCustomTarget when command executed', async () => {
       const { CommandRegistrar } =
         await import('../../src/core/command-registrar');
       const registrar = new CommandRegistrar(mockPlugin);
@@ -202,13 +202,13 @@ describe('CommandRegistrar', () => {
 
       const command = mockPlugin.addCommand.mock.calls.find(
         (call: any[]) =>
-          call[0].id === 'add-internal-link-with-caption-and-custom-target'
+          call[0].id === 'add-internal-link-with-display-text-and-custom-target'
       );
 
       command[0].editorCallback({}, {});
 
       expect(
-        mockPlugin.addInternalLinkWithCaptionAndCustomTarget
+        mockPlugin.addInternalLinkWithDisplayTextAndCustomTarget
       ).toHaveBeenCalled();
     });
   });

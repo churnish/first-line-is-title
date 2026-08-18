@@ -11,7 +11,7 @@ import { t } from '../i18n';
  *
  * Responsibilities:
  * - Register rename commands (current file, unless excluded, all files)
- * - Register link commands (safe internal link, with caption)
+ * - Register link commands (safe internal link, with display text)
  * - Register toggle and utility commands
  */
 export class CommandRegistrar {
@@ -33,8 +33,8 @@ export class CommandRegistrar {
     this.registerRenameCurrentFileUnlessExcludedCommand();
     this.registerRenameAllFilesCommand();
     this.registerSafeInternalLinkCommand();
-    this.registerSafeInternalLinkWithCaptionCommand();
-    this.registerInternalLinkWithCaptionAndCustomTargetCommand();
+    this.registerSafeInternalLinkWithDisplayTextCommand();
+    this.registerInternalLinkWithDisplayTextAndCustomTargetCommand();
     this.registerToggleAutomaticRenamingCommand();
     this.registerDisableRenamingCommand();
     this.registerEnableRenamingCommand();
@@ -151,29 +151,29 @@ export class CommandRegistrar {
   }
 
   /**
-   * Register command: Add safe internal link with selection as caption
+   * Register command: Add safe internal link with selection as display text
    */
-  private registerSafeInternalLinkWithCaptionCommand(): void {
+  private registerSafeInternalLinkWithDisplayTextCommand(): void {
     this.plugin.addCommand({
-      id: 'add-safe-internal-link-with-caption',
-      name: t('commands.addSafeInternalLinkWithCaption'),
+      id: 'add-safe-internal-link-with-display-text',
+      name: t('commands.addSafeInternalLinkWithDisplayText'),
       icon: 'link',
       editorCallback: (_editor, _view) => {
-        this.plugin.addSafeInternalLinkWithCaption();
+        this.plugin.addSafeInternalLinkWithDisplayText();
       },
     });
   }
 
   /**
-   * Register command: Add internal link with caption and custom target
+   * Register command: Add internal link with display text and custom target
    */
-  private registerInternalLinkWithCaptionAndCustomTargetCommand(): void {
+  private registerInternalLinkWithDisplayTextAndCustomTargetCommand(): void {
     this.plugin.addCommand({
-      id: 'add-internal-link-with-caption-and-custom-target',
-      name: t('commands.addInternalLinkWithCaptionAndCustomTarget'),
+      id: 'add-internal-link-with-display-text-and-custom-target',
+      name: t('commands.addInternalLinkWithDisplayTextAndCustomTarget'),
       icon: 'link',
       editorCallback: (_editor, _view) => {
-        this.plugin.addInternalLinkWithCaptionAndCustomTarget();
+        this.plugin.addInternalLinkWithDisplayTextAndCustomTarget();
       },
     });
   }

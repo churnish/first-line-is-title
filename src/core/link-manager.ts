@@ -65,10 +65,10 @@ export class LinkManager {
             const pipeIndex = linkContent.indexOf('|');
 
             if (pipeIndex !== -1) {
-              // Has caption: [[target|caption]] → caption
+              // Has display text: [[target|display text]] → display text
               replacement = linkContent.slice(pipeIndex + 1);
             } else {
-              // No caption: [[target]] → reverse(target)
+              // No display text: [[target]] → reverse(target)
               replacement = reverseSafeLinkTarget(
                 linkContent,
                 this.plugin.settings
@@ -104,7 +104,7 @@ export class LinkManager {
     }
   }
 
-  addSafeInternalLinkWithCaption(): void {
+  addSafeInternalLinkWithDisplayText(): void {
     // Try to get active editor from any view type (Markdown, canvas, etc.)
     const activeEditor = this.plugin.app.workspace.activeEditor?.editor;
     if (!activeEditor) {
@@ -158,23 +158,23 @@ export class LinkManager {
             const pipeIndex = linkContent.indexOf('|');
 
             if (pipeIndex !== -1) {
-              // Has caption: [[target|caption]]
+              // Has display text: [[target|display text]]
               const target = linkContent.slice(0, pipeIndex);
-              const caption = linkContent.slice(pipeIndex + 1);
+              const displayText = linkContent.slice(pipeIndex + 1);
               const reversedTarget = reverseSafeLinkTarget(
                 target,
                 this.plugin.settings
               );
 
-              if (reversedTarget === caption) {
-                // [[Heyˆ|Hey^]] → Hey^ (strip when caption matches reversed target)
-                replacement = caption;
+              if (reversedTarget === displayText) {
+                // [[Heyˆ|Hey^]] → Hey^ (strip when display text matches reversed target)
+                replacement = displayText;
               } else {
-                // [[Heyˆ|Bye]] → [[Heyˆ|Hey^]] (update caption to reversed target)
+                // [[Heyˆ|Bye]] → [[Heyˆ|Hey^]] (update display text to reversed target)
                 replacement = `[[${target}|${reversedTarget}]]`;
               }
             } else {
-              // No caption: [[Heyˆ]] → [[Heyˆ|Hey^]] (add caption as reversed target)
+              // No display text: [[Heyˆ]] → [[Heyˆ|Hey^]] (add display text as reversed target)
               const reversedTarget = reverseSafeLinkTarget(
                 linkContent,
                 this.plugin.settings
@@ -198,26 +198,26 @@ export class LinkManager {
       const modal = new InternalLinkModal(
         this.plugin.app,
         this.plugin,
-        (linkTarget: string, linkCaption?: string) => {
+        (linkTarget: string, linkDisplayText?: string) => {
           const safeLinkTarget = generateSafeLinkTarget(
             linkTarget,
             this.plugin.settings
           );
           let wikiLink: string;
-          if (linkCaption && linkCaption.trim()) {
-            wikiLink = `[[${safeLinkTarget}|${linkCaption}]]`;
+          if (linkDisplayText && linkDisplayText.trim()) {
+            wikiLink = `[[${safeLinkTarget}|${linkDisplayText}]]`;
           } else {
             wikiLink = `[[${safeLinkTarget}|${linkTarget}]]`;
           }
           activeEditor.replaceSelection(wikiLink);
         },
         true
-      ); // true for withCaption
+      ); // true for withDisplayText
       modal.open();
     }
   }
 
-  addInternalLinkWithCaptionAndCustomTarget(): void {
+  addInternalLinkWithDisplayTextAndCustomTarget(): void {
     // Try to get active editor from any view type (Markdown, canvas, etc.)
     const activeEditor = this.plugin.app.workspace.activeEditor?.editor;
     if (!activeEditor) {
@@ -261,7 +261,7 @@ export class LinkManager {
 
       for (const { from, to, text } of selectionData) {
         if (text.trim()) {
-          // Replace selection with [[|text]] (empty target, text as caption)
+          // Replace selection with [[|text]] (empty target, text as display text)
           const replacement = `[[|${text}]]`;
           activeEditor.replaceRange(replacement, from, to);
 

@@ -32,34 +32,33 @@ Multiple safeguards are in place to prevent unintended changes but **regular [ba
 
 ### Ribbon
 
-| Command                              | Description                                                                              |
-| ------------------------------------ | ---------------------------------------------------------------------------------------- |
-| Put first line in title              | Rename active note, even if in excluded folder or with excluded tag or property.         |
-| Put first line in title in all notes | Rename all notes in vault except if in excluded folder or with excluded tag or property. |
-| Toggle automatic renaming            | Toggle the **Rename automatically** setting.                                             |
+| Command | Description |
+| --- | --- |
+| Put first line in title | Rename active note, even if in excluded folder or with excluded tag or property. |
+| Toggle automatic renaming | Toggle the **Rename automatically** setting. |
 
 ### Command palette
 
-| Command                                          | Description                                                                                                                                           |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Put first line in title                          | Rename active note, even if in excluded folder or with excluded tag or property.                                                                      |
-| Put first line in title (unless excluded)        | Rename active note except if in excluded folder or with excluded tag or property.                                                                     |
-| Put first line in title in all notes             | Rename all notes in vault except if in excluded folder or with excluded tag or property.                                                              |
-| Toggle automatic renaming                        | Toggle the **Rename automatically** setting.                                                                                                          |
-| Disable renaming for note                        | Exclude active note from renaming.                                                                                                                    |
-| Enable renaming for note                         | Stop excluding active note from renaming.                                                                                                             |
-| Add safe internal link                           | Create internal link with forbidden characters handled as set in **Replace characters**.                                                              |
-| Add safe internal link with caption              | Create internal link with forbidden characters handled as set in **Replace characters**, and with original text in caption.                           |
-| Add internal link with caption and custom target | Create internal link with selected text in caption. Set link path manually.                                                                           |
-| Insert file name at cursor position              | Insert current file name at cursor position. Convert forbidden character replacements back to their original forms, as set in **Replace characters**. |
+| Command | Description |
+| --- | --- |
+| Put first line in title | Rename active note, even if in excluded folder or with excluded tag or property. |
+| Put first line in title (unless excluded) | Rename active note except if in excluded folder or with excluded tag or property. |
+| Put first line in title in all notes | Rename all notes in vault except if in excluded folder or with excluded tag or property. |
+| Toggle automatic renaming | Toggle the **Rename automatically** setting. |
+| Disable renaming for note | Exclude active note from renaming. |
+| Enable renaming for note | Stop excluding active note from renaming. |
+| Add safe internal link | Create internal link with forbidden characters handled as set in **Character replacements**. |
+| Add safe internal link with display text | Create internal link with forbidden characters handled as set in **Character replacements**, and with original text as display text. |
+| Add internal link with display text and custom target | Create internal link with selected text as display text. Set link path manually. |
+| Insert file name at cursor position | Insert current file name at cursor position. Convert replacements for forbidden characters back to their original forms, as set in **Character replacements**. |
 
 ### File, folder, tag and vault search context menu
 
-| Command                 | Description                                                      |
-| ----------------------- | ---------------------------------------------------------------- |
-| Put first line in title | Rename selected note(s).                                         |
-| Disable renaming        | Exclude selected note(s), folder(s) or tag from renaming.        |
-| Enable renaming         | Stop excluding selected note(s), folder(s) or tag from renaming. |
+| Command | Description |
+| --- | --- |
+| Put first line in title | Rename selected note(s). |
+| Disable renaming | Exclude selected note(s), folder(s) or tag from renaming. |
+| Enable renaming | Stop excluding selected note(s), folder(s) or tag from renaming. |
 
 ## Installation
 

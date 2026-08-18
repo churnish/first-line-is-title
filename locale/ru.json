@@ -17,8 +17,8 @@
     "enableRenaming": "Включить переименование",
     "toggleAutomaticRenaming": "Переключить автоматическое переименование",
     "addSafeInternalLink": "Добавить безопасную внутреннюю ссылку",
-    "addSafeInternalLinkWithCaption": "Добавить безопасную внутреннюю ссылку с подписью",
-    "addInternalLinkWithCaptionAndCustomTarget": "Добавить внутреннюю ссылку с подписью и указанием пути",
+    "addSafeInternalLinkWithDisplayText": "Добавить безопасную внутреннюю ссылку с отображаемым текстом",
+    "addInternalLinkWithDisplayTextAndCustomTarget": "Добавить внутреннюю ссылку с отображаемым текстом и указанием пути",
     "insertFilename": "Вставить имя файла в позицию курсора",
     "putFirstLineInTitleNFolders": {
       "few": "Поместить первую строку в название ({{count}} папки)",

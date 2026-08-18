@@ -413,12 +413,12 @@ export default class FirstLineIsTitle extends Plugin {
     this.linkManager.addSafeInternalLink();
   }
 
-  addSafeInternalLinkWithCaption(): void {
-    this.linkManager.addSafeInternalLinkWithCaption();
+  addSafeInternalLinkWithDisplayText(): void {
+    this.linkManager.addSafeInternalLinkWithDisplayText();
   }
 
-  addInternalLinkWithCaptionAndCustomTarget(): void {
-    this.linkManager.addInternalLinkWithCaptionAndCustomTarget();
+  addInternalLinkWithDisplayTextAndCustomTarget(): void {
+    this.linkManager.addInternalLinkWithDisplayTextAndCustomTarget();
   }
 
   updatePropertyVisibility(): void {

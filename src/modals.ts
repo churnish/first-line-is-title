@@ -1450,20 +1450,20 @@ export class DisableEnableModal extends Modal {
 
 export class InternalLinkModal extends Modal {
   plugin: FirstLineIsTitlePlugin;
-  onSubmit: (linkTarget: string, linkCaption?: string) => void;
-  withCaption: boolean;
+  onSubmit: (linkTarget: string, linkDisplayText?: string) => void;
+  withDisplayText: boolean;
   private enterKeyHandler?: (e: KeyboardEvent) => void;
 
   constructor(
     app: App,
     plugin: FirstLineIsTitlePlugin,
-    onSubmit: (linkTarget: string, linkCaption?: string) => void,
-    withCaption: boolean = false
+    onSubmit: (linkTarget: string, linkDisplayText?: string) => void,
+    withDisplayText: boolean = false
   ) {
     super(app);
     this.plugin = plugin;
     this.onSubmit = onSubmit;
-    this.withCaption = withCaption;
+    this.withDisplayText = withDisplayText;
   }
 
   onOpen() {
@@ -1492,7 +1492,7 @@ export class InternalLinkModal extends Modal {
       const inputText = textInput.value.trim();
       if (inputText) {
         this.close();
-        this.onSubmit(inputText, this.withCaption ? inputText : undefined);
+        this.onSubmit(inputText, this.withDisplayText ? inputText : undefined);
       }
     };
 

@@ -544,7 +544,7 @@ export function extractTitle(
     const regularEmbedRegex = /!\[(.*?)\]\((.*?)\)/g;
     line = line.replace(
       regularEmbedRegex,
-      (_match: string, caption: string) => caption
+      (_match: string, displayText: string) => displayText
     );
   }
 
