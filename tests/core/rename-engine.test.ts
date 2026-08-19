@@ -394,6 +394,35 @@ describe('RenameEngine', () => {
       ).not.toHaveBeenCalled();
     });
 
+    it('should return before reading the vault when the editor is syncing', async () => {
+      // The plugin's own title insertion fires editor-change like a keystroke; without this
+      // guard it opens a second entry into the pipeline and reads the file from disk
+      plugin.cacheManager.isLocked = vi.fn().mockReturnValue(false);
+      plugin.fileStateManager.isEditorSyncing = vi.fn().mockReturnValue(true);
+      plugin.fileStateManager.getLastEditorContent = vi
+        .fn()
+        .mockReturnValue(null);
+
+      await renameEngine.processEditorChangeOptimal(editor, file);
+
+      expect(plugin.app.vault.read).not.toHaveBeenCalled();
+      expect(
+        plugin.fileStateManager.setLastEditorContent
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should still process an unlocked file when the editor is not syncing', async () => {
+      plugin.cacheManager.isLocked = vi.fn().mockReturnValue(false);
+      plugin.fileStateManager.isEditorSyncing = vi.fn().mockReturnValue(false);
+      plugin.fileStateManager.getLastEditorContent = vi
+        .fn()
+        .mockReturnValue(null);
+
+      await renameEngine.processEditorChangeOptimal(editor, file);
+
+      expect(plugin.app.vault.read).toHaveBeenCalledWith(file);
+    });
+
     it('should skip processing when only frontmatter changed', async () => {
       const previousContent = '---\ntitle: Old\n---\nBody';
       const currentContent = '---\ntitle: New\n---\nBody';
@@ -530,13 +559,13 @@ describe('RenameEngine', () => {
       );
       plugin.app.vault.getAllLoadedFiles = vi.fn().mockReturnValue([]);
       plugin.app.vault.read = vi.fn().mockResolvedValue('');
-      plugin.settings.customRules.enableCustomReplacements = true;
+      plugin.settings.customReplacements.enableCustomReplacements = true;
     });
 
-    describe('custom rule replacements containing a path separator', () => {
+    describe('custom replacements containing a path separator', () => {
       it('keeps the note in its folder when rules run after forbidden chars', async () => {
-        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = true;
-        plugin.settings.customRules.customReplacements = [makeRule()];
+        plugin.settings.customReplacements.applyAfterForbiddenChars = true;
+        plugin.settings.customReplacements.rules = [makeRule()];
 
         expect(await renameWith('# TODO item')).toBe(
           'Notes/ArchiveDone item.md'
@@ -544,9 +573,9 @@ describe('RenameEngine', () => {
       });
 
       it('keeps the note in its folder when rules run after markup stripping', async () => {
-        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = false;
-        plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping = true;
-        plugin.settings.customRules.customReplacements = [makeRule()];
+        plugin.settings.customReplacements.applyAfterForbiddenChars = false;
+        plugin.settings.markupStripping.applyCustomReplacementsAfterMarkupStripping = true;
+        plugin.settings.customReplacements.rules = [makeRule()];
 
         expect(await renameWith('# TODO item')).toBe(
           'Notes/ArchiveDone item.md'
@@ -554,9 +583,9 @@ describe('RenameEngine', () => {
       });
 
       it('keeps the note in its folder when rules run first', async () => {
-        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = false;
-        plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping = false;
-        plugin.settings.customRules.customReplacements = [makeRule()];
+        plugin.settings.customReplacements.applyAfterForbiddenChars = false;
+        plugin.settings.markupStripping.applyCustomReplacementsAfterMarkupStripping = false;
+        plugin.settings.customReplacements.rules = [makeRule()];
 
         expect(await renameWith('# TODO item')).toBe(
           'Notes/ArchiveDone item.md'
@@ -564,9 +593,9 @@ describe('RenameEngine', () => {
       });
 
       it('truncates to the character limit after a rule lengthens the title', async () => {
-        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = true;
+        plugin.settings.customReplacements.applyAfterForbiddenChars = true;
         plugin.settings.core.charCount = 10;
-        plugin.settings.customRules.customReplacements = [
+        plugin.settings.customReplacements.rules = [
           makeRule({ replaceText: 'Archive/Done and then some more text' }),
         ];
 
@@ -586,32 +615,32 @@ describe('RenameEngine', () => {
       });
 
       it('runs rules after forbidden chars have eaten the colon', async () => {
-        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = true;
-        plugin.settings.customRules.customReplacements = [colonRule];
+        plugin.settings.customReplacements.applyAfterForbiddenChars = true;
+        plugin.settings.customReplacements.rules = [colonRule];
 
         expect(await renameWith('# TODO: item')).toBe('Notes/TODO item.md');
       });
 
       it('runs rules before forbidden chars when rules follow markup stripping', async () => {
-        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = false;
-        plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping = true;
-        plugin.settings.customRules.customReplacements = [colonRule];
+        plugin.settings.customReplacements.applyAfterForbiddenChars = false;
+        plugin.settings.markupStripping.applyCustomReplacementsAfterMarkupStripping = true;
+        plugin.settings.customReplacements.rules = [colonRule];
 
         expect(await renameWith('# TODO: item')).toBe('Notes/Done item.md');
       });
 
       it('strips the heading marker before rules run when rules follow markup stripping', async () => {
-        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = false;
-        plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping = true;
-        plugin.settings.customRules.customReplacements = [headingRule];
+        plugin.settings.customReplacements.applyAfterForbiddenChars = false;
+        plugin.settings.markupStripping.applyCustomReplacementsAfterMarkupStripping = true;
+        plugin.settings.customReplacements.rules = [headingRule];
 
         expect(await renameWith('# TODO: item')).toBe('Notes/TODO item.md');
       });
 
       it('runs rules on the raw line when rules come first', async () => {
-        plugin.settings.customRules.applyCustomRulesAfterForbiddenChars = false;
-        plugin.settings.markupStripping.applyCustomRulesAfterMarkupStripping = false;
-        plugin.settings.customRules.customReplacements = [headingRule];
+        plugin.settings.customReplacements.applyAfterForbiddenChars = false;
+        plugin.settings.markupStripping.applyCustomReplacementsAfterMarkupStripping = false;
+        plugin.settings.customReplacements.rules = [headingRule];
 
         expect(await renameWith('# TODO: item')).toBe('Notes/Done item.md');
       });

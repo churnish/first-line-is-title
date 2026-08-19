@@ -42,14 +42,28 @@ export class AliasManager {
    * Called multiple times per operation but not cached since:
    * - Property string is typically short ("aliases")
    * - Caching adds complexity without measurable benefit
+   *
+   * A blank setting yields an empty array rather than falling back to
+   * `aliases`: the field is stored exactly as typed, so blank means the user
+   * asked for no alias property at all.
    */
   private getAliasPropertyKeys(): string[] {
-    const aliasPropertyKey =
-      this.settings.aliases.aliasPropertyKey || 'aliases';
-    return aliasPropertyKey
+    return this.settings.aliases.aliasPropertyKey
       .split(',')
       .map((key) => key.trim())
       .filter((key) => key.length > 0);
+  }
+
+  /**
+   * True when the alias property name setting resolves to no key at all.
+   *
+   * Every public entry point checks this before doing any work. Letting the
+   * per-key loops iterate zero times is not enough: the surrounding code still
+   * calls `activeView.save()` and `processFrontMatter()`, both of which write
+   * the file, to accomplish nothing.
+   */
+  private hasNoAliasProperty(): boolean {
+    return this.getAliasPropertyKeys().length === 0;
   }
 
   async updateAliasIfNeeded(
@@ -59,6 +73,14 @@ export class AliasManager {
     editor?: Editor,
     isBatchOperation = false
   ): Promise<boolean> {
+    // Ahead of `trackUsage()`, which can persist `data.json`: with no property
+    // to populate this call is not plugin usage, it is a no-op. `false` matches
+    // every other skip in this method, including the `enableAliases` one — it
+    // means "no alias update performed", not "failed".
+    if (this.hasNoAliasProperty()) {
+      return false;
+    }
+
     // Track plugin usage
     this.plugin.trackUsage();
 
@@ -199,7 +221,7 @@ export class AliasManager {
         processedTitleSource.trim() === titleToCompare;
 
       const shouldHaveAlias =
-        !this.settings.aliases.addAliasOnlyIfFirstLineDiffers ||
+        !this.settings.aliases.addAliasOnlyIfTitleDiffers ||
         !processedLineMatchesFilename;
 
       if (!shouldHaveAlias) {
@@ -304,6 +326,12 @@ export class AliasManager {
     editor?: Editor,
     isBatchOperation = false
   ): Promise<void> {
+    // No property to write the alias into - skip before `activeView.save()` and
+    // `processFrontMatter()` touch the file.
+    if (this.hasNoAliasProperty()) {
+      return;
+    }
+
     try {
       // Validate file exists and get fresh reference from vault.
       // We also re-validate before each processFrontMatter call to guard against
@@ -323,11 +351,10 @@ export class AliasManager {
 
       // Apply custom replacements to alias if enabled
       if (
-        this.settings.customRules.enableCustomReplacements &&
-        this.settings.markupStripping.applyCustomRulesInAlias
+        this.settings.customReplacements.enableCustomReplacements &&
+        this.settings.markupStripping.applyCustomReplacementsInAlias
       ) {
-        for (const replacement of this.settings.customRules
-          .customReplacements) {
+        for (const replacement of this.settings.customReplacements.rules) {
           if (replacement.searchText === '' || !replacement.enabled) continue;
 
           let tempLine = aliasProcessedLine;
@@ -354,26 +381,26 @@ export class AliasManager {
       // Process alias WITHOUT forbidden char replacements.
       // Use try/finally to guarantee settings restoration even if extractTitle throws.
       const originalCharReplacementSetting =
-        this.settings.replaceCharacters.enableForbiddenCharReplacements;
+        this.settings.characterReplacements.enableForbiddenCharReplacements;
 
       let aliasToAdd: string;
       try {
-        this.settings.replaceCharacters.enableForbiddenCharReplacements = false;
+        this.settings.characterReplacements.enableForbiddenCharReplacements = false;
         aliasToAdd = extractTitle(aliasProcessedLine, this.settings, {
           skipMarkupStripping:
             !this.settings.markupStripping.stripMarkupInAlias,
         });
       } finally {
-        this.settings.replaceCharacters.enableForbiddenCharReplacements =
+        this.settings.characterReplacements.enableForbiddenCharReplacements =
           originalCharReplacementSetting;
       }
-      // Re-check alias-matches-filename after custom rules are applied.
+      // Re-check alias-matches-filename after custom replacements are applied.
       // The caller (updateAliasIfNeeded) checks this at line 182, but custom replacement
       // rules (lines 276-303) can modify the alias value differently, so we must verify again.
       const targetTitle = newTitle.trim();
       const aliasMatchesFilename = aliasToAdd.trim() === targetTitle;
       const shouldAddAlias =
-        !this.settings.aliases.addAliasOnlyIfFirstLineDiffers ||
+        !this.settings.aliases.addAliasOnlyIfTitleDiffers ||
         !aliasMatchesFilename;
 
       if (!shouldAddAlias) {
@@ -687,6 +714,16 @@ export class AliasManager {
   }
 
   async removePluginAliasesFromFile(file: TFile): Promise<void> {
+    // No property to clean up - skip before `activeView.save()` and
+    // `processFrontMatter()` touch the file. Aliases written under a key the
+    // user has since cleared or renamed are left in place by design: the
+    // plugin stores no history of property names it previously used, and acts
+    // only on the property currently named in settings. Cleaning them up would
+    // mean writing to a property the user has not authorised.
+    if (this.hasNoAliasProperty()) {
+      return;
+    }
+
     try {
       // Validate file exists and get fresh reference from vault.
       // We check twice: once here and once before processFrontMatter.
@@ -812,6 +849,12 @@ export class AliasManager {
   }
 
   async removeAliasFromFile(file: TFile, aliasToRemove: string): Promise<void> {
+    // No property to remove the alias from - skip before `activeView.save()`
+    // and `processFrontMatter()` touch the file.
+    if (this.hasNoAliasProperty()) {
+      return;
+    }
+
     try {
       const trimmedAlias = aliasToRemove.trim();
 

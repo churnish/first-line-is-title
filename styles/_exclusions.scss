@@ -1,4 +1,4 @@
-// Exclusion list rows and their below-list add-row chrome.
+// Exclusion list rows.
 
 /* Qualified with .setting-item so `align-items` outranks Obsidian's
    `.setting-item { align-items: flex-start }` (0,1,0) outright rather than
@@ -40,60 +40,4 @@
   flex-shrink: 0;
   width: 32px;
   height: 32px;
-}
-
-/* Below-the-list "Add" row: an empty-name Setting holding only a button.
-   Unscoped (no .flit-settings-page ancestor) because it is a plain
-   declarative row, not mounted into a legacy host. Being a standalone run
-   with no heading, the framework wraps it in the same card-styled
-   .setting-items box a list uses; strip that box's chrome so the row reads
-   as a plain floating button, matching the pre-migration look. */
-.setting-items.flit-add-item-row-box {
-  background: transparent;
-  border-radius: 0;
-}
-
-/* Restore the button's pill on mobile. Stripping the card above drops the
-   button onto --settings-background, and `.is-mobile` maps both that and
-   --interactive-normal to --background-secondary (#f6f6f6 light), while also
-   setting --input-shadow: none — same fill, no outline, invisible pill.
-   --background-modifier-border is what Obsidian itself uses for
-   --interactive-normal on mobile dark, so light now matches dark.
-   (0,2,1) beats app.css `button:not(.clickable-icon)` (0,1,1) outright. */
-.is-mobile .flit-add-item-row .setting-item-control button {
-  background-color: var(--background-modifier-border, #e4e4e4);
-}
-
-/* Press state. The resting rule above (0,3,1) outranks Obsidian's
-   `button:not(.clickable-icon).mobile-tap` (0,2,1), so the tap colour has to
-   be restated or pressing produces no change on mobile light, where
-   --interactive-hover happens to equal the resting --background-modifier-border.
-   border → border-hover is the same pair Obsidian already uses for
-   --interactive-normal/--interactive-hover on mobile dark, so dark is unchanged. */
-.is-mobile .flit-add-item-row .setting-item-control button.mobile-tap {
-  background-color: var(--background-modifier-border-hover, #dadada);
-}
-
-/* iPadOS with a trackpad or mouse gets :hover instead of .mobile-tap, and the
-   resting rule outranks app.css's `button:hover` (0,1,1) too. Gated on
-   (hover: hover) so touch-only devices never latch a sticky hover state. */
-@media (hover: hover) {
-  .is-mobile .flit-add-item-row .setting-item-control button:hover {
-    background-color: var(--background-modifier-border-hover, #dadada);
-  }
-}
-
-/* The framework's standard 24px inter-group margin reads as too much gap
-   between a list's last row and its own "Add" affordance. */
-.setting-group.flit-add-item-row-group {
-  margin-top: 4px;
-}
-
-.flit-add-item-row .setting-item-info {
-  display: none;
-}
-
-.flit-add-item-row {
-  border-top: none;
-  padding-top: 0;
 }

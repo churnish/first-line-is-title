@@ -14,7 +14,7 @@ import {
   mountLegacyHost,
   appendEmphasis,
 } from './settings-base';
-import { t } from '../i18n';
+import { t, tp } from '../i18n';
 import { CustomReplacement } from '../types';
 
 async function persistSettings(plugin: FirstLineIsTitlePlugin): Promise<void> {
@@ -29,48 +29,36 @@ async function persistSettings(plugin: FirstLineIsTitlePlugin): Promise<void> {
 /**
  * Behavioural notes for the master toggle, as bare newline-separated lines
  * (no bullet markup) — its own row below the toggle, matching the trim-note
- * pattern in `tab-replace-characters.ts`.
+ * pattern in `character-replacements.ts`.
  */
 function appendMasterNote(parent: HTMLElement | DocumentFragment): void {
   appendLines(parent, [
     (target) =>
-      target.appendText(t('settings.customRules.rulesAppliedSequentially')),
+      target.appendText(t('settings.customReplacements.rulesApplyTopToBottom')),
     (target) => {
-      target.appendText(t('settings.customRules.leaveBlank.part1'));
-      appendEmphasis(target, 'settings.customRules.leaveBlank.replaceWith');
-      target.appendText(t('settings.customRules.leaveBlank.part2'));
-    },
-    (target) => {
-      target.appendText(t('settings.customRules.untitledWarning.part1'));
+      target.appendText(t('settings.customReplacements.leaveBlank.part1'));
       appendEmphasis(
         target,
-        'settings.customRules.untitledWarning.replaceWith'
+        'settings.customReplacements.leaveBlank.replaceWith'
       );
-      target.appendText(t('settings.customRules.untitledWarning.part2'));
-      appendEmphasis(
-        target,
-        'settings.customRules.untitledWarning.textToReplace'
-      );
-      target.appendText(t('settings.customRules.untitledWarning.part3'));
-      appendEmphasis(target, 'settings.customRules.untitledWarning.untitled');
-      target.appendText(t('settings.customRules.untitledWarning.part4'));
+      target.appendText(t('settings.customReplacements.leaveBlank.part2'));
     },
     (target) =>
-      target.appendText(t('settings.customRules.whitespacePreserved')),
+      target.appendText(t('settings.customReplacements.whitespacePreserved')),
   ]);
 }
 
 function buildApplyAfterForbiddenDescription(): DocumentFragment {
   return createFragment((frag) => {
     frag.appendText(
-      t('settings.customRules.processingOrder.asSetInReplace.part1')
+      t('settings.customReplacements.processingOrder.asSetInReplace.part1')
     );
     appendEmphasis(
       frag,
-      'settings.customRules.processingOrder.asSetInReplace.replaceCharacters'
+      'settings.customReplacements.processingOrder.asSetInReplace.characterReplacements'
     );
     frag.appendText(
-      t('settings.customRules.processingOrder.asSetInReplace.part2')
+      t('settings.customReplacements.processingOrder.asSetInReplace.part2')
     );
   });
 }
@@ -78,14 +66,14 @@ function buildApplyAfterForbiddenDescription(): DocumentFragment {
 function buildApplyAfterMarkupDescription(): DocumentFragment {
   return createFragment((frag) => {
     frag.appendText(
-      t('settings.customRules.processingOrder.asSetInStrip.part1')
+      t('settings.customReplacements.processingOrder.asSetInStrip.part1')
     );
     appendEmphasis(
       frag,
-      'settings.customRules.processingOrder.asSetInStrip.stripMarkup'
+      'settings.customReplacements.processingOrder.asSetInStrip.markupStripping'
     );
     frag.appendText(
-      t('settings.customRules.processingOrder.asSetInStrip.part2')
+      t('settings.customReplacements.processingOrder.asSetInStrip.part2')
     );
   });
 }
@@ -101,31 +89,31 @@ function buildRuleRow(
   rule: CustomReplacement
 ): SettingDefinitionRender {
   const ruleIndex = () =>
-    plugin.settings.customRules.customReplacements.indexOf(rule);
+    plugin.settings.customReplacements.rules.indexOf(rule);
 
   return {
     name:
       rule.searchText ||
       rule.replaceText ||
-      t('settings.customRules.emptyRule', 'Empty rule'),
+      t('settings.customReplacements.emptyRule', 'Empty rule'),
     searchable: false,
     render: (setting) => {
       const host = mountLegacyHost(setting.settingEl);
 
       const enableSetting = new Setting(host).setName(
-        t('settings.customRules.headers.enable')
+        t('settings.customReplacements.headers.enable')
       );
       const searchTextSetting = new Setting(host).setName(
-        t('settings.customRules.headers.textToReplace')
+        t('settings.customReplacements.headers.textToReplace')
       );
       const replaceTextSetting = new Setting(host).setName(
-        t('settings.customRules.headers.replaceWith')
+        t('settings.customReplacements.headers.replaceWith')
       );
       const onlyAtStartSetting = new Setting(host).setName(
-        t('settings.customRules.headers.onlyMatchLineStart')
+        t('settings.customReplacements.headers.onlyMatchLineStart')
       );
       const onlyWholeLineSetting = new Setting(host).setName(
-        t('settings.customRules.headers.onlyMatchWholeLine')
+        t('settings.customReplacements.headers.onlyMatchWholeLine')
       );
 
       /** Per-rule enable gates the rule's own fields, not its enable toggle. */
@@ -156,7 +144,7 @@ function buildRuleRow(
 
       searchTextSetting.addText((text) => {
         text
-          .setPlaceholder(t('settings.replaceCharacters.emptyPlaceholder'))
+          .setPlaceholder(t('settings.characterReplacements.emptyPlaceholder'))
           .setValue(rule.searchText)
           .onChange(async (value) => {
             rule.searchText = value;
@@ -170,7 +158,7 @@ function buildRuleRow(
 
       replaceTextSetting.addText((text) => {
         text
-          .setPlaceholder(t('settings.replaceCharacters.emptyPlaceholder'))
+          .setPlaceholder(t('settings.characterReplacements.emptyPlaceholder'))
           .setValue(rule.replaceText)
           .onChange(async (value) => {
             rule.replaceText = value;
@@ -217,43 +205,82 @@ function buildRuleRow(
 }
 
 /**
- * Custom rules sub-page.
+ * Custom replacements sub-page.
  *
  * The rule collection uses the native list type, so add / delete / reorder
  * affordances come from the framework. List `items` are captured when the
  * definitions are built, so every mutation that changes the row set calls
  * `tab.update()`.
  */
-export function buildCustomRulesPage(
+export function buildCustomReplacementsPage(
   plugin: FirstLineIsTitlePlugin,
   tab: PluginSettingTab
 ): SettingDefinitionPage {
-  const rules = () => plugin.settings.customRules.customReplacements;
+  const rules = () => plugin.settings.customReplacements.rules;
 
   return {
     type: 'page',
-    name: t('settings.tabs.customRules'),
-    desc: t('settings.customRules.desc'),
+    name: t('settings.sections.customReplacements'),
+    desc: t('settings.customReplacements.desc'),
+    // Counts what the plugin acts on, not what the list holds: a disabled or
+    // blank-search rule never fires, so counting it would overstate the page.
+    // Silent at zero and while the master toggle is off, rather than reading
+    // "0 rules": the count is an at-a-glance summary, and a summary of nothing
+    // is noise the native affordance does not show either.
+    displayValue: () => {
+      if (!plugin.settings.customReplacements.enableCustomReplacements)
+        return '';
+      const active = rules().filter(
+        (rule) => rule.enabled && rule.searchText
+      ).length;
+      return active ? tp('settings.ruleCount', active) : '';
+    },
     items: [
       {
-        name: t('settings.customRules.name'),
-        desc: t('settings.customRules.desc'),
+        name: t('settings.customReplacements.name'),
+        desc: t('settings.customReplacements.toggleDesc'),
         control: {
           type: 'toggle',
-          key: 'customRules.enableCustomReplacements',
+          key: 'customReplacements.enableCustomReplacements',
+        },
+      },
+      {
+        name: t(
+          'settings.customReplacements.processingOrder.applyAfterForbidden'
+        ),
+        desc: buildApplyAfterForbiddenDescription(),
+        visible: () =>
+          plugin.settings.customReplacements.enableCustomReplacements,
+        control: {
+          type: 'toggle',
+          key: 'customReplacements.applyAfterForbiddenChars',
+        },
+      },
+      {
+        name: t('settings.customReplacements.processingOrder.applyAfterMarkup'),
+        desc: buildApplyAfterMarkupDescription(),
+        visible: () =>
+          plugin.settings.customReplacements.enableCustomReplacements,
+        control: {
+          type: 'toggle',
+          key: 'markupStripping.applyCustomReplacementsAfterMarkupStripping',
         },
       },
       buildDescRow(
         createFragment((frag) => appendMasterNote(frag)),
         {
-          visible: () => plugin.settings.customRules.enableCustomReplacements,
+          visible: () =>
+            plugin.settings.customReplacements.enableCustomReplacements,
         }
       ),
       {
         type: 'list',
-        heading: t('settings.customRules.listHeading'),
-        visible: () => plugin.settings.customRules.enableCustomReplacements,
-        emptyState: t('settings.customRules.emptyState', 'No custom rules.'),
+        visible: () =>
+          plugin.settings.customReplacements.enableCustomReplacements,
+        emptyState: t(
+          'settings.customReplacements.emptyState',
+          'No custom replacements.'
+        ),
         items: rules().map((rule) => buildRuleRow(plugin, tab, rule)),
         onDelete: (index) => {
           void (async () => {
@@ -270,7 +297,7 @@ export function buildCustomRulesPage(
           })();
         },
         addItem: {
-          name: t('settings.customRules.addReplacement'),
+          name: t('settings.customReplacements.addReplacement'),
           action: () => {
             void (async () => {
               rules().push({
@@ -285,29 +312,6 @@ export function buildCustomRulesPage(
             })();
           },
         },
-      },
-      {
-        type: 'group',
-        heading: t('settings.customRules.processingOrder.title'),
-        visible: () => plugin.settings.customRules.enableCustomReplacements,
-        items: [
-          {
-            name: t('settings.customRules.processingOrder.applyAfterForbidden'),
-            desc: buildApplyAfterForbiddenDescription(),
-            control: {
-              type: 'toggle',
-              key: 'customRules.applyCustomRulesAfterForbiddenChars',
-            },
-          },
-          {
-            name: t('settings.customRules.processingOrder.applyAfterMarkup'),
-            desc: buildApplyAfterMarkupDescription(),
-            control: {
-              type: 'toggle',
-              key: 'markupStripping.applyCustomRulesAfterMarkupStripping',
-            },
-          },
-        ],
       },
     ],
   };

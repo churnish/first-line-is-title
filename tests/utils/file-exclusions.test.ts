@@ -3,13 +3,14 @@ import {
   isFileInConfiguredFolders,
   fileHasExcludedProperties,
   shouldProcessFile,
+  isExcludedByFileName,
 } from '../../src/utils/file-exclusions';
 import {
   createTestSettings,
   createMockFile,
   createMockApp,
 } from '../testUtils';
-import { PluginSettings } from '../../src/types';
+import { FileNameExclusion, PluginSettings } from '../../src/types';
 import { App, TFolder } from '../mockObsidian';
 
 describe('file-exclusions', () => {
@@ -24,7 +25,7 @@ describe('file-exclusions', () => {
   describe('isFileInConfiguredFolders', () => {
     beforeEach(() => {
       settings.exclusions.excludedFolders = ['Notes', 'Archive'];
-      settings.exclusions.excludeSubfolders = false;
+      settings.exclusions.matchSubfolders = false;
     });
 
     it('should return true if file is in configured folder', () => {
@@ -61,8 +62,8 @@ describe('file-exclusions', () => {
       expect(result).toBe(true);
     });
 
-    it('should check subfolders when excludeSubfolders is enabled', () => {
-      settings.exclusions.excludeSubfolders = true;
+    it('should check subfolders when matchSubfolders is enabled', () => {
+      settings.exclusions.matchSubfolders = true;
       settings.exclusions.excludedFolders = ['Notes'];
 
       const file = createMockFile('Notes/Work/test.md');
@@ -72,8 +73,8 @@ describe('file-exclusions', () => {
       expect(result).toBe(true);
     });
 
-    it('should not check subfolders when excludeSubfolders is disabled', () => {
-      settings.exclusions.excludeSubfolders = false;
+    it('should not check subfolders when matchSubfolders is disabled', () => {
+      settings.exclusions.matchSubfolders = false;
       settings.exclusions.excludedFolders = ['Notes'];
 
       const file = createMockFile('Notes/Work/test.md');
@@ -94,7 +95,7 @@ describe('file-exclusions', () => {
     });
 
     it('should not check subfolders of root folder', () => {
-      settings.exclusions.excludeSubfolders = true;
+      settings.exclusions.matchSubfolders = true;
       settings.exclusions.excludedFolders = ['/'];
 
       const file = createMockFile('Notes/test.md');
@@ -106,7 +107,7 @@ describe('file-exclusions', () => {
     });
 
     it('should handle deeply nested subfolders', () => {
-      settings.exclusions.excludeSubfolders = true;
+      settings.exclusions.matchSubfolders = true;
       settings.exclusions.excludedFolders = ['Notes'];
 
       const file = createMockFile('Notes/Work/Projects/2024/test.md');
@@ -441,6 +442,123 @@ describe('file-exclusions', () => {
 
         const result = shouldProcessFile(file, settings, app);
         expect(result).toBe(false);
+      });
+    });
+  });
+
+  describe('isExcludedByFileName', () => {
+    const rule = (
+      text: string,
+      overrides: Partial<FileNameExclusion> = {}
+    ): FileNameExclusion => ({
+      text,
+      onlyAtStart: false,
+      onlyWholeLine: false,
+      enabled: true,
+      caseSensitive: false,
+      ...overrides,
+    });
+
+    beforeEach(() => {
+      settings.exclusions.fileNameScopeStrategy = 'Only exclude...';
+      settings.exclusions.excludedFileNames = [];
+    });
+
+    describe('"Only exclude..." strategy', () => {
+      it('should exclude a file whose name matches a rule', () => {
+        settings.exclusions.excludedFileNames = [rule('draft')];
+
+        expect(isExcludedByFileName('draft note.md', settings)).toBe(true);
+      });
+
+      it('should not exclude a file whose name matches no rule', () => {
+        settings.exclusions.excludedFileNames = [rule('draft')];
+
+        expect(isExcludedByFileName('final note.md', settings)).toBe(false);
+      });
+
+      it('should exclude nothing when the list is empty', () => {
+        expect(isExcludedByFileName('draft note.md', settings)).toBe(false);
+      });
+    });
+
+    describe('"Exclude all except..." strategy', () => {
+      beforeEach(() => {
+        settings.exclusions.fileNameScopeStrategy = 'Exclude all except...';
+      });
+
+      it('should not exclude a file whose name matches a rule', () => {
+        settings.exclusions.excludedFileNames = [rule('draft')];
+
+        expect(isExcludedByFileName('draft note.md', settings)).toBe(false);
+      });
+
+      it('should exclude a file whose name matches no rule', () => {
+        settings.exclusions.excludedFileNames = [rule('draft')];
+
+        expect(isExcludedByFileName('final note.md', settings)).toBe(true);
+      });
+
+      it('should exclude everything when the list is empty', () => {
+        expect(isExcludedByFileName('draft note.md', settings)).toBe(true);
+      });
+
+      // A rule the matcher skips must not count as a target either: if it did, the
+      // allow-list would exclude the whole vault with no name able to satisfy it.
+      it('should exclude everything when every rule is disabled', () => {
+        settings.exclusions.excludedFileNames = [
+          rule('draft', { enabled: false }),
+        ];
+
+        expect(isExcludedByFileName('draft note.md', settings)).toBe(true);
+        expect(isExcludedByFileName('final note.md', settings)).toBe(true);
+      });
+
+      it('should exclude everything when every rule has blank text', () => {
+        settings.exclusions.excludedFileNames = [rule('')];
+
+        expect(isExcludedByFileName('draft note.md', settings)).toBe(true);
+      });
+
+      it('should still honour a live rule alongside a disabled one', () => {
+        settings.exclusions.excludedFileNames = [
+          rule('draft', { enabled: false }),
+          rule('keep'),
+        ];
+
+        expect(isExcludedByFileName('keep this.md', settings)).toBe(false);
+        expect(isExcludedByFileName('draft note.md', settings)).toBe(true);
+      });
+    });
+
+    // The empty-list verdict has to match the sibling sections': an empty allow-list
+    // excludes the whole vault there too, and a split here would be silent.
+    describe('empty-list parity with the folder strategy', () => {
+      beforeEach(() => {
+        settings.exclusions.excludedFolders = [];
+        settings.exclusions.excludedTags = [];
+        settings.exclusions.excludedProperties = [];
+        settings.exclusions.tagScopeStrategy = 'Only exclude...';
+        settings.exclusions.propertyScopeStrategy = 'Only exclude...';
+      });
+
+      it('should exclude nothing under "Only exclude...", as folders do', () => {
+        const file = createMockFile('Notes/test.md');
+        file.parent = new TFolder('Notes');
+        settings.exclusions.folderScopeStrategy = 'Only exclude...';
+
+        expect(shouldProcessFile(file, settings, app)).toBe(true);
+        expect(isExcludedByFileName('test.md', settings)).toBe(false);
+      });
+
+      it('should exclude everything under "Exclude all except...", as folders do', () => {
+        const file = createMockFile('Notes/test.md');
+        file.parent = new TFolder('Notes');
+        settings.exclusions.folderScopeStrategy = 'Exclude all except...';
+        settings.exclusions.fileNameScopeStrategy = 'Exclude all except...';
+
+        expect(shouldProcessFile(file, settings, app)).toBe(false);
+        expect(isExcludedByFileName('test.md', settings)).toBe(true);
       });
     });
   });

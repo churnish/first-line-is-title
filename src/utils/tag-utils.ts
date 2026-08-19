@@ -140,9 +140,9 @@ export function fileHasTargetTags(
           return true;
         }
 
-        // Check child tags if enabled (default true)
-        if (settings.exclusions.excludeChildTags) {
-          // If file has child tag and target tag is parent
+        // Check subtags if enabled (default true)
+        if (settings.exclusions.matchSubtags) {
+          // If file has subtag and target tag is parent
           if (normalizedFileTag.startsWith(normalizedTargetTag + '/')) {
             return true;
           }
@@ -173,9 +173,9 @@ export function fileHasTargetTags(
           return true;
         }
 
-        // Check child tags if enabled (default true)
-        if (settings.exclusions.excludeChildTags) {
-          // If file has child tag and target tag is parent
+        // Check subtags if enabled (default true)
+        if (settings.exclusions.matchSubtags) {
+          // If file has subtag and target tag is parent
           if (inlineTag.startsWith(normalizedTargetTag + '/')) {
             return true;
           }

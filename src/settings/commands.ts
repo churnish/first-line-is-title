@@ -7,7 +7,7 @@ export function buildCommandsPage(
 ): SettingDefinitionPage {
   return {
     type: 'page',
-    name: t('settings.tabs.commands'),
+    name: t('settings.sections.commands'),
     desc: t('settings.commands.desc'),
     items: [
       {
@@ -30,7 +30,7 @@ export function buildCommandsPage(
         desc: t('settings.commands.search.desc'),
         control: {
           type: 'toggle',
-          key: 'core.enableVaultSearchContextMenu',
+          key: 'core.enableSearchCommands',
         },
       },
     ],

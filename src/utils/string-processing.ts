@@ -49,14 +49,14 @@ export function processForbiddenChars(
     if (char === '.') {
       // Check if dot should be replaced (applies at any position if enabled)
       if (
-        settings.replaceCharacters.enableForbiddenCharReplacements &&
-        settings.replaceCharacters.charReplacements.dot.enabled
+        settings.characterReplacements.enableForbiddenCharReplacements &&
+        settings.characterReplacements.charReplacements.dot.enabled
       ) {
         const replacement =
-          settings.replaceCharacters.charReplacements.dot.replacement;
+          settings.characterReplacements.charReplacements.dot.replacement;
         if (replacement !== '') {
           // Has replacement - use it at any position
-          if (settings.replaceCharacters.charReplacements.dot.trimRight) {
+          if (settings.characterReplacements.charReplacements.dot.trimRight) {
             // Skip upcoming whitespace characters
             while (i + 1 < text.length && /\s/.test(text[i + 1])) {
               i++;
@@ -77,11 +77,11 @@ export function processForbiddenChars(
       let replacement = '';
 
       // Check if master toggle is on AND individual toggle is on
-      if (settings.replaceCharacters.enableForbiddenCharReplacements) {
+      if (settings.characterReplacements.enableForbiddenCharReplacements) {
         // `.` never reaches here - it has its own branch above - so every forbidden char has a key
         const settingKey = CHAR_TO_SETTING_KEY[char];
         const charConfig = settingKey
-          ? settings.replaceCharacters.charReplacements[settingKey]
+          ? settings.characterReplacements.charReplacements[settingKey]
           : undefined;
 
         if (charConfig?.enabled) {
@@ -143,7 +143,7 @@ export function reverseSafeLinkTarget(
   let result = text;
 
   // Reverse forbidden character replacements if enabled
-  if (settings.replaceCharacters.enableForbiddenCharReplacements) {
+  if (settings.characterReplacements.enableForbiddenCharReplacements) {
     for (const [forbiddenChar, settingKey] of Object.entries(
       CHAR_TO_SETTING_KEY
     )) {
@@ -154,7 +154,7 @@ export function reverseSafeLinkTarget(
       if (settingKey === 'dot') continue;
 
       const replacementConfig =
-        settings.replaceCharacters.charReplacements[settingKey];
+        settings.characterReplacements.charReplacements[settingKey];
       if (replacementConfig.enabled && replacementConfig.replacement) {
         result = result
           .split(replacementConfig.replacement)

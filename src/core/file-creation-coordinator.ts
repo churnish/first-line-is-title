@@ -10,7 +10,7 @@ import { TIMING } from '../constants/timing';
 import { verboseLog } from '../utils';
 // Leaf modules, not the '../utils' barrel: the coordinator suite mocks the barrel down to verboseLog
 import {
-  containsFileNameExclusion,
+  isExcludedByFileName,
   shouldProcessFile,
 } from '../utils/file-exclusions';
 import {
@@ -379,7 +379,7 @@ export class FileCreationCoordinator {
    */
   private isFeatureEnabled(): 'both' | 'cursor' | 'title' | 'neither' {
     const moveCursor = this.plugin.settings.core.moveCursorToFirstLine;
-    const insertTitle = this.plugin.settings.core.insertTitleOnCreation;
+    const insertTitle = this.plugin.settings.core.insertTitle;
 
     if (moveCursor && insertTitle) return 'both';
     if (moveCursor) return 'cursor';
@@ -420,7 +420,7 @@ export class FileCreationCoordinator {
    * Nodes 2c, 13b: Check file-name exclusions, the same ones the rename path enforces in rename-engine.ts.
    */
   private isFileNameExcluded(file: TFile): boolean {
-    return containsFileNameExclusion(file.name, this.plugin.settings);
+    return isExcludedByFileName(file.name, this.plugin.settings);
   }
 
   /**

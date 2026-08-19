@@ -13,17 +13,17 @@ import { FIRST_ENABLE_CHAR_KEYS } from '../types/char-replacement';
 
 import {
   buildGeneralDefinitions,
-  buildNoteCreationGroup,
+  buildNewNotesGroup,
   buildFooterDefinitions,
   buildSupportGroup,
-} from './tab-general';
-import { buildExclusionsPage } from './tab-exclusions';
-import { buildCharacterReplacementsPage } from './tab-replace-characters';
-import { buildCustomRulesPage } from './tab-custom-rules';
-import { buildMarkupStrippingPage } from './tab-strip-markup';
-import { buildAliasPage } from './tab-alias';
-import { buildCommandsPage } from './tab-commands';
-import { buildOtherPage } from './tab-other';
+} from './general';
+import { buildExclusionsPage } from './exclusions';
+import { buildCharacterReplacementsPage } from './character-replacements';
+import { buildCustomReplacementsPage } from './custom-replacements';
+import { buildMarkupStrippingPage } from './markup-stripping';
+import { buildAliasPage } from './alias';
+import { buildCommandsPage } from './commands';
+import { buildOtherPage } from './other';
 
 /**
  * Side effects that must run when a `control` writes a given key.
@@ -34,25 +34,25 @@ import { buildOtherPage } from './tab-other';
  * so there is no recursion and exactly one save per user action.
  */
 const CASCADES: Record<string, (plugin: FirstLineIsTitlePlugin) => void> = {
-  'replaceCharacters.enableForbiddenCharReplacements': (plugin) => {
+  'characterReplacements.enableForbiddenCharReplacements': (plugin) => {
     const { settings } = plugin;
-    if (!settings.replaceCharacters.enableForbiddenCharReplacements) return;
+    if (!settings.characterReplacements.enableForbiddenCharReplacements) return;
     if (settings.core.hasEnabledForbiddenChars) return;
 
     for (const key of FIRST_ENABLE_CHAR_KEYS) {
-      settings.replaceCharacters.charReplacements[key].enabled = true;
+      settings.characterReplacements.charReplacements[key].enabled = true;
     }
     settings.core.hasEnabledForbiddenChars = true;
   },
 
-  'customRules.enableCustomReplacements': (plugin) => {
+  'customReplacements.enableCustomReplacements': (plugin) => {
     const { settings } = plugin;
-    if (!settings.customRules.enableCustomReplacements) {
-      settings.markupStripping.applyCustomRulesInAlias = false;
+    if (!settings.customReplacements.enableCustomReplacements) {
+      settings.markupStripping.applyCustomReplacementsInAlias = false;
       return;
     }
     if (settings.core.hasEnabledCustomReplacements) return;
-    for (const replacement of settings.customRules.customReplacements) {
+    for (const replacement of settings.customReplacements.rules) {
       replacement.enabled = true;
     }
     settings.core.hasEnabledCustomReplacements = true;
@@ -65,8 +65,8 @@ const CASCADES: Record<string, (plugin: FirstLineIsTitlePlugin) => void> = {
     }
     settings.aliases.keepEmptyAliasProperty = true;
     settings.markupStripping.stripMarkupInAlias = true;
-    if (settings.customRules.enableCustomReplacements) {
-      settings.markupStripping.applyCustomRulesInAlias = true;
+    if (settings.customReplacements.enableCustomReplacements) {
+      settings.markupStripping.applyCustomReplacementsInAlias = true;
     }
     settings.core.hasEnabledAliases = true;
   },
@@ -76,8 +76,8 @@ const CASCADES: Record<string, (plugin: FirstLineIsTitlePlugin) => void> = {
   'core.checkInterval': (plugin) =>
     plugin.editorLifecycle?.initializeCheckingSystem(),
 
-  'core.verboseLogging': (plugin) => {
-    const enabled = plugin.settings.core.verboseLogging;
+  'core.debug': (plugin) => {
+    const enabled = plugin.settings.core.debug;
     // Stamps when debugging was switched on so log output is attributable.
     plugin.settings.core.debugEnabledTimestamp = enabled
       ? (plugin.getCurrentTimestamp?.() ?? '')
@@ -94,8 +94,8 @@ const CASCADES: Record<string, (plugin: FirstLineIsTitlePlugin) => void> = {
  * stale value. These need a full `update()` instead.
  */
 const VALUE_MUTATING_KEYS = new Set([
-  'replaceCharacters.enableForbiddenCharReplacements',
-  'customRules.enableCustomReplacements',
+  'characterReplacements.enableForbiddenCharReplacements',
+  'customReplacements.enableCustomReplacements',
   'aliases.enableAliases',
 ]);
 
@@ -146,15 +146,15 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
       // Page-level action closes out the everyday settings, above the Exclusions row.
       ...buildFooterDefinitions(this.plugin),
       buildExclusionsPage(this.plugin, this),
-      buildNoteCreationGroup(this.plugin),
+      buildNewNotesGroup(this.plugin),
       {
         type: 'group',
-        heading: t('settings.tabs.advancedGroup'),
+        heading: t('settings.sections.advancedGroup'),
         items: [
           buildAliasPage(this.plugin),
           buildCharacterReplacementsPage(this.plugin),
           buildCommandsPage(this.plugin),
-          buildCustomRulesPage(this.plugin, this),
+          buildCustomReplacementsPage(this.plugin, this),
           buildMarkupStrippingPage(this.plugin),
           buildOtherPage(this.plugin, this),
         ],

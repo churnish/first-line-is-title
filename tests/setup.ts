@@ -25,11 +25,16 @@ Object.defineProperty(global, 'navigator', {
 global.HTMLElement = dom.window.HTMLElement as any;
 global.Element = dom.window.Element as any;
 global.Node = dom.window.Node as any;
+global.MutationObserver = dom.window.MutationObserver as any;
 
 // Obsidian's runtime patches HTMLElement.prototype with DOM helpers like addClass;
 // jsdom doesn't have this, so tests that call it on real elements (e.g. Notice.containerEl) need it polyfilled.
 global.HTMLElement.prototype.addClass = function (...classNames: string[]) {
   this.classList.add(...classNames);
+};
+
+global.HTMLElement.prototype.removeClass = function (...classNames: string[]) {
+  this.classList.remove(...classNames);
 };
 
 // Obsidian also patches Node.prototype with element factories and exposes createFragment globally;

@@ -1,4 +1,4 @@
-import { App, SettingDefinitionRender, TFile } from 'obsidian';
+import { App, Setting, SettingDefinitionRender, TFile } from 'obsidian';
 import { PluginSettings } from '../types';
 import { UNIVERSAL_FORBIDDEN_CHARS, WINDOWS_ANDROID_CHARS } from '../constants';
 import { detectOS } from '../utils';
@@ -28,23 +28,6 @@ export interface FirstLineIsTitlePlugin {
   cacheManager?: {
     clearReservedPaths(): void;
   };
-}
-
-/**
- * Localizes the default file-name exclusion example to the current locale.
- * Only touches it while it's still the untouched default text, so a user's
- * own edit to that entry is never overwritten. Shared by initial settings
- * load and "Clear settings", the two places a fresh default can appear.
- */
-export function applyLocalizedDefaults(settings: PluginSettings): void {
-  if (
-    settings.exclusions.fileNameExclusions.length > 0 &&
-    ['To do', 'Задачи'].includes(settings.exclusions.fileNameExclusions[0].text)
-  ) {
-    const locale = getCurrentLocale();
-    settings.exclusions.fileNameExclusions[0].text =
-      locale === 'ru' ? 'Задачи' : 'To do';
-  }
 }
 
 /**
@@ -207,5 +190,42 @@ export function buildDescRow(
     searchable: false,
     visible: options?.visible,
     render: () => {},
+  };
+}
+
+/**
+ * A single button to mount via `buildButtonRow`. `onClick` receives the
+ * row's `Setting` instance for call sites that need it (e.g. resolving the
+ * owner window for a popout-safe `window.open`). `destructive` gives the red
+ * tint (`setDestructive()`) without the filled-CTA treatment — for secondary
+ * destructive actions. A destructive *primary* action
+ * (`setDestructive().setCta()`) has no call site yet, so this helper does
+ * not expose `setCta()`.
+ */
+export interface ButtonRowButton {
+  text: string;
+  onClick: (setting: Setting) => void;
+  destructive?: boolean;
+}
+
+/**
+ * Builds the `render` callback for the "name + desc + button" row shape
+ * hand-rolled across the settings tabs — one or more buttons and nothing
+ * else. Callers still declare `name`/`desc`/`visible` on the surrounding
+ * definition themselves; this only replaces the repeated
+ * `addButton().setButtonText().onClick()` chain.
+ */
+export function buildButtonRow(
+  buttons: ButtonRowButton | ButtonRowButton[]
+): (setting: Setting) => void {
+  const buttonList = Array.isArray(buttons) ? buttons : [buttons];
+  return (setting: Setting) => {
+    buttonList.forEach(({ text, onClick, destructive }) => {
+      setting.addButton((button) => {
+        button.setButtonText(text);
+        if (destructive) button.setDestructive();
+        button.onClick(() => onClick(setting));
+      });
+    });
   };
 }

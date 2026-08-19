@@ -11,6 +11,34 @@ import { readFileContent } from '../utils/content-reader';
 import { TIMING } from '../constants/timing';
 import FirstLineIsTitle from '../../main';
 
+/** Attempts allowed when writing the title through the editor before falling back to vault.process */
+const TITLE_INSERTION_MAX_ATTEMPTS = 10;
+
+/** Pause after a programmatic editor write so CodeMirror applies the transaction before it is verified */
+const EDITOR_TRANSACTION_SETTLE_MS = 10;
+
+/** Where a title belongs in a note, derived from that note's content */
+interface TitleInsertionPoint {
+  /** Index of the closing `---` of the properties block, or -1 when there is none */
+  frontmatterEndLine: number;
+  /** Line the title is written to: the first line below the properties block */
+  insertLine: number;
+  /** True when the body below the properties block already holds content */
+  hasBodyContent: boolean;
+}
+
+/** Outcome of a title insertion attempt */
+export interface TitleInsertionResult {
+  /** True when the title ended up in the note (freshly written, or already present) */
+  inserted: boolean;
+  /**
+   * True when this call placed the cursor AND left the view in its final mode, meaning the
+   * delayed cursor pass would only redo work already done. False whenever that pass still
+   * owes something - a mode transition, or the cursor move itself.
+   */
+  cursorPositioned: boolean;
+}
+
 export class FileOperations {
   constructor(private plugin: FirstLineIsTitle) {}
 
@@ -23,14 +51,98 @@ export class FileOperations {
   }
 
   /**
+   * Derive where a title belongs in `content`, and whether a body is already there.
+   *
+   * Single source of truth for every path that has to answer that question. The editor
+   * write path, the vault.process fallback and the cursor pass each derived it separately
+   * before, which let them disagree: the editor path could insert a second title into a
+   * note whose body had filled in since its snapshot was taken.
+   */
+  private deriveTitleInsertionPoint(content: string): TitleInsertionPoint {
+    const lines = content.split('\n');
+
+    let frontmatterEndLine = -1;
+    if (lines[0] === '---') {
+      for (let i = 1; i < lines.length; i++) {
+        if (lines[i] === '---') {
+          frontmatterEndLine = i;
+          break;
+        }
+      }
+    }
+
+    const insertLine = frontmatterEndLine !== -1 ? frontmatterEndLine + 1 : 0;
+
+    return {
+      frontmatterEndLine,
+      insertLine,
+      hasBodyContent: lines.slice(insertLine).join('\n').trim() !== '',
+    };
+  }
+
+  /**
+   * Find the Markdown view showing `file`, preferring one the caller already resolved.
+   *
+   * A single note creation used to run this scan up to seven times across the call chain,
+   * each one allocating a fresh array and walking every leaf in every pane. The hint lets
+   * the chain share one resolution. It is re-validated rather than trusted, because a leaf
+   * can be closed or re-targeted between the caller's lookup and this call, and a stale view
+   * would act on the wrong note. Callers must not pass a hint across a timer boundary.
+   *
+   * @param requireEditor Insertion paths need an editor. The cursor path matched on path
+   *   alone and then used optional chaining on the editor, so it must not filter those out.
+   */
+  resolveMarkdownViewForFile(
+    file: TFile,
+    hint?: MarkdownView | null,
+    requireEditor: boolean = true
+  ): MarkdownView | null {
+    const matches = (view: MarkdownView | null | undefined): boolean =>
+      !!view &&
+      view.file?.path === file.path &&
+      (!requireEditor || !!view.editor);
+
+    if (matches(hint)) {
+      return hint as MarkdownView;
+    }
+
+    for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
+      const view = leaf.view;
+      if (view instanceof MarkdownView && matches(view)) {
+        return view;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Place the cursor after an insertion and report whether the delayed cursor pass is now
+   * redundant. Placement alone settles it: that pass does nothing else.
+   */
+  private settleCursorAfterInsertion(
+    view: MarkdownView,
+    line: number,
+    length: number
+  ): boolean {
+    return this.positionCursorAfterTitleInsertion(view, line, length);
+  }
+
+  /**
    * Inserts the filename as the first line of a newly created file
    * @param initialContent - Optional initial content captured at file creation time
-   * @returns true if title was inserted, false if skipped
+   * @param viewHint - View already resolved by the caller, re-validated before use
    */
-  async insertTitleOnCreation(
+  async insertTitle(
     file: TFile,
-    initialContent?: string
-  ): Promise<boolean> {
+    initialContent?: string,
+    viewHint?: MarkdownView | null
+  ): Promise<TitleInsertionResult> {
+    const skipped: TitleInsertionResult = {
+      inserted: false,
+      cursorPositioned: false,
+    };
+
     try {
       const untitledWord = t('untitled').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const untitledPattern = new RegExp(`^${untitledWord}(\\s[1-9]\\d*)?$`);
@@ -39,7 +151,7 @@ export class FileOperations {
           this.plugin,
           `Skipping title insertion for untitled file: ${file.path}`
         );
-        return false;
+        return skipped;
       }
 
       // Title goes into the note body, so restore the spacing the trim flags stripped from the filename
@@ -50,7 +162,7 @@ export class FileOperations {
         { restoreTrimmedSpacing: true }
       );
 
-      // Note: addHeadingToTitle setting will be applied conditionally below
+      // Note: formatAsHeading setting will be applied conditionally below
       // (skipped if heading pattern already exists in template)
 
       verboseLog(
@@ -73,7 +185,7 @@ export class FileOperations {
         );
         try {
           currentContent = await readFileContent(this.plugin, file, {
-            searchWorkspace: this.settings.core.fileReadMethod === 'Editor',
+            searchWorkspace: this.settings.core.contentReadMethod === 'Editor',
             preferFresh: true,
           });
         } catch (error) {
@@ -81,37 +193,22 @@ export class FileOperations {
             `Failed to read file ${file.path} for title insertion:`,
             error
           );
-          return false;
+          return skipped;
         }
       }
 
       const lines = currentContent.split('\n');
+      const snapshotPoint = this.deriveTitleInsertionPoint(currentContent);
 
-      let yamlEndLine = -1;
-      if (lines[0] === '---') {
-        for (let i = 1; i < lines.length; i++) {
-          if (lines[i] === '---') {
-            yamlEndLine = i;
-            break;
-          }
-        }
-      }
+      // One lookup for every branch below - the CREATE handler has usually resolved it already
+      const targetView = this.resolveMarkdownViewForFile(file, viewHint);
 
-      const contentAfterYaml =
-        yamlEndLine !== -1
-          ? lines
-              .slice(yamlEndLine + 1)
-              .join('\n')
-              .trim()
-          : currentContent.trim();
-
-      if (contentAfterYaml !== '') {
+      if (snapshotPoint.hasBodyContent) {
         verboseLog(this.plugin, `File has content (excluding YAML)`);
-        const startLineIndex = yamlEndLine !== -1 ? yamlEndLine + 1 : 0;
         let firstNonEmptyLine: string | null = null;
         let firstNonEmptyLineIndex = -1;
 
-        for (let i = startLineIndex; i < lines.length; i++) {
+        for (let i = snapshotPoint.insertLine; i < lines.length; i++) {
           const line = lines[i].trim();
           if (line !== '') {
             firstNonEmptyLine = line;
@@ -131,27 +228,34 @@ export class FileOperations {
             `[TITLE-INSERT] Found heading pattern "${firstNonEmptyLine}" at line ${firstNonEmptyLineIndex}, inserting title`
           );
 
-          const leaves = this.app.workspace.getLeavesOfType('markdown');
           let insertedViaEditor = false;
+          let cursorPositioned = false;
 
-          for (const leaf of leaves) {
-            const view = leaf.view as MarkdownView;
-            if (view && view.file?.path === file.path && view.editor) {
-              view.editor.setLine(firstNonEmptyLineIndex, titleWithHeading);
+          if (targetView) {
+            // Guard our own write: CodeMirror fires editor-change for setLine exactly as it
+            // does for a keystroke, and at the default newNoteDelay of 0 nothing else stops
+            // that event from re-entering the rename pipeline.
+            this.plugin.fileStateManager.markEditorSyncing(file.path);
+            try {
+              targetView.editor.setLine(
+                firstNonEmptyLineIndex,
+                titleWithHeading
+              );
               verboseLog(
                 this.plugin,
                 `[TITLE-INSERT] Replaced heading at line ${firstNonEmptyLineIndex} via editor`
               );
 
               // Position cursor at end of title if both settings enabled
-              this.positionCursorAfterTitleInsertion(
-                view,
+              cursorPositioned = this.settleCursorAfterInsertion(
+                targetView,
                 firstNonEmptyLineIndex,
                 titleWithHeading.length
               );
 
               insertedViaEditor = true;
-              break;
+            } finally {
+              this.plugin.fileStateManager.clearEditorSyncing(file.path);
             }
           }
 
@@ -171,7 +275,7 @@ export class FileOperations {
             this.plugin,
             `Successfully inserted title in heading for ${file.path}`
           );
-          return true;
+          return { inserted: true, cursorPositioned };
         } else {
           verboseLog(
             this.plugin,
@@ -179,6 +283,7 @@ export class FileOperations {
           );
 
           // If both settings are ON, position cursor at line end even though we're not inserting
+          let cursorPositioned = false;
           if (
             this.settings.core.moveCursorToFirstLine &&
             this.settings.core.placeCursorAtLineEnd
@@ -189,45 +294,24 @@ export class FileOperations {
               currentContent
             );
 
-            if (!isExcluded) {
-              const leaves = this.app.workspace.getLeavesOfType('markdown');
-              for (const leaf of leaves) {
-                const view = leaf.view as MarkdownView;
-                if (view && view.file?.path === file.path && view.editor) {
-                  const contentLine = yamlEndLine !== -1 ? yamlEndLine + 1 : 0;
-                  const lineContent = view.editor.getLine(contentLine);
-                  const lineLength = lineContent.length;
-
-                  // Use setTimeout to ensure cursor positioning happens after any pending editor updates
-                  window.setTimeout(() => {
-                    if (view.editor) {
-                      view.editor.focus();
-                      verboseLog(
-                        this.plugin,
-                        `[CURSOR-FLIT] file-operations.ts:245 - BEFORE setCursor() | target: line ${contentLine} ch ${lineLength}`
-                      );
-                      view.editor.setCursor({
-                        line: contentLine,
-                        ch: lineLength,
-                      });
-                      verboseLog(
-                        this.plugin,
-                        `[TITLE-INSERT] File has content, positioned cursor at end of line ${contentLine} (${lineLength} chars)`
-                      );
-                    }
-                  }, 0);
-                  break;
-                }
-              }
+            if (!isExcluded && targetView) {
+              const lineLength = targetView.editor.getLine(
+                snapshotPoint.insertLine
+              ).length;
+              cursorPositioned = this.settleCursorAfterInsertion(
+                targetView,
+                snapshotPoint.insertLine,
+                lineLength
+              );
             }
           }
 
-          return false;
+          return { inserted: false, cursorPositioned };
         }
       }
 
-      // Apply addHeadingToTitle setting since no heading pattern was found
-      const finalTitle = this.settings.markupStripping.addHeadingToTitle
+      // Apply formatAsHeading setting since no heading pattern was found
+      const finalTitle = this.settings.core.formatAsHeading
         ? '# ' + cleanTitle
         : cleanTitle;
 
@@ -236,44 +320,51 @@ export class FileOperations {
         this.app.workspace.getMostRecentLeaf()?.view?.getViewType?.() ===
         'canvas';
       let insertedViaEditor = false;
+      let cursorPositioned = false;
 
-      if (!canvasIsActive) {
-        // Use live build's simple loop structure (proven to work)
-        const leaves = this.app.workspace.getLeavesOfType('markdown');
+      if (!canvasIsActive && targetView) {
+        const view = targetView;
 
-        for (const leaf of leaves) {
-          const view = leaf.view as MarkdownView;
-          if (view && view.file?.path === file.path && view.editor) {
-            let titleLine = yamlEndLine !== -1 ? yamlEndLine + 1 : 0;
-            const insertPos = { line: titleLine, ch: 0 };
+        // Re-derive from live editor content rather than the creation-time snapshot. Reports
+        // 'inserted' when the title is already on the insertion line, 'blocked' when a body
+        // appeared underneath the properties block, 'pending' when a write is still needed.
+        // Order matters: our own successful write makes a body appear, so the
+        // already-inserted test has to come first.
+        const inspectLiveContent = (): {
+          state: 'inserted' | 'blocked' | 'pending';
+          point: TitleInsertionPoint;
+        } => {
+          const liveContent = view.editor.getValue();
+          const point = this.deriveTitleInsertionPoint(liveContent);
+          const lineAtInsertPoint = liveContent.split('\n')[point.insertLine];
 
-            // Verify insertion with retry (max 10 attempts = 1000ms)
-            for (let attempt = 0; attempt < 10; attempt++) {
-              view.editor.replaceRange(finalTitle + '\n', insertPos);
+          if (lineAtInsertPoint?.trim() === finalTitle.trim()) {
+            return { state: 'inserted', point };
+          }
+          if (point.hasBodyContent) {
+            return { state: 'blocked', point };
+          }
+          return { state: 'pending', point };
+        };
 
-              // Let editor process the change before verification
-              await new Promise((resolve) => window.setTimeout(resolve, 10));
+        // Verify before writing. The previous loop wrote first and never undid a failed
+        // attempt, so ten failed verifications prepended ten titles.
+        let outcome = inspectLiveContent();
 
-              // Now verify
-              const content = view.editor.getValue();
-              const lines = content.split('\n');
-              if (lines[titleLine]?.trim() === finalTitle.trim()) {
-                // Success - position cursor
-                verboseLog(
-                  this.plugin,
-                  `[TITLE-INSERT] Verified insertion at line ${titleLine} (attempt ${attempt + 1})`
-                );
-                this.positionCursorAfterTitleInsertion(
-                  view,
-                  titleLine,
-                  finalTitle.length
-                );
-                insertedViaEditor = true;
-                break;
-              }
-
-              // Failed - wait before retry
-              if (attempt < 9) {
+        if (outcome.state === 'pending') {
+          // Guard our own writes for the whole retry loop: CodeMirror fires editor-change for
+          // replaceRange exactly as it does for a keystroke, and at the default newNoteDelay
+          // of 0 nothing else stops that event from re-entering the rename pipeline. The
+          // finally clears it on every exit path, throws included.
+          this.plugin.fileStateManager.markEditorSyncing(file.path);
+          try {
+            for (
+              let attempt = 0;
+              attempt < TITLE_INSERTION_MAX_ATTEMPTS &&
+              outcome.state === 'pending';
+              attempt++
+            ) {
+              if (attempt > 0) {
                 verboseLog(
                   this.plugin,
                   `[TITLE-INSERT] Verification failed, retry in ${TIMING.VIEW_READINESS_RETRY_DELAY_MS}ms (attempt ${attempt + 1})`
@@ -284,15 +375,53 @@ export class FileOperations {
                     TIMING.VIEW_READINESS_RETRY_DELAY_MS
                   )
                 );
-              } else {
-                verboseLog(
-                  this.plugin,
-                  `[TITLE-INSERT] Verification failed after 10 attempts, fallback to vault.process`
-                );
               }
+
+              view.editor.replaceRange(finalTitle + '\n', {
+                line: outcome.point.insertLine,
+                ch: 0,
+              });
+
+              // Let editor process the change before verification
+              await new Promise((resolve) =>
+                window.setTimeout(resolve, EDITOR_TRANSACTION_SETTLE_MS)
+              );
+
+              outcome = inspectLiveContent();
             }
-            break; // Exit leaf loop
+          } finally {
+            this.plugin.fileStateManager.clearEditorSyncing(file.path);
           }
+        }
+
+        if (outcome.state === 'blocked') {
+          // A body appeared between the snapshot and now - the same race the vault.process
+          // fallback names. Return instead of falling through to it: vault.process reads from
+          // disk, which lags the editor by Obsidian's ~2s save debounce, so it would see an
+          // empty body and insert a duplicate (odkb/obsidian-api-quirks.md).
+          verboseLog(
+            this.plugin,
+            `[TITLE-INSERT] Body content appeared since creation, skipping insertion for ${file.path}`
+          );
+          return skipped;
+        }
+
+        if (outcome.state === 'inserted') {
+          verboseLog(
+            this.plugin,
+            `[TITLE-INSERT] Verified insertion at line ${outcome.point.insertLine}`
+          );
+          cursorPositioned = this.settleCursorAfterInsertion(
+            view,
+            outcome.point.insertLine,
+            finalTitle.length
+          );
+          insertedViaEditor = true;
+        } else {
+          verboseLog(
+            this.plugin,
+            `[TITLE-INSERT] Verification failed after ${TITLE_INSERTION_MAX_ATTEMPTS} attempts, fallback to vault.process`
+          );
         }
       }
 
@@ -301,49 +430,45 @@ export class FileOperations {
           this.plugin,
           `[TITLE-INSERT] Inserting title via vault.process`
         );
-        await this.app.vault.process(file, (content) => {
-          // Always use fresh content from vault.process callback (not stale initialContent)
-          // This handles race conditions where file content changed since initial read
-          const freshLines = content.split('\n');
-          let freshYamlEndLine = -1;
-          if (freshLines[0] === '---') {
-            for (let i = 1; i < freshLines.length; i++) {
-              if (freshLines[i] === '---') {
-                freshYamlEndLine = i;
-                break;
-              }
-            }
-          }
+        let wroteViaVault = false;
 
-          // Check if content after YAML is non-empty (race condition: content appeared)
-          const contentStartLine =
-            freshYamlEndLine !== -1 ? freshYamlEndLine + 1 : 0;
-          const contentAfterYaml = freshLines
-            .slice(contentStartLine)
-            .join('\n')
-            .trim();
-          if (contentAfterYaml !== '') {
+        await this.app.vault.process(file, (content) => {
+          // Re-derive from the callback's content rather than the creation-time snapshot,
+          // through the same helper the editor path uses so the two cannot drift again.
+          const point = this.deriveTitleInsertionPoint(content);
+
+          if (point.hasBodyContent) {
             // Content exists - skip insertion to avoid duplicate
             return content;
           }
 
-          if (freshYamlEndLine !== -1) {
-            freshLines.splice(freshYamlEndLine + 1, 0, finalTitle);
+          wroteViaVault = true;
+
+          if (point.frontmatterEndLine !== -1) {
+            const freshLines = content.split('\n');
+            freshLines.splice(point.insertLine, 0, finalTitle);
             return freshLines.join('\n');
-          } else {
-            return finalTitle + '\n' + content;
           }
+          return finalTitle + '\n' + content;
         });
+
+        if (!wroteViaVault) {
+          verboseLog(
+            this.plugin,
+            `[TITLE-INSERT] Body content already present on disk, skipped insertion for ${file.path}`
+          );
+          return skipped;
+        }
       }
 
       verboseLog(this.plugin, `Successfully inserted title in ${file.path}`);
-      return true;
+      return { inserted: true, cursorPositioned };
     } catch (error) {
       console.error(
         `Error inserting title on creation for ${file.path}:`,
         error
       );
-      return false;
+      return skipped;
     }
   }
 
@@ -360,7 +485,8 @@ export class FileOperations {
   async handleCursorPositioning(
     file: TFile,
     usePlaceCursorAtLineEndSetting: boolean = true,
-    explicitPlaceCursorAtEnd?: boolean
+    explicitPlaceCursorAtEnd?: boolean,
+    viewHint?: MarkdownView | null
   ): Promise<void> {
     try {
       verboseLog(
@@ -368,62 +494,38 @@ export class FileOperations {
         `handleCursorPositioning called for ${file.path}, usePlaceCursorAtLineEndSetting: ${usePlaceCursorAtLineEndSetting}`
       );
 
-      let targetView: MarkdownView | null = null;
-      const leaves = this.app.workspace.getLeavesOfType('markdown');
-      for (const leaf of leaves) {
-        const view = leaf.view as MarkdownView;
-        if (view && view.file?.path === file.path) {
-          targetView = view;
-          break;
-        }
-      }
+      // requireEditor false: the original scan matched on path alone and then used optional
+      // chaining on the editor, so a view without one must still reach the mode transition
+      const targetView = this.resolveMarkdownViewForFile(file, viewHint, false);
 
       verboseLog(
         this.plugin,
         `Target view found: ${!!targetView}, file matches: ${targetView?.file?.path === file.path}`
       );
 
-      if (targetView && targetView.file?.path === file.path) {
-        await targetView.leaf.setViewState({
-          type: 'markdown',
-          state: {
-            mode: 'source',
-            source: false,
-          },
-        });
-
+      if (targetView) {
+        // No view-state transition here: this path only ever runs for a note that was just
+        // created, and Obsidian already opens those in Live Preview regardless of the
+        // "Default view for new tabs" setting, which governs opening existing notes.
         targetView.editor?.focus();
 
-        let titleLineNumber = 0;
-        let titleLineLength = 0;
         const content = targetView.editor?.getValue() || '';
-        const lines = content.split('\n');
+        const point = this.deriveTitleInsertionPoint(content);
+        const titleLineNumber = point.insertLine;
 
-        let yamlEndLine = -1;
-        if (lines[0] === '---') {
-          for (let i = 1; i < lines.length; i++) {
-            if (lines[i] === '---') {
-              yamlEndLine = i;
-              break;
-            }
-          }
-        }
-
-        if (yamlEndLine !== -1) {
-          titleLineNumber = yamlEndLine + 1;
+        if (point.frontmatterEndLine !== -1) {
           verboseLog(
             this.plugin,
-            `Found frontmatter ending at line ${yamlEndLine}, title on line ${titleLineNumber}`
+            `Found frontmatter ending at line ${point.frontmatterEndLine}, title on line ${titleLineNumber}`
           );
         } else {
-          titleLineNumber = 0;
           verboseLog(
             this.plugin,
             `No frontmatter found, title on line ${titleLineNumber}`
           );
         }
 
-        titleLineLength =
+        const titleLineLength =
           targetView.editor?.getLine(titleLineNumber)?.length || 0;
 
         // Determine target position
@@ -457,7 +559,7 @@ export class FileOperations {
 
         verboseLog(
           this.plugin,
-          `[CURSOR-FLIT] file-operations.ts:500 - BEFORE setCursor() | target: line ${targetPosition.line} ch ${targetPosition.ch}`
+          `[CURSOR-FLIT] file-operations.ts - BEFORE setCursor() | target: line ${targetPosition.line} ch ${targetPosition.ch}`
         );
         targetView.editor?.setCursor(targetPosition);
         verboseLog(
@@ -591,35 +693,40 @@ export class FileOperations {
 
   /**
    * Position cursor at end of title line after insertion (if settings allow)
-   * Helper to consolidate cursor positioning logic in insertTitleOnCreation
+   * Helper to consolidate cursor positioning logic in insertTitle
    * @param view The Markdown view where title was inserted
    * @param titleLine Line number where title was inserted
    * @param titleLength Length of the inserted title
+   * @returns true when a cursor move was scheduled, false when settings ruled it out
    */
   private positionCursorAfterTitleInsertion(
     view: MarkdownView,
     titleLine: number,
     titleLength: number
-  ): void {
+  ): boolean {
     if (
-      this.settings.core.moveCursorToFirstLine &&
-      this.settings.core.placeCursorAtLineEnd
+      !this.settings.core.moveCursorToFirstLine ||
+      !this.settings.core.placeCursorAtLineEnd
     ) {
-      window.setTimeout(() => {
-        if (view.editor) {
-          view.editor.focus();
-          verboseLog(
-            this.plugin,
-            `[CURSOR-FLIT] file-operations.ts:641 - BEFORE setCursor() | target: line ${titleLine} ch ${titleLength}`
-          );
-          view.editor.setCursor({ line: titleLine, ch: titleLength });
-          verboseLog(
-            this.plugin,
-            `[TITLE-INSERT] Positioned cursor at end of title line ${titleLine} (${titleLength} chars)`
-          );
-        }
-      }, 0);
+      return false;
     }
+
+    window.setTimeout(() => {
+      if (view.editor) {
+        view.editor.focus();
+        verboseLog(
+          this.plugin,
+          `[CURSOR-FLIT] file-operations.ts - BEFORE setCursor() | target: line ${titleLine} ch ${titleLength}`
+        );
+        view.editor.setCursor({ line: titleLine, ch: titleLength });
+        verboseLog(
+          this.plugin,
+          `[TITLE-INSERT] Positioned cursor at end of title line ${titleLine} (${titleLength} chars)`
+        );
+      }
+    }, 0);
+
+    return true;
   }
 
   /**

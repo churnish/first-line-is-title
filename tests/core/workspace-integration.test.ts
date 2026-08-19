@@ -67,7 +67,7 @@ describe('WorkspaceIntegration', () => {
         processFile: vi.fn().mockResolvedValue(undefined),
       },
       fileOperations: {
-        insertTitleOnCreation: vi.fn().mockResolvedValue(undefined),
+        insertTitle: vi.fn().mockResolvedValue(undefined),
         handleCursorPositioning: vi.fn().mockResolvedValue(undefined),
         cleanup: vi.fn(),
       },
@@ -87,14 +87,14 @@ describe('WorkspaceIntegration', () => {
   });
 
   describe('registerRibbonIcons', () => {
-    it('should register all three ribbon icons', async () => {
+    it('should register both ribbon icons', async () => {
       const { WorkspaceIntegration } =
         await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       integration.registerRibbonIcons();
 
-      expect(mockPlugin.addRibbonIcon).toHaveBeenCalledTimes(3);
+      expect(mockPlugin.addRibbonIcon).toHaveBeenCalledTimes(2);
     });
 
     it('should register file-type-corner icon for rename', async () => {
@@ -111,17 +111,17 @@ describe('WorkspaceIntegration', () => {
       );
     });
 
-    it('should register file-stack icon for bulk rename', async () => {
+    it('no longer registers a bulk-rename icon, which moved to the command palette only', async () => {
       const { WorkspaceIntegration } =
         await import('../../src/core/workspace-integration');
       const integration = new WorkspaceIntegration(mockPlugin);
 
       integration.registerRibbonIcons();
 
-      expect(mockPlugin.addRibbonIcon).toHaveBeenCalledWith(
+      expect(mockPlugin.addRibbonIcon).not.toHaveBeenCalledWith(
         'file-stack',
-        'commands.putFirstLineInTitleAllNotes',
-        expect.any(Function)
+        expect.anything(),
+        expect.anything()
       );
     });
 
@@ -179,26 +179,6 @@ describe('WorkspaceIntegration', () => {
       expect(
         mockPlugin.commandRegistrar.executeToggleAutomaticRenaming
       ).toHaveBeenCalled();
-    });
-
-    it('should open RenameAllFilesModal when file-stack ribbon is clicked', async () => {
-      const { WorkspaceIntegration } =
-        await import('../../src/core/workspace-integration');
-      const { RenameAllFilesModal } = await import('../../src/modals');
-      const integration = new WorkspaceIntegration(mockPlugin);
-
-      integration.registerRibbonIcons();
-
-      // Get the callback for file-stack icon
-      const filesCall = mockPlugin.addRibbonIcon.mock.calls.find(
-        (call: any[]) => call[0] === 'file-stack'
-      );
-      const callback = filesCall[2];
-
-      // Execute callback
-      callback();
-
-      expect(RenameAllFilesModal).toHaveBeenCalledWith(mockApp, mockPlugin);
     });
   });
 

@@ -64,7 +64,7 @@ describe('FileCreationCoordinator', () => {
     exclusions: DeepPartial<PluginSettings>['exclusions']
   ) {
     mockPlugin.settings = createTestSettings({
-      core: { insertTitleOnCreation: true, moveCursorToFirstLine: true },
+      core: { insertTitle: true, moveCursorToFirstLine: true },
       exclusions,
     });
   }
@@ -81,7 +81,7 @@ describe('FileCreationCoordinator', () => {
       settings: createTestSettings({
         core: {
           ...structuredClone(DEFAULT_SETTINGS.core),
-          insertTitleOnCreation: true,
+          insertTitle: true,
           moveCursorToFirstLine: true,
         },
       }),
@@ -283,7 +283,7 @@ describe('FileCreationCoordinator', () => {
     mockPlugin.settings = createTestSettings({
       core: {
         ...structuredClone(DEFAULT_SETTINGS.core),
-        insertTitleOnCreation: true,
+        insertTitle: true,
         moveCursorToFirstLine: true,
       },
       exclusions: {
@@ -305,12 +305,12 @@ describe('FileCreationCoordinator', () => {
     mockPlugin.settings = createTestSettings({
       core: {
         ...structuredClone(DEFAULT_SETTINGS.core),
-        insertTitleOnCreation: true,
+        insertTitle: true,
         moveCursorToFirstLine: true,
       },
       exclusions: {
         // DEFAULT_SETTINGS ships its one entry disabled, so the fixture supplies its own
-        fileNameExclusions: [
+        excludedFileNames: [
           {
             text: 'test',
             onlyAtStart: false,
@@ -337,11 +337,11 @@ describe('FileCreationCoordinator', () => {
     mockPlugin.settings = createTestSettings({
       core: {
         ...structuredClone(DEFAULT_SETTINGS.core),
-        insertTitleOnCreation: true,
+        insertTitle: true,
         moveCursorToFirstLine: true,
       },
       exclusions: {
-        fileNameExclusions: [
+        excludedFileNames: [
           {
             text: 'excluded-term',
             onlyAtStart: false,
@@ -374,7 +374,7 @@ describe('FileCreationCoordinator', () => {
     mockPlugin.settings = createTestSettings({
       core: {
         ...structuredClone(DEFAULT_SETTINGS.core),
-        insertTitleOnCreation: true,
+        insertTitle: true,
         moveCursorToFirstLine: true,
       },
       exclusions: {
@@ -404,13 +404,13 @@ describe('FileCreationCoordinator', () => {
     mockPlugin.settings = createTestSettings({
       core: {
         ...structuredClone(DEFAULT_SETTINGS.core),
-        insertTitleOnCreation: true,
+        insertTitle: true,
         moveCursorToFirstLine: true,
       },
       exclusions: {
         // A configured tag rule is what sends the walk down the Templater branch at Node 3
         excludedTags: ['exclude-me'],
-        fileNameExclusions: [
+        excludedFileNames: [
           {
             text: 'daily',
             onlyAtStart: false,
@@ -457,7 +457,7 @@ describe('FileCreationCoordinator', () => {
     mockPlugin.settings = createTestSettings({
       core: {
         ...structuredClone(DEFAULT_SETTINGS.core),
-        insertTitleOnCreation: true,
+        insertTitle: true,
         moveCursorToFirstLine: true,
       },
       exclusions: {

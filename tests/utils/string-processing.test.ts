@@ -45,7 +45,7 @@ describe('string-processing', () => {
 
     beforeEach(() => {
       settings = createTestSettings({
-        replaceCharacters: {
+        characterReplacements: {
           enableForbiddenCharReplacements: true,
           osPreset: 'macOS',
           charReplacements: {
@@ -164,13 +164,13 @@ describe('string-processing', () => {
     });
 
     it('should not replace characters when master toggle is off', () => {
-      settings.replaceCharacters.enableForbiddenCharReplacements = false;
+      settings.characterReplacements.enableForbiddenCharReplacements = false;
       const result = processForbiddenChars('hello/world:test', settings);
       expect(result).toBe('helloworldtest'); // Strips forbidden chars
     });
 
     it('should not replace character when individual toggle is off', () => {
-      settings.replaceCharacters.charReplacements.slash.enabled = false;
+      settings.characterReplacements.charReplacements.slash.enabled = false;
       const result = processForbiddenChars('hello/world', settings);
       expect(result).toBe('helloworld'); // Strips slash instead of replacing
     });
@@ -196,20 +196,20 @@ describe('string-processing', () => {
     });
 
     it('should replace dots when dot replacement enabled', () => {
-      settings.replaceCharacters.charReplacements.dot.enabled = true;
-      settings.replaceCharacters.charReplacements.dot.replacement = '-';
+      settings.characterReplacements.charReplacements.dot.enabled = true;
+      settings.characterReplacements.charReplacements.dot.replacement = '-';
       const result = processForbiddenChars('hello.world', settings);
       expect(result).toBe('hello-world');
     });
 
     it('should handle trimLeft option for replacements', () => {
-      settings.replaceCharacters.charReplacements.slash.trimLeft = true;
+      settings.characterReplacements.charReplacements.slash.trimLeft = true;
       const result = processForbiddenChars('hello /world', settings);
       expect(result).toBe('hello-world'); // Trims space before slash
     });
 
     it('should handle trimRight option for replacements', () => {
-      settings.replaceCharacters.charReplacements.slash.trimRight = true;
+      settings.characterReplacements.charReplacements.slash.trimRight = true;
       const result = processForbiddenChars('hello/ world', settings);
       expect(result).toBe('hello-world'); // Trims space after slash
     });
@@ -227,15 +227,15 @@ describe('string-processing', () => {
     });
 
     it('should replace Windows/Android characters unconditionally', () => {
-      settings.replaceCharacters.charReplacements.asterisk.enabled = true;
-      settings.replaceCharacters.charReplacements.asterisk.replacement = '-';
+      settings.characterReplacements.charReplacements.asterisk.enabled = true;
+      settings.characterReplacements.charReplacements.asterisk.replacement = '-';
       const result = processForbiddenChars('hello*world', settings);
       expect(result).toBe('hello-world');
     });
 
     it('should not replace Windows/Android character when its individual toggle is off', () => {
-      settings.replaceCharacters.charReplacements.asterisk.enabled = false;
-      settings.replaceCharacters.charReplacements.asterisk.replacement = '-';
+      settings.characterReplacements.charReplacements.asterisk.enabled = false;
+      settings.characterReplacements.charReplacements.asterisk.replacement = '-';
       const result = processForbiddenChars('hello*world', settings);
       expect(result).toBe('helloworld'); // Strips asterisk instead of replacing
     });
@@ -264,7 +264,7 @@ describe('string-processing', () => {
 
     beforeEach(() => {
       settings = createTestSettings({
-        replaceCharacters: {
+        characterReplacements: {
           enableForbiddenCharReplacements: true,
           osPreset: 'macOS',
           charReplacements: {
@@ -376,7 +376,7 @@ describe('string-processing', () => {
 
     beforeEach(() => {
       settings = createTestSettings({
-        replaceCharacters: {
+        characterReplacements: {
           enableForbiddenCharReplacements: true,
           osPreset: 'macOS',
           charReplacements: {
@@ -481,7 +481,7 @@ describe('string-processing', () => {
 
     it('should handle multiple replacements', () => {
       // When multiple chars map to same replacement, reverse uses the first mapping
-      settings.replaceCharacters.charReplacements.colon.replacement = '-';
+      settings.characterReplacements.charReplacements.colon.replacement = '-';
       const safe = 'Title-With-Multiple-Separators';
       const result = reverseSafeLinkTarget(safe, settings);
       // Both slash and colon map to '-', so dashes get reversed to '/' (first mapping)
@@ -489,32 +489,32 @@ describe('string-processing', () => {
     });
 
     it('should not reverse when master toggle is off', () => {
-      settings.replaceCharacters.enableForbiddenCharReplacements = false;
+      settings.characterReplacements.enableForbiddenCharReplacements = false;
       const result = reverseSafeLinkTarget('Title-With-Dashes', settings);
       expect(result).toBe('Title-With-Dashes');
     });
 
     it('should not reverse when individual toggle is off', () => {
-      settings.replaceCharacters.charReplacements.slash.enabled = false;
+      settings.characterReplacements.charReplacements.slash.enabled = false;
       const result = reverseSafeLinkTarget('Title-With-Dashes', settings);
       expect(result).toBe('Title-With-Dashes');
     });
 
     it('should reverse Windows/Android characters unconditionally', () => {
-      settings.replaceCharacters.charReplacements.asterisk.replacement = 'STAR';
+      settings.characterReplacements.charReplacements.asterisk.replacement = 'STAR';
       const result = reverseSafeLinkTarget('TitleSTARBold', settings);
       expect(result).toBe('Title*Bold');
     });
 
     it('should not reverse Windows/Android character when its individual toggle is off', () => {
-      settings.replaceCharacters.charReplacements.asterisk.enabled = false;
-      settings.replaceCharacters.charReplacements.asterisk.replacement = 'STAR';
+      settings.characterReplacements.charReplacements.asterisk.enabled = false;
+      settings.characterReplacements.charReplacements.asterisk.replacement = 'STAR';
       const result = reverseSafeLinkTarget('TitleSTARBold', settings);
       expect(result).toBe('TitleSTARBold');
     });
 
     it('should handle empty replacement (no reverse needed)', () => {
-      settings.replaceCharacters.charReplacements.hash.replacement = '';
+      settings.characterReplacements.charReplacements.hash.replacement = '';
       const result = reverseSafeLinkTarget('TitleWithoutHash', settings);
       expect(result).toBe('TitleWithoutHash');
     });

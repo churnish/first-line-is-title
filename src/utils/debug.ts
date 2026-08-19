@@ -19,7 +19,7 @@ export class DebugUtils {
    * @param value The new value of the setting
    */
   debugLog(settingName: string, value: unknown): void {
-    if (this.settings.core.verboseLogging) {
+    if (this.settings.core.debug) {
       console.debug(
         `Setting changed: ${settingName} = ${JSON.stringify(value)}`
       );
@@ -38,7 +38,7 @@ export class DebugUtils {
     editorContent?: string
   ): void {
     if (
-      !this.settings.core.verboseLogging ||
+      !this.settings.core.debug ||
       !this.settings.core.debugOutputFullContent
     ) {
       return;
@@ -63,7 +63,7 @@ export class DebugUtils {
    * Outputs complete plugin settings for debugging purposes
    */
   outputAllSettings(): void {
-    if (!this.settings.core.verboseLogging) {
+    if (!this.settings.core.debug) {
       return;
     }
 

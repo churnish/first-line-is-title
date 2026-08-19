@@ -15,7 +15,7 @@ import {
 } from '../types/char-replacement';
 
 /**
- * Sub-key under `settings.replaceCharacters.characters` holding each
+ * Sub-key under `settings.characterReplacements.characters` holding each
  * character's display label. Two keys differ from the setting key itself.
  */
 const CHAR_LABEL_KEYS: Record<CharKey, string> = {
@@ -63,30 +63,34 @@ function renderTableHeader(wrapper: HTMLElement): void {
   });
 
   const enableHeader = headerRow.createDiv({ cls: 'flit-enable-column' });
-  enableHeader.textContent = t('settings.replaceCharacters.headers.enable');
+  enableHeader.textContent = t('settings.characterReplacements.headers.enable');
 
   const charNameHeader = headerRow.createDiv({ cls: 'flit-char-name-column' });
   charNameHeader.textContent = t(
-    'settings.replaceCharacters.headers.character'
+    'settings.characterReplacements.headers.character'
   );
 
   const inputHeader = headerRow.createDiv({
     cls: 'flit-char-text-input-container',
   });
-  inputHeader.textContent = t('settings.replaceCharacters.headers.replaceWith');
+  inputHeader.textContent = t(
+    'settings.characterReplacements.headers.replaceWith'
+  );
 
   const trimLeftHeader = headerRow.createDiv({
     cls: 'flit-toggle-column center',
   });
   const trimLeftLine1 = trimLeftHeader.createDiv();
-  trimLeftLine1.textContent = t('settings.replaceCharacters.headers.trimLeft');
+  trimLeftLine1.textContent = t(
+    'settings.characterReplacements.headers.trimLeft'
+  );
 
   const trimRightHeader = headerRow.createDiv({
     cls: 'flit-toggle-column center',
   });
   const trimRightLine1 = trimRightHeader.createDiv();
   trimRightLine1.textContent = t(
-    'settings.replaceCharacters.headers.trimRight'
+    'settings.characterReplacements.headers.trimRight'
   );
 }
 
@@ -95,7 +99,8 @@ function renderCharacterRows(
   config: CharTableConfig
 ): void {
   config.chars.forEach((key) => {
-    const charConfig = plugin.settings.replaceCharacters.charReplacements[key];
+    const charConfig =
+      plugin.settings.characterReplacements.charReplacements[key];
     const rowEl = config.wrapper.createDiv({
       cls: 'flit-char-replacement-setting',
     });
@@ -123,7 +128,9 @@ function renderCharacterRows(
       cls: 'flit-char-name-column',
     });
     nameContainer.createDiv({
-      text: t(`settings.replaceCharacters.characters.${CHAR_LABEL_KEYS[key]}`),
+      text: t(
+        `settings.characterReplacements.characters.${CHAR_LABEL_KEYS[key]}`
+      ),
       cls: 'setting-item-name',
     });
     const noteKey = CHAR_NOTE_KEYS[key];
@@ -132,7 +139,7 @@ function renderCharacterRows(
         cls: 'setting-item-description',
       });
       descEl.textContent = t(
-        `settings.replaceCharacters.characters.${noteKey}`
+        `settings.characterReplacements.characters.${noteKey}`
       );
     }
 
@@ -141,7 +148,7 @@ function renderCharacterRows(
     });
 
     const defaultReplacement =
-      DEFAULT_SETTINGS.replaceCharacters.charReplacements[key].replacement;
+      DEFAULT_SETTINGS.characterReplacements.charReplacements[key].replacement;
 
     const restoreButton = inputContainer.createDiv({
       cls: 'clickable-icon extra-setting-button',
@@ -177,7 +184,9 @@ function renderCharacterRows(
       type: 'text',
       cls: 'flit-char-text-input flit-width-120',
     });
-    textInput.placeholder = t('settings.replaceCharacters.emptyPlaceholder');
+    textInput.placeholder = t(
+      'settings.characterReplacements.emptyPlaceholder'
+    );
     textInput.value = charConfig.replacement;
     textInput.addEventListener('input', (e) => {
       void (async () => {
@@ -239,11 +248,11 @@ function appendTrimNote(parent: HTMLElement | DocumentFragment): void {
     parent.appendText(quoteLabel(t(localeKey)));
   };
 
-  parent.appendText(t('settings.replaceCharacters.trimNote.part1'));
-  appendEmphasis('settings.replaceCharacters.trimNote.trimLeft');
-  parent.appendText(t('settings.replaceCharacters.trimNote.part2'));
-  appendEmphasis('settings.replaceCharacters.trimNote.trimRight');
-  parent.appendText(t('settings.replaceCharacters.trimNote.part3'));
+  parent.appendText(t('settings.characterReplacements.trimNote.part1'));
+  appendEmphasis('settings.characterReplacements.trimNote.trimLeft');
+  parent.appendText(t('settings.characterReplacements.trimNote.part2'));
+  appendEmphasis('settings.characterReplacements.trimNote.trimRight');
+  parent.appendText(t('settings.characterReplacements.trimNote.part3'));
 }
 
 /**
@@ -284,35 +293,41 @@ export function buildCharacterReplacementsPage(
 
   return {
     type: 'page',
-    name: t('settings.tabs.replaceCharacters'),
-    desc: t('settings.replaceCharacters.desc'),
+    name: t('settings.sections.characterReplacements'),
+    desc: t('settings.characterReplacements.desc'),
+    // Blank rather than "Disabled" when off — see the note on the Alias page.
+    displayValue: () =>
+      plugin.settings.characterReplacements.enableForbiddenCharReplacements
+        ? t('settings.common.enabled')
+        : '',
     items: [
       {
-        name: t('settings.replaceCharacters.name'),
+        name: t('settings.characterReplacements.name'),
         // Deliberately not the section desc: the section summarises what the
         // page is for, the toggle explains what each position does.
-        desc: t('settings.replaceCharacters.toggleDesc'),
+        desc: t('settings.characterReplacements.toggleDesc'),
         control: {
           type: 'toggle',
-          key: 'replaceCharacters.enableForbiddenCharReplacements',
+          key: 'characterReplacements.enableForbiddenCharReplacements',
         },
       },
       buildDescRow(
         createFragment((frag) => appendTrimNote(frag)),
         {
           visible: () =>
-            plugin.settings.replaceCharacters.enableForbiddenCharReplacements,
+            plugin.settings.characterReplacements
+              .enableForbiddenCharReplacements,
         }
       ),
       {
         type: 'group',
-        heading: t('settings.replaceCharacters.allOSes.title'),
+        heading: t('settings.characterReplacements.allOSes.title'),
         visible: () =>
-          plugin.settings.replaceCharacters.enableForbiddenCharReplacements,
+          plugin.settings.characterReplacements.enableForbiddenCharReplacements,
         items: [
           {
             name: '',
-            desc: t('settings.replaceCharacters.allOSes.desc'),
+            desc: t('settings.characterReplacements.allOSes.desc'),
             render: (setting) => {
               mountTable(
                 setting,
@@ -326,13 +341,13 @@ export function buildCharacterReplacementsPage(
       },
       {
         type: 'group',
-        heading: t('settings.replaceCharacters.windowsAndroid.title'),
+        heading: t('settings.characterReplacements.windowsAndroid.title'),
         visible: () =>
-          plugin.settings.replaceCharacters.enableForbiddenCharReplacements,
+          plugin.settings.characterReplacements.enableForbiddenCharReplacements,
         items: [
           {
             name: '',
-            desc: t('settings.replaceCharacters.windowsAndroid.desc'),
+            desc: t('settings.characterReplacements.windowsAndroid.desc'),
             render: (setting) => {
               mountTable(
                 setting,

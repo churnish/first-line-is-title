@@ -46,7 +46,7 @@ export async function readFileContent(
     // Accept any string including empty (user may have deleted all content)
     if (providedContent !== undefined) {
       content = providedContent;
-      if (settings.core.verboseLogging) {
+      if (settings.core.debug) {
         console.debug(
           `Using provided content for ${file.path} (${content.length} chars)`
         );
@@ -57,7 +57,7 @@ export async function readFileContent(
     // Strategy 2: Use provided editor if available
     if (providedEditor) {
       content = providedEditor.getValue();
-      if (settings.core.verboseLogging) {
+      if (settings.core.debug) {
         console.debug(
           `Using provided editor content for ${file.path} (${content.length} chars)`
         );
@@ -69,7 +69,7 @@ export async function readFileContent(
     if (searchWorkspace) {
       const editorContent = findEditorContent(app, file);
       if (editorContent !== null) {
-        if (settings.core.verboseLogging) {
+        if (settings.core.debug) {
           console.debug(
             `Found editor in workspace for ${file.path} (${editorContent.length} chars)`
           );
@@ -78,8 +78,8 @@ export async function readFileContent(
       }
     }
 
-    // Strategy 4: Use fileReadMethod setting
-    if (settings.core.fileReadMethod === 'Editor') {
+    // Strategy 4: Use contentReadMethod setting
+    if (settings.core.contentReadMethod === 'Editor') {
       // Editor method with no editor available - fallback based on preferFresh or file state
       const needsFresh =
         preferFresh || plugin.fileStateManager?.needsFreshRead(file.path);
@@ -87,29 +87,29 @@ export async function readFileContent(
         content = await app.vault.read(file);
         // Clear needsFreshRead flag after using it
         plugin.fileStateManager?.clearNeedsFreshRead(file.path);
-        if (settings.core.verboseLogging) {
+        if (settings.core.debug) {
           console.debug(
             `Editor method using fresh read for ${file.path} (${content.length} chars)`
           );
         }
       } else {
         content = await app.vault.cachedRead(file);
-        if (settings.core.verboseLogging) {
+        if (settings.core.debug) {
           console.debug(
             `Editor method fallback to cached read for ${file.path} (${content.length} chars)`
           );
         }
       }
-    } else if (settings.core.fileReadMethod === 'Cache') {
+    } else if (settings.core.contentReadMethod === 'Cache') {
       content = await app.vault.cachedRead(file);
-      if (settings.core.verboseLogging) {
+      if (settings.core.debug) {
         console.debug(
           `Cached read content from ${file.path} (${content.length} chars)`
         );
       }
-    } else if (settings.core.fileReadMethod === 'File') {
+    } else if (settings.core.contentReadMethod === 'File') {
       content = await app.vault.read(file);
-      if (settings.core.verboseLogging) {
+      if (settings.core.debug) {
         console.debug(
           `Direct read content from ${file.path} (${content.length} chars)`
         );
@@ -118,14 +118,14 @@ export async function readFileContent(
       // Unknown method - use preferFresh or fallback to cache
       if (preferFresh) {
         content = await app.vault.read(file);
-        if (settings.core.verboseLogging) {
+        if (settings.core.debug) {
           console.debug(
             `Unknown method, using fresh read for ${file.path} (${content.length} chars)`
           );
         }
       } else {
         content = await app.vault.cachedRead(file);
-        if (settings.core.verboseLogging) {
+        if (settings.core.debug) {
           console.debug(
             `Unknown method, fallback to cached read for ${file.path} (${content.length} chars)`
           );

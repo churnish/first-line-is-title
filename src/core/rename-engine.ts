@@ -5,7 +5,7 @@ import {
   verboseLog,
   shouldProcessFile,
   canModifyFile,
-  containsFileNameExclusion,
+  isExcludedByFileName,
   extractTitle,
   isValidHeading,
   findTitleSourceLine,
@@ -112,8 +112,22 @@ export class RenameEngine {
     const startTime = Date.now();
 
     try {
+      // Second line of defence behind the same check in handleEditorChangeWithThrottle: a
+      // throttle timer scheduled just before the plugin started writing can still land mid
+      // write, and this entry point performs a real vault.read() for a file with no tracked
+      // previous content. Placed above the lock check because that one only reaches this
+      // guard while a file operation happens to hold the lock.
+      if (this.plugin.fileStateManager.isEditorSyncing(file.path)) {
+        if (this.plugin.settings.core.debug) {
+          console.debug(
+            `Editor change ignored - plugin is writing to this editor: ${file.path}`
+          );
+        }
+        return;
+      }
+
       if (this.plugin.cacheManager?.isLocked(file.path)) {
-        if (this.plugin.settings.core.verboseLogging) {
+        if (this.plugin.settings.core.debug) {
           console.debug(
             `Editor change ignored - file operation in progress: ${file.path}`
           );
@@ -122,7 +136,7 @@ export class RenameEngine {
         // This prevents setValue() on background editors from scheduling spurious rechecks
         if (!this.plugin.fileStateManager.isEditorSyncing(file.path)) {
           this.plugin.cacheManager?.markPendingAliasRecheck(file.path);
-        } else if (this.plugin.settings.core.verboseLogging) {
+        } else if (this.plugin.settings.core.debug) {
           console.debug(
             `Skipping recheck - editor-change from background editor sync: ${file.path}`
           );
@@ -139,7 +153,7 @@ export class RenameEngine {
       );
       if (previousContent) {
         if (isOnlyFrontmatterChanged(currentContent, previousContent)) {
-          if (this.plugin.settings.core.verboseLogging) {
+          if (this.plugin.settings.core.debug) {
             console.debug(`Skipping - only frontmatter edited: ${file.path}`);
           }
           this.plugin.fileStateManager.setLastEditorContent(
@@ -154,7 +168,7 @@ export class RenameEngine {
 
         if (isOnlyFrontmatterChanged(currentContent, diskContent)) {
           // No body edits (or YAML-only edit) - skip processing
-          if (this.plugin.settings.core.verboseLogging) {
+          if (this.plugin.settings.core.debug) {
             console.debug(
               `Skipping - no body edits detected on first open: ${file.path}`
             );
@@ -177,7 +191,7 @@ export class RenameEngine {
         }
 
         // Body content differs from disk - user edited body, proceed with processing
-        if (this.plugin.settings.core.verboseLogging) {
+        if (this.plugin.settings.core.debug) {
           console.debug(`Body edited, will process: ${file.path}`);
         }
       }
@@ -197,7 +211,7 @@ export class RenameEngine {
           cachedTitleRegion.firstNonEmptyLine &&
         currentTitleRegion.titleSourceLine === cachedTitleRegion.titleSourceLine
       ) {
-        if (this.plugin.settings.core.verboseLogging) {
+        if (this.plugin.settings.core.debug) {
           console.debug(
             `Title region unchanged - skipping processing: ${file.path}`
           );
@@ -218,7 +232,7 @@ export class RenameEngine {
         file.path,
         currentTitleRegion
       );
-      if (this.plugin.settings.core.verboseLogging) {
+      if (this.plugin.settings.core.debug) {
         console.debug(`Title region changed - processing: ${file.path}`, {
           previous: cachedTitleRegion,
           current: currentTitleRegion,
@@ -227,7 +241,7 @@ export class RenameEngine {
 
       const metadata = this.plugin.app.metadataCache.getFileCache(file);
       const timeSinceStart = Date.now() - startTime;
-      if (this.plugin.settings.core.verboseLogging) {
+      if (this.plugin.settings.core.debug) {
         console.debug(
           `[TIMING] Content changed in ${timeSinceStart}ms: ${file.path}`
         );
@@ -618,7 +632,7 @@ export class RenameEngine {
 
     // Runs before the content gate: this rule reads only the name, so paying for shouldProcessFile's YAML parses first would be wasted work. A file both name- and strategy-excluded therefore reports 'file-name-exclusion'.
     // Check if filename matches any file name exclusions and skip if enabled (always respected)
-    if (containsFileNameExclusion(file.name, this.plugin.settings)) {
+    if (isExcludedByFileName(file.name, this.plugin.settings)) {
       if (showNotices && !isBatchOperation) {
         // Rate limit: show notice max once per 2 seconds per file
         if (
@@ -882,13 +896,13 @@ export class RenameEngine {
     let newTitle = titleSourceLine;
     verboseLog(
       this.plugin,
-      `Custom replacements enabled: ${this.plugin.settings.customRules.enableCustomReplacements}, count: ${this.plugin.settings.customRules.customReplacements?.length || 0}`
+      `Custom replacements enabled: ${this.plugin.settings.customReplacements.enableCustomReplacements}, count: ${this.plugin.settings.customReplacements.rules?.length || 0}`
     );
 
-    const applyCustomRules = () => {
-      if (this.plugin.settings.customRules.enableCustomReplacements) {
-        for (const replacement of this.plugin.settings.customRules
-          .customReplacements) {
+    const applyCustomReplacements = () => {
+      if (this.plugin.settings.customReplacements.enableCustomReplacements) {
+        for (const replacement of this.plugin.settings.customReplacements
+          .rules) {
           if (replacement.searchText === '' || !replacement.enabled) continue;
 
           verboseLog(this.plugin, `Checking custom replacement:`, {
@@ -998,25 +1012,25 @@ export class RenameEngine {
     };
 
     // Apply operations in correct order based on settings
-    if (this.plugin.settings.customRules.applyCustomRulesAfterForbiddenChars) {
-      // Apply markup stripping, then forbidden chars, then custom rules
+    if (this.plugin.settings.customReplacements.applyAfterForbiddenChars) {
+      // Apply markup stripping, then forbidden chars, then custom replacements
       newTitle = extractTitle(newTitle, this.plugin.settings);
       applyForbiddenCharReplacement();
-      applyCustomRules();
+      applyCustomReplacements();
       // A rule's replacement text can reintroduce path separators and blow past the char limit, so re-sanitize
       applyForbiddenCharReplacement();
     } else {
-      // Apply custom rules and markup stripping based on other setting, then forbidden chars
+      // Apply custom replacements and markup stripping based on other setting, then forbidden chars
       if (
         this.plugin.settings.markupStripping
-          .applyCustomRulesAfterMarkupStripping
+          .applyCustomReplacementsAfterMarkupStripping
       ) {
-        // Markup stripping → custom rules → forbidden chars
+        // Markup stripping → custom replacements → forbidden chars
         newTitle = extractTitle(newTitle, this.plugin.settings);
-        applyCustomRules();
+        applyCustomReplacements();
       } else {
-        // Custom rules → markup stripping → forbidden chars
-        applyCustomRules();
+        // Custom replacements → markup stripping → forbidden chars
+        applyCustomReplacements();
         newTitle = extractTitle(newTitle, this.plugin.settings);
       }
       applyForbiddenCharReplacement();

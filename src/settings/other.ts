@@ -4,12 +4,9 @@ import {
   PluginSettingTab,
   SettingDefinitionPage,
 } from 'obsidian';
-import {
-  applyLocalizedDefaults,
-  FirstLineIsTitlePlugin,
-} from './settings-base';
+import { buildButtonRow, FirstLineIsTitlePlugin } from './settings-base';
 import { PluginSettings } from '../types';
-import { DEFAULT_SETTINGS } from '../constants';
+import { CURRENT_DATA_SCHEMA_VERSION, DEFAULT_SETTINGS } from '../constants';
 import { deepMerge, verboseLog } from '../utils';
 import { t } from '../i18n';
 import { PluginInitializer } from '../core/plugin-initializer';
@@ -24,11 +21,11 @@ const PLUGIN_LINK_EMBED = 'Link Embed';
  */
 function buildCardLinkDescription(): DocumentFragment {
   return createFragment((frag) => {
-    frag.appendText(t('settings.other.grabCardLink.desc.part1'));
+    frag.appendText(t('settings.other.grabTitleFromCardLink.desc.part1'));
     createPluginLink(frag, 'auto-card-link', PLUGIN_AUTO_CARD_LINK);
-    frag.appendText(t('settings.other.grabCardLink.desc.part2'));
+    frag.appendText(t('settings.other.grabTitleFromCardLink.desc.part2'));
     createPluginLink(frag, 'obsidian-link-embed', PLUGIN_LINK_EMBED);
-    frag.appendText(t('settings.other.grabCardLink.desc.part3'));
+    frag.appendText(t('settings.other.grabTitleFromCardLink.desc.part3'));
   });
 }
 
@@ -83,7 +80,18 @@ function importSettingsFromFile(
         const content = readerEvent.target?.result;
         if (typeof content === 'string') {
           try {
-            importedJson = JSON.parse(content) as Record<string, unknown>;
+            const parsed: unknown = JSON.parse(content);
+            // `JSON.parse` returns null, numbers and strings without throwing.
+            // Those used to fall past the `if (importedJson)` guard below and
+            // end the import silently, with no notice.
+            if (
+              typeof parsed !== 'object' ||
+              parsed === null ||
+              Array.isArray(parsed)
+            ) {
+              throw new Error('not a settings object');
+            }
+            importedJson = parsed as Record<string, unknown>;
           } catch {
             const notice = new Notice(t('notifications.invalidImportFile'));
             notice.containerEl.addClass('mod-warning');
@@ -101,6 +109,19 @@ function importSettingsFromFile(
         }
 
         if (importedJson) {
+          // `loadSettings()` discards any data.json whose schema version does not
+          // match, so this path must not become a back door around that gate.
+          // Refusing is also the only non-destructive option: `dataSchemaVersion`
+          // is itself a settings key, so the filter below would copy a mismatched
+          // one straight through, and the next load would then silently wipe every
+          // setting the user still had.
+          if (importedJson.dataSchemaVersion !== CURRENT_DATA_SCHEMA_VERSION) {
+            const notice = new Notice(t('settings.errors.importIncompatible'));
+            notice.containerEl.addClass('mod-warning');
+            input.remove();
+            return;
+          }
+
           // Pre-filter before merging: deepMerge writes a non-object source value straight over an object default, so an entry like {"exclusions": "x"} would survive and throw on every downstream read
           const compatibleOverrides: Record<string, unknown> = {};
           for (const setting in plugin.settings) {
@@ -108,8 +129,13 @@ function importSettingsFromFile(
               const importedValue = importedJson[setting];
               const existingValue =
                 plugin.settings[setting as keyof typeof plugin.settings];
-              // Basic type check to prevent corruption from malformed imports
-              if (typeof importedValue === typeof existingValue) {
+              // `typeof` alone lets an array through where an object branch
+              // lives (both report 'object'), and deepMerge replaces the whole
+              // branch with it — so compare array-ness too.
+              if (
+                typeof importedValue === typeof existingValue &&
+                Array.isArray(importedValue) === Array.isArray(existingValue)
+              ) {
                 compatibleOverrides[setting] = importedValue;
               } else {
                 console.warn(
@@ -211,9 +237,6 @@ async function resetAllSettings(
   const previousSettings = cloneSettings(plugin.settings);
   const newSettings = cloneSettings(DEFAULT_SETTINGS);
 
-  applyLocalizedDefaults(newSettings);
-
-  newSettings.core.hasShownFirstTimeNotice = true;
   newSettings.core.lastUsageDate = plugin.getTodayDateString?.() || '';
 
   try {
@@ -243,7 +266,7 @@ export function buildOtherPage(
 ): SettingDefinitionPage {
   return {
     type: 'page',
-    name: t('settings.tabs.other'),
+    name: t('settings.sections.other'),
     desc: t('settings.other.desc'),
     items: [
       {
@@ -287,7 +310,7 @@ export function buildOtherPage(
         },
       },
       {
-        name: t('settings.other.grabCardLink.name'),
+        name: t('settings.other.grabTitleFromCardLink.name'),
         desc: buildCardLinkDescription(),
         control: {
           type: 'toggle',
@@ -295,61 +318,69 @@ export function buildOtherPage(
         },
       },
       {
-        name: t('settings.other.newNoteDelay.name'),
-        desc: t('settings.other.newNoteDelay.desc'),
-        control: {
-          type: 'slider',
-          key: 'core.newNoteDelay',
-          min: 0,
-          max: 5000,
-          step: 50,
-          defaultValue: DEFAULT_SETTINGS.core.newNoteDelay,
-        },
-      },
-      {
-        name: t('settings.other.contentReadMethod.name'),
-        desc: t('settings.other.contentReadMethod.desc'),
-        control: {
-          type: 'dropdown',
-          key: 'core.fileReadMethod',
-          options: {
-            Editor: t('settings.other.contentReadMethod.editor'),
-            Cache: t('settings.other.contentReadMethod.cache'),
-            File: t('settings.other.contentReadMethod.file'),
+        // Debug's dependent row travels with it: left outside the group it
+        // would appear in a separate box below, detached from its parent.
+        type: 'group',
+        heading: t('settings.other.troubleshooting.title'),
+        items: [
+          {
+            name: t('settings.other.newNoteDelay.name'),
+            desc: t('settings.other.newNoteDelay.desc'),
+            control: {
+              type: 'slider',
+              key: 'core.newNoteDelay',
+              min: 0,
+              max: 5000,
+              step: 50,
+              defaultValue: DEFAULT_SETTINGS.core.newNoteDelay,
+            },
           },
-        },
-      },
-      {
-        name: t('settings.other.checkInterval.name'),
-        desc: t('settings.other.checkInterval.desc'),
-        visible: () =>
-          plugin.settings.core.renameAutomatically &&
-          plugin.settings.core.fileReadMethod === 'Editor',
-        control: {
-          type: 'slider',
-          key: 'core.checkInterval',
-          min: 0,
-          max: 5000,
-          step: 50,
-          defaultValue: DEFAULT_SETTINGS.core.checkInterval,
-        },
-      },
-      {
-        name: t('settings.other.debug.name'),
-        desc: t('settings.other.debug.desc'),
-        control: {
-          type: 'toggle',
-          key: 'core.verboseLogging',
-        },
-      },
-      {
-        name: t('settings.other.debugOutputContent.name'),
-        desc: t('settings.other.debugOutputContent.desc'),
-        visible: () => plugin.settings.core.verboseLogging,
-        control: {
-          type: 'toggle',
-          key: 'core.debugOutputFullContent',
-        },
+          {
+            name: t('settings.other.contentReadMethod.name'),
+            desc: t('settings.other.contentReadMethod.desc'),
+            control: {
+              type: 'dropdown',
+              key: 'core.contentReadMethod',
+              options: {
+                Editor: t('settings.other.contentReadMethod.editor'),
+                Cache: t('settings.other.contentReadMethod.cache'),
+                File: t('settings.other.contentReadMethod.file'),
+              },
+            },
+          },
+          {
+            name: t('settings.other.checkInterval.name'),
+            desc: t('settings.other.checkInterval.desc'),
+            visible: () =>
+              plugin.settings.core.renameAutomatically &&
+              plugin.settings.core.contentReadMethod === 'Editor',
+            control: {
+              type: 'slider',
+              key: 'core.checkInterval',
+              min: 0,
+              max: 5000,
+              step: 50,
+              defaultValue: DEFAULT_SETTINGS.core.checkInterval,
+            },
+          },
+          {
+            name: t('settings.other.debug.name'),
+            desc: t('settings.other.debug.desc'),
+            control: {
+              type: 'toggle',
+              key: 'core.debug',
+            },
+          },
+          {
+            name: t('settings.other.debugOutputFullContent.name'),
+            desc: t('settings.other.debugOutputFullContent.desc'),
+            visible: () => plugin.settings.core.debug,
+            control: {
+              type: 'toggle',
+              key: 'core.debugOutputFullContent',
+            },
+          },
+        ],
       },
       {
         type: 'group',
@@ -358,59 +389,53 @@ export function buildOtherPage(
           {
             name: t('settings.other.backupSettings.name'),
             desc: t('settings.other.backupSettings.desc'),
-            render: (setting) => {
-              setting
-                .addButton((button) =>
-                  button
-                    .setButtonText(t('settings.other.backupSettings.import'))
-                    .onClick(() => importSettingsFromFile(plugin, tab))
-                )
-                .addButton((button) =>
-                  button
-                    .setButtonText(t('settings.other.backupSettings.export'))
-                    .onClick(() => exportSettingsToFile(plugin))
-                );
-            },
+            render: buildButtonRow([
+              {
+                text: t('settings.other.backupSettings.import'),
+                onClick: () => importSettingsFromFile(plugin, tab),
+              },
+              {
+                text: t('settings.other.backupSettings.export'),
+                onClick: () => exportSettingsToFile(plugin),
+              },
+            ]),
           },
           {
             // `render` rather than `action` so the row carries a labelled
             // button, matching "Rename all notes" and "Send feedback".
             name: t('settings.other.clearSettings.name'),
             desc: t('settings.other.clearSettings.desc'),
-            render: (setting) => {
-              setting.addButton((button) =>
-                button
-                  .setButtonText(t('settings.other.clearSettings.button'))
-                  // Red tint without the filled-CTA treatment, since this is a
-                  // secondary destructive action rather than the page's primary
-                  // one.
-                  .setDestructive()
-                  .onClick(() => {
-                    const body = createFragment((frag) => {
-                      frag.createEl('p', {
-                        text: t('modals.resetAllSettings'),
-                        cls: 'mod-warning',
-                      });
-                    });
+            render: buildButtonRow({
+              text: t('settings.other.clearSettings.button'),
+              // Red tint without the filled-CTA treatment, since this is a
+              // secondary destructive action rather than the page's primary
+              // one.
+              destructive: true,
+              onClick: () => {
+                const body = createFragment((frag) => {
+                  frag.createEl('p', {
+                    text: t('modals.resetAllSettings'),
+                    cls: 'mod-warning',
+                  });
+                });
 
-                    new ConfirmationModal(plugin.app)
-                      .setTitle(t('modals.caution'))
-                      .setContent(body)
-                      .addButton((btn) =>
-                        btn
-                          .setButtonText(t('modals.buttons.clear'))
-                          // Non-deprecated equivalent of setWarning()
-                          .setDestructive()
-                          .setCta()
-                          .onClick(() => {
-                            void resetAllSettings(plugin, tab);
-                          })
-                      )
-                      .addCancelButton()
-                      .open();
-                  })
-              );
-            },
+                new ConfirmationModal(plugin.app)
+                  .setTitle(t('modals.caution'))
+                  .setContent(body)
+                  .addButton((btn) =>
+                    btn
+                      .setButtonText(t('modals.buttons.clear'))
+                      // Non-deprecated equivalent of setWarning()
+                      .setDestructive()
+                      .setCta()
+                      .onClick(() => {
+                        void resetAllSettings(plugin, tab);
+                      })
+                  )
+                  .addCancelButton()
+                  .open();
+              },
+            }),
           },
         ],
       },

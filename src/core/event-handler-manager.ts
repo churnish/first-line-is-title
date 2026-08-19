@@ -238,7 +238,7 @@ export class EventHandlerManager {
       (this.plugin.app.workspace as unknown as WorkspaceWithSearchEvents).on(
         'search:results-menu',
         (menu: Menu, leaf: Record<string, unknown>) => {
-          if (!this.plugin.settings.core.enableVaultSearchContextMenu) return;
+          if (!this.plugin.settings.core.enableSearchCommands) return;
 
           // Extract files from search results DOM structure
           let files: TFile[] = [];
@@ -315,14 +315,14 @@ export class EventHandlerManager {
   private registerEditorChangeHandler(): void {
     this.plugin.registerEvent(
       this.plugin.app.workspace.on('editor-change', (editor, info) => {
-        if (this.plugin.settings.core.verboseLogging) {
+        if (this.plugin.settings.core.debug) {
           console.debug(
             `Editor change detected for file: ${info.file?.path || 'unknown'}`
           );
         }
 
         if (!this.plugin.settings.core.renameAutomatically) {
-          if (this.plugin.settings.core.verboseLogging) {
+          if (this.plugin.settings.core.debug) {
             console.debug(
               `Skipping editor-change: renameAutomatically=${this.plugin.settings.core.renameAutomatically}`
             );
@@ -331,14 +331,14 @@ export class EventHandlerManager {
         }
 
         if (!info.file) {
-          if (this.plugin.settings.core.verboseLogging) {
+          if (this.plugin.settings.core.debug) {
             console.debug(`Skipping editor-change: no file in info`);
           }
           return;
         }
 
         if (info.file.extension !== 'md') {
-          if (this.plugin.settings.core.verboseLogging) {
+          if (this.plugin.settings.core.debug) {
             console.debug(
               `Skipping editor-change: not Markdown (${info.file.extension})`
             );
@@ -351,7 +351,7 @@ export class EventHandlerManager {
           if (
             this.plugin.editorLifecycle.isFileInCreationDelay(info.file.path)
           ) {
-            if (this.plugin.settings.core.verboseLogging) {
+            if (this.plugin.settings.core.debug) {
               console.debug(
                 `Skipping editor-change: file in creation delay: ${info.file.path}`
               );
@@ -361,7 +361,7 @@ export class EventHandlerManager {
         }
 
         if (!this.plugin.isFullyLoaded) {
-          if (this.plugin.settings.core.verboseLogging) {
+          if (this.plugin.settings.core.debug) {
             console.debug(`Skipping editor-change: plugin not fully loaded`);
           }
           return;
@@ -436,8 +436,8 @@ export class EventHandlerManager {
 
         // Process rename for Cache/File modes (catches cache updates after save)
         if (
-          this.plugin.settings.core.fileReadMethod === 'Cache' ||
-          this.plugin.settings.core.fileReadMethod === 'File'
+          this.plugin.settings.core.contentReadMethod === 'Cache' ||
+          this.plugin.settings.core.contentReadMethod === 'File'
         ) {
           if (
             this.plugin.settings.core.renameAutomatically &&
@@ -445,7 +445,7 @@ export class EventHandlerManager {
           ) {
             verboseLog(
               this.plugin,
-              `Modify event: processing ${file.path} (fileReadMethod: ${this.plugin.settings.core.fileReadMethod})`
+              `Modify event: processing ${file.path} (contentReadMethod: ${this.plugin.settings.core.contentReadMethod})`
             );
             await this.plugin.renameEngine.processFile(file, true);
           }
@@ -558,7 +558,7 @@ export class EventHandlerManager {
 
         // Skip if file is in creation delay period
         if (this.plugin.editorLifecycle.isFileInCreationDelay(file.path)) {
-          if (this.plugin.settings.core.verboseLogging) {
+          if (this.plugin.settings.core.debug) {
             console.debug(
               `Skipping metadata-alias: file in creation delay: ${file.path}`
             );
@@ -616,7 +616,7 @@ export class EventHandlerManager {
               lastUpdateSucceeded &&
               !statusIsStale
             ) {
-              if (this.plugin.settings.core.verboseLogging) {
+              if (this.plugin.settings.core.debug) {
                 console.debug(
                   `Skipping metadata-alias update - only frontmatter edited: ${file.path}`
                 );

@@ -20,7 +20,7 @@ const PLUGIN_HOVER_EDITOR = 'Hover Editor';
 
 /**
  * The limitation caveats, as bare newline-separated lines (no bullet markup),
- * matching the master-toggle note pattern in `tab-custom-rules.ts`.
+ * matching the master-toggle note pattern in `custom-replacements.ts`.
  */
 function buildLimitationsNote(): DocumentFragment {
   return createFragment((frag) => {
@@ -88,16 +88,28 @@ export function buildAliasPage(
 
   const items: SettingDefinitionItem[] = [
     {
-      name: t('settings.alias.addAlias.name'),
-      desc: t('settings.alias.addAlias.desc'),
-      control: {
-        type: 'toggle',
-        key: 'aliases.enableAliases',
-      },
+      // The master toggle gets its own box, with the caveats that qualify it
+      // directly beneath rather than stranded at the foot of the page.
+      type: 'group',
+      items: [
+        {
+          name: t('settings.alias.addAlias.name'),
+          desc: t('settings.alias.addAlias.desc'),
+          control: {
+            type: 'toggle',
+            key: 'aliases.enableAliases',
+          },
+        },
+        // Desktop-only: the caveats it lists have no mobile equivalent.
+        buildDescRow(buildLimitationsNote(), {
+          visible: () => aliasesEnabled() && !Platform.isMobile,
+        }),
+      ],
     },
     {
-      // Empty input silently falls back to `aliases`, which `validate` cannot
-      // express — it rejects rather than corrects. Hence `render`, not `control`.
+      // `render`, not `control`: `SettingControlBase` exposes only `key`,
+      // `defaultValue`, `validate` and `disabled`, so it can express neither
+      // the restore button nor the visibility refresh this row needs on change.
       visible: aliasesEnabled,
       name: t('settings.alias.aliasPropertyName.name'),
       desc: buildAliasPropertyKeyDescription(),
@@ -111,6 +123,10 @@ export function buildAliasPage(
             'aliasPropertyKey',
             plugin.settings.aliases.aliasPropertyKey
           );
+          // Nothing else reaches property visibility on a key change: the
+          // cascade map only fires for `control` rows. Without this, clearing
+          // the key would leave the old key's properties hidden.
+          plugin.updatePropertyVisibility?.();
           try {
             await plugin.saveSettings();
           } catch {
@@ -136,10 +152,16 @@ export function buildAliasPage(
 
           // Native dims through `aria-disabled` and leaves the button
           // clickable, since restoring to the current value does nothing.
+          // Gauged on the FIELD, not the stored value: an empty field stores
+          // the default, but restoring still visibly repopulates the box, so
+          // dimming there would misrepresent a button that does something.
           syncRestoreState = () => {
+            const shown =
+              textComponent?.getValue() ??
+              plugin.settings.aliases.aliasPropertyKey;
             button.extraSettingsEl.setAttribute(
               'aria-disabled',
-              String(plugin.settings.aliases.aliasPropertyKey === defaultKey)
+              String(shown === defaultKey)
             );
           };
         });
@@ -147,13 +169,14 @@ export function buildAliasPage(
         setting.addText((text) => {
           textComponent = text;
           text
-            .setPlaceholder(t('settings.replaceCharacters.emptyPlaceholder'))
+            .setPlaceholder(t('settings.alias.aliasPropertyName.placeholder'))
             .setValue(plugin.settings.aliases.aliasPropertyKey)
             .onChange(async (value) => {
-              // Empty falls back to the default rather than being rejected,
-              // so the button dims on an empty field too.
-              plugin.settings.aliases.aliasPropertyKey =
-                value.trim() || defaultKey;
+              // Stored as typed, empty included, so the field keeps what the
+              // user put in it. An empty key is a valid choice meaning "no
+              // alias property": both `alias-manager.ts` and
+              // `property-visibility.ts` no-op entirely on it.
+              plugin.settings.aliases.aliasPropertyKey = value.trim();
               syncRestoreState();
               await persist();
             });
@@ -164,11 +187,11 @@ export function buildAliasPage(
     },
     {
       visible: aliasesEnabled,
-      name: t('settings.alias.onlyAddIfDiffers.name'),
-      desc: t('settings.alias.onlyAddIfDiffers.desc'),
+      name: t('settings.alias.addAliasOnlyIfTitleDiffers.name'),
+      desc: t('settings.alias.addAliasOnlyIfTitleDiffers.desc'),
       control: {
         type: 'toggle',
-        key: 'aliases.addAliasOnlyIfFirstLineDiffers',
+        key: 'aliases.addAliasOnlyIfTitleDiffers',
       },
     },
     {
@@ -182,15 +205,16 @@ export function buildAliasPage(
     },
     {
       visible: aliasesEnabled,
-      name: t('settings.alias.applyCustomRules.name'),
+      name: t('settings.alias.applyCustomReplacements.name'),
       desc: buildLabelReferenceDescription(
-        'settings.alias.applyCustomRules.desc',
-        'customRules'
+        'settings.alias.applyCustomReplacements.desc',
+        'customReplacements'
       ),
       control: {
         type: 'toggle',
-        key: 'markupStripping.applyCustomRulesInAlias',
-        disabled: () => !plugin.settings.customRules.enableCustomReplacements,
+        key: 'markupStripping.applyCustomReplacementsInAlias',
+        disabled: () =>
+          !plugin.settings.customReplacements.enableCustomReplacements,
       },
     },
     {
@@ -207,8 +231,8 @@ export function buildAliasPage(
     },
     {
       visible: aliasesEnabled,
-      name: t('settings.alias.keepEmptyProperty.name'),
-      desc: t('settings.alias.keepEmptyProperty.desc'),
+      name: t('settings.alias.keepEmptyAliasProperty.name'),
+      desc: t('settings.alias.keepEmptyAliasProperty.desc'),
       control: {
         type: 'toggle',
         key: 'aliases.keepEmptyAliasProperty',
@@ -225,15 +249,15 @@ export function buildAliasPage(
     },
     {
       visible: aliasesEnabled,
-      name: t('settings.alias.hideProperty.name'),
-      desc: t('settings.alias.hideProperty.desc'),
+      name: t('settings.alias.hideAliasProperty.name'),
+      desc: t('settings.alias.hideAliasProperty.desc'),
       control: {
         type: 'dropdown',
         key: 'aliases.hideAliasProperty',
         options: {
-          never: t('settings.alias.hideProperty.never'),
-          when_empty: t('settings.alias.hideProperty.onlyWhenEmpty'),
-          always: t('settings.alias.hideProperty.always'),
+          never: t('settings.alias.hideAliasProperty.never'),
+          when_empty: t('settings.alias.hideAliasProperty.onlyWhenEmpty'),
+          always: t('settings.alias.hideAliasProperty.always'),
         },
       },
     },
@@ -250,21 +274,18 @@ export function buildAliasPage(
         key: 'aliases.hideAliasInSidebar',
       },
     },
-    {
-      // Desktop-only: the caveats it lists have no mobile equivalent.
-      type: 'group',
-      heading: t('settings.alias.limitations.title'),
-      visible: () => aliasesEnabled() && !Platform.isMobile,
-      items: [buildDescRow(buildLimitationsNote())],
-    },
   ];
 
   items.push(buildPluginLinkRouterGroup(plugin.app));
 
   return {
     type: 'page',
-    name: t('settings.tabs.alias'),
+    name: t('settings.sections.alias'),
     desc: t('settings.alias.desc'),
+    // Blank rather than "Disabled" when off, matching the rule-count rows: the
+    // value summarises what is active, and absence already reads as inactive.
+    displayValue: () =>
+      plugin.settings.aliases.enableAliases ? t('settings.common.enabled') : '',
     items,
   };
 }

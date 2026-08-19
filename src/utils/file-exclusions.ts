@@ -8,6 +8,7 @@ import {
 import {
   EXCLUSION_STRATEGY,
   ExclusionStrategy,
+  FileNameExclusion,
   PluginSettings,
 } from '../types';
 import { filterNonEmpty, isRootFolderPath } from './string-processing';
@@ -47,7 +48,7 @@ export function isFileInConfiguredFolders(
   }
 
   // Check subfolders if enabled
-  if (settings.exclusions.excludeSubfolders) {
+  if (settings.exclusions.matchSubfolders) {
     for (const folder of nonEmptyFolders) {
       // Root folder "/" has no subfolders to check
       if (folder === '/') continue;
@@ -162,6 +163,30 @@ export function fileHasExcludedProperties(
 }
 
 /**
+ * Applies one exclusion strategy to one detector's verdict.
+ * Returns TRUE if the file should be EXCLUDED (don't process).
+ *
+ * - "Only exclude...": exclude what the list matches. An empty list excludes nothing.
+ * - "Exclude all except...": exclude what the list does NOT match. An empty list excludes
+ *   everything — there is no listed target to spare.
+ *
+ * Shared by every exclusion type, file names included, so the inversion and the empty-list
+ * behaviour cannot drift between sections. `hasTargets` must be computed with the same
+ * filter its own detector applies: if it counts rules the detector ignores, "Exclude all
+ * except..." excludes every file while no rule can ever match one.
+ */
+function shouldExcludeUnderStrategy(
+  isTargeted: boolean,
+  hasTargets: boolean,
+  strategy: ExclusionStrategy
+): boolean {
+  if (strategy === EXCLUSION_STRATEGY.ONLY_EXCLUDE) {
+    return hasTargets ? isTargeted : false;
+  }
+  return hasTargets ? !isTargeted : true;
+}
+
+/**
  * Determines whether a file should be processed based on the include/exclude strategy
  *
  * Logic summary:
@@ -192,31 +217,12 @@ export function shouldProcessFile(
   },
   plugin?: { settings: PluginSettings }
 ): boolean {
-  // Helper function to apply strategy logic for a single exclusion type
-  // Returns TRUE if file should be EXCLUDED (don't process)
-  const applyStrategy = (
-    isTargeted: boolean,
-    hasTargets: boolean,
-    strategy: ExclusionStrategy
-  ): boolean => {
-    if (strategy === EXCLUSION_STRATEGY.ONLY_EXCLUDE) {
-      // Only exclude: exclude files matching the targets
-      // If no targets specified, don't exclude anything (process all)
-      return hasTargets ? isTargeted : false;
-    } else {
-      // 'Exclude all except...'
-      // Exclude all except: exclude files NOT matching the targets
-      // If no targets specified, exclude everything (process none)
-      return hasTargets ? !isTargeted : true;
-    }
-  };
-
   // Apply strategy for each exclusion type independently, respecting overrides.
   // Each detector is called inside its branch, not hoisted: the bulk-rename path passes
   // all three overrides, and each detector walks the metadata cache per file.
   const shouldExcludeFromFolders = exclusionOverrides?.ignoreFolder
     ? false
-    : applyStrategy(
+    : shouldExcludeUnderStrategy(
         isFileInConfiguredFolders(file, settings),
         settings.exclusions.excludedFolders.some(
           (folder) => folder.trim() !== ''
@@ -226,7 +232,7 @@ export function shouldProcessFile(
 
   const shouldExcludeFromTags = exclusionOverrides?.ignoreTag
     ? false
-    : applyStrategy(
+    : shouldExcludeUnderStrategy(
         fileHasTargetTags(file, settings, app, content),
         settings.exclusions.excludedTags.some((tag) => tag.trim() !== ''),
         settings.exclusions.tagScopeStrategy
@@ -234,7 +240,7 @@ export function shouldProcessFile(
 
   const shouldExcludeFromProperties = exclusionOverrides?.ignoreProperty
     ? false
-    : applyStrategy(
+    : shouldExcludeUnderStrategy(
         fileHasExcludedProperties(file, settings, app, content),
         settings.exclusions.excludedProperties.some(
           (prop) => prop.key.trim() !== ''
@@ -243,7 +249,7 @@ export function shouldProcessFile(
       );
 
   // Log exclusion reasons if verbose logging enabled
-  if (plugin?.settings.core.verboseLogging) {
+  if (plugin?.settings.core.debug) {
     const reasons: string[] = [];
     if (shouldExcludeFromFolders)
       reasons.push(`folder (${settings.exclusions.folderScopeStrategy})`);
@@ -266,6 +272,23 @@ export function shouldProcessFile(
   );
 }
 
+/**
+ * A file-name rule the matcher will actually act on. Disabled rows and rows with no text
+ * are inert, so they must not count as targets either — see `shouldExcludeUnderStrategy`.
+ */
+function isActiveFileNameExclusion(exclusion: FileNameExclusion): boolean {
+  return exclusion.enabled && Boolean(exclusion.text);
+}
+
+/** The `hasTargets` half of the file-name strategy: is any rule live? */
+function hasActiveFileNameExclusions(settings: PluginSettings): boolean {
+  return settings.exclusions.excludedFileNames.some(isActiveFileNameExclusion);
+}
+
+/**
+ * Raw matcher: does the name match any live rule? Strategy-agnostic — callers gating a
+ * rename want `isExcludedByFileName`, which reads the user's exclusion mode.
+ */
 export function containsFileNameExclusion(
   filename: string,
   settings: PluginSettings
@@ -273,8 +296,8 @@ export function containsFileNameExclusion(
   // Get filename without extension for comparison
   const filenameWithoutExt = filename.replace(/\.md$/, '');
 
-  for (const exclusion of settings.exclusions.fileNameExclusions) {
-    if (!exclusion.enabled || !exclusion.text) continue;
+  for (const exclusion of settings.exclusions.excludedFileNames) {
+    if (!isActiveFileNameExclusion(exclusion)) continue;
 
     // Check against both full filename and filename without extension
     const compareFullFilename = exclusion.caseSensitive
@@ -308,4 +331,24 @@ export function containsFileNameExclusion(
     }
   }
   return false;
+}
+
+/**
+ * Should this file be skipped because of its name?
+ *
+ * Wraps the raw matcher in `fileNameScopeStrategy` so the list reads either as a blacklist
+ * ("Only exclude...") or as an allow-list ("Exclude all except..."), exactly as the folder,
+ * tag and property lists do. Deliberately not folded into `shouldProcessFile`: callers run
+ * this first because it reads only the name — no YAML parsing — and report it as its own
+ * skip reason.
+ */
+export function isExcludedByFileName(
+  filename: string,
+  settings: PluginSettings
+): boolean {
+  return shouldExcludeUnderStrategy(
+    containsFileNameExclusion(filename, settings),
+    hasActiveFileNameExclusions(settings),
+    settings.exclusions.fileNameScopeStrategy
+  );
 }

@@ -18,7 +18,7 @@ describe('shipped defaults', () => {
   it('inserts the title into new notes and moves the cursor there', () => {
     // Both were off historically; turning them on changes what happens on
     // every note creation, including for users upgrading without a stored value.
-    expect(DEFAULT_SETTINGS.core.insertTitleOnCreation).toBe(true);
+    expect(DEFAULT_SETTINGS.core.insertTitle).toBe(true);
     expect(DEFAULT_SETTINGS.core.moveCursorToFirstLine).toBe(true);
   });
 
@@ -26,10 +26,10 @@ describe('shipped defaults', () => {
     // These amplify title insertion; both staying off is what keeps the
     // default-on insertion behaviour conservative.
     expect(
-      DEFAULT_SETTINGS.replaceCharacters.enableForbiddenCharReplacements
+      DEFAULT_SETTINGS.characterReplacements.enableForbiddenCharReplacements
     ).toBe(false);
-    expect(DEFAULT_SETTINGS.markupStripping.addHeadingToTitle).toBe(false);
-    expect(DEFAULT_SETTINGS.customRules.enableCustomReplacements).toBe(false);
+    expect(DEFAULT_SETTINGS.core.formatAsHeading).toBe(false);
+    expect(DEFAULT_SETTINGS.customReplacements.enableCustomReplacements).toBe(false);
   });
 
   it('does not delay or throttle note processing by default', () => {

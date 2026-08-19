@@ -6,7 +6,7 @@
 // - No !important: overrides win by qualifying the selector with the element's
 //   own class/tag instead, so a theme cannot flip them via stylesheet order
 // - No :has(): framework-owned ancestors are tagged with marker classes from JS
-//   (flit-settings-page-host, flit-add-item-row-box, flit-add-item-row-group)
+//   (flit-settings-page-host)
 // - State class (.flit-row-disabled) controls per-row opacity/pointer-events
 
 // Modals and tables

@@ -287,7 +287,7 @@ export class FolderOperations {
     const files: TFile[] = [];
 
     // Always recurse: the removed exclusions.includeSubfolders key was permanently true, and
-    // reusing excludeSubfolders here would let an Exclusions setting govern folder-menu bulk renames
+    // reusing matchSubfolders here would let an Exclusions setting govern folder-menu bulk renames
     const processFolder = (currentFolder: TFolder) => {
       currentFolder.children.forEach((child) => {
         if (child instanceof TFile && child.extension === 'md') {

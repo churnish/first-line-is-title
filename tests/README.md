@@ -33,7 +33,7 @@ tests/
 │   ├── plugin-links.test.ts
 │   ├── settings-main.test.ts
 │   ├── settings-paths.test.ts
-│   └── tab-general.test.ts
+│   └── general.test.ts
 └── utils/                      # Utility module tests
     ├── content-reader.test.ts
     ├── debug.test.ts

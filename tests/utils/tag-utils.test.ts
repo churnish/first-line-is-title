@@ -266,7 +266,7 @@ describe('tag-utils', () => {
       file = createMockFile('test.md');
       settings.exclusions.excludedTags = ['work', 'important'];
       settings.exclusions.tagMatchingMode = 'In Properties and note body';
-      settings.exclusions.excludeChildTags = true;
+      settings.exclusions.matchSubtags = true;
     });
 
     it('should return false when no target tags configured', () => {
@@ -321,8 +321,8 @@ describe('tag-utils', () => {
       expect(result).toBe(true);
     });
 
-    it('should detect child tags when excludeChildTags is true', () => {
-      settings.exclusions.excludeChildTags = true;
+    it('should detect subtags when matchSubtags is true', () => {
+      settings.exclusions.matchSubtags = true;
       app.metadataCache.getFileCache = vi.fn().mockReturnValue({
         frontmatter: { tags: ['work/project/backend'] },
         tags: [],
@@ -332,8 +332,8 @@ describe('tag-utils', () => {
       expect(result).toBe(true);
     });
 
-    it('should not detect child tags when excludeChildTags is false', () => {
-      settings.exclusions.excludeChildTags = false;
+    it('should not detect subtags when matchSubtags is false', () => {
+      settings.exclusions.matchSubtags = false;
       app.metadataCache.getFileCache = vi.fn().mockReturnValue({
         frontmatter: { tags: ['work/project'] },
         tags: [],
@@ -422,7 +422,7 @@ describe('tag-utils', () => {
       expect(result).toBe(true);
     });
 
-    it('should detect exact match before child tag check', () => {
+    it('should detect exact match before subtag check', () => {
       settings.exclusions.excludedTags = ['work'];
       app.metadataCache.getFileCache = vi.fn().mockReturnValue({
         frontmatter: { tags: ['work'] },
@@ -463,7 +463,7 @@ describe('tag-utils', () => {
       expect(result).toBe(true);
     });
 
-    it('should match inline child tags case-insensitively', () => {
+    it('should match inline subtags case-insensitively', () => {
       settings.exclusions.excludedTags = ['WORK'];
       app.metadataCache.getFileCache = vi.fn().mockReturnValue({
         frontmatter: null,

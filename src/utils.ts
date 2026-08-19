@@ -30,6 +30,7 @@ export {
   fileHasExcludedProperties,
   shouldProcessFile,
   containsFileNameExclusion,
+  isExcludedByFileName,
 } from './utils/file-exclusions';
 
 // Re-export from PropertyManager (wrapped to avoid unbound-method warning)
@@ -41,7 +42,7 @@ export function verboseLog(
   message: string,
   data?: unknown
 ) {
-  if (plugin.settings.core.verboseLogging) {
+  if (plugin.settings.core.debug) {
     if (data) {
       console.debug(message, data);
     } else {
@@ -175,6 +176,7 @@ export function canModifyFile(
 // - fileHasExcludedProperties → utils/file-exclusions.ts
 // - shouldProcessFile → utils/file-exclusions.ts
 // - containsFileNameExclusion → utils/file-exclusions.ts
+// - isExcludedByFileName → utils/file-exclusions.ts
 // - deepMerge → utils/deep-merge.ts
 
 export function hasDisablePropertyInFile(
@@ -309,8 +311,8 @@ export function extractTitle(
   let escapeCounter = 0;
 
   const backslashReplacementEnabled =
-    settings.replaceCharacters.enableForbiddenCharReplacements &&
-    settings.replaceCharacters.charReplacements.backslash.enabled;
+    settings.characterReplacements.enableForbiddenCharReplacements &&
+    settings.characterReplacements.charReplacements.backslash.enabled;
 
   // Check for placeholder collision (extremely rare - user would need to type exact Unicode chars)
   const hasPlaceholderCollision = line.includes('⸢FLITESC');
@@ -848,7 +850,7 @@ export function reverseCharacterReplacements(
   plugin?: { settings: PluginSettings },
   options?: { restoreTrimmedSpacing?: boolean }
 ): string {
-  if (!settings.core.convertReplacementCharactersInTitle) {
+  if (!settings.core.convertReplacementChars) {
     return text;
   }
 
@@ -858,7 +860,7 @@ export function reverseCharacterReplacements(
   const replacementCounts = new Map<string, number>();
   const enabledReplacements: string[] = [];
   for (const settingKey of Object.values(CHAR_TO_SETTING_KEY)) {
-    const replacement = settings.replaceCharacters.charReplacements[settingKey];
+    const replacement = settings.characterReplacements.charReplacements[settingKey];
     if (replacement.enabled && replacement.replacement) {
       replacementCounts.set(
         replacement.replacement,
@@ -879,7 +881,7 @@ export function reverseCharacterReplacements(
   for (const [originalChar, settingKey] of Object.entries(
     CHAR_TO_SETTING_KEY
   )) {
-    const replacement = settings.replaceCharacters.charReplacements[settingKey];
+    const replacement = settings.characterReplacements.charReplacements[settingKey];
     if (replacement.enabled && replacement.replacement) {
       // Skip if this replacement string is used by multiple enabled characters (ambiguous)
       const count = replacementCounts.get(replacement.replacement) || 0;
@@ -1101,13 +1103,13 @@ export function normalizeExclusionLists(settings: PluginSettings): boolean {
 
   // Drop blank file name exclusions; they are not deduplicated because their
   // per-entry flags make two same-text entries meaningfully different
-  const fileNameExclusions = settings.exclusions.fileNameExclusions ?? [];
-  const originalFileNameCount = fileNameExclusions.length;
-  settings.exclusions.fileNameExclusions = fileNameExclusions.filter(
+  const excludedFileNames = settings.exclusions.excludedFileNames ?? [];
+  const originalFileNameCount = excludedFileNames.length;
+  settings.exclusions.excludedFileNames = excludedFileNames.filter(
     (exclusion) => exclusion.text.trim() !== ''
   );
 
-  if (settings.exclusions.fileNameExclusions.length !== originalFileNameCount) {
+  if (settings.exclusions.excludedFileNames.length !== originalFileNameCount) {
     hasChanges = true;
   }
 

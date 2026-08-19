@@ -28,10 +28,10 @@ export class PluginInitializer {
 
     // Custom replacements first-enable logic
     if (
-      this.settings.customRules.enableCustomReplacements &&
+      this.settings.customReplacements.enableCustomReplacements &&
       !this.settings.core.hasEnabledCustomReplacements
     ) {
-      this.settings.customRules.customReplacements.forEach((replacement) => {
+      this.settings.customReplacements.rules.forEach((replacement) => {
         replacement.enabled = true;
       });
       this.settings.core.hasEnabledCustomReplacements = true;
@@ -44,11 +44,11 @@ export class PluginInitializer {
 
     // Forbidden chars first-enable logic
     if (
-      this.settings.replaceCharacters.enableForbiddenCharReplacements &&
+      this.settings.characterReplacements.enableForbiddenCharReplacements &&
       !this.settings.core.hasEnabledForbiddenChars
     ) {
       FIRST_ENABLE_CHAR_KEYS.forEach((key) => {
-        this.settings.replaceCharacters.charReplacements[key].enabled = true;
+        this.settings.characterReplacements.charReplacements[key].enabled = true;
       });
       this.settings.core.hasEnabledForbiddenChars = true;
       settingsChanged = true;

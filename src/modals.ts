@@ -803,7 +803,7 @@ export class ProcessTagModal extends Modal {
   private normalizedTag: string;
   // The preview count and the run repeat the same full-vault metadata scan, and
   // the modal is too short-lived for the result to drift between them. Keyed by
-  // `includeChildTags` because the checkbox widens the match.
+  // `includeSubtags` because the checkbox widens the match.
   private matchingFilesCache = new Map<boolean, TFile[]>();
 
   constructor(app: App, plugin: FirstLineIsTitlePlugin, tag: string) {
@@ -814,24 +814,24 @@ export class ProcessTagModal extends Modal {
   }
 
   /** Every Markdown file carrying the tag, optionally widened to its subtags. */
-  private getMatchingFiles(includeChildTags: boolean): TFile[] {
-    const cached = this.matchingFilesCache.get(includeChildTags);
+  private getMatchingFiles(includeSubtags: boolean): TFile[] {
+    const cached = this.matchingFilesCache.get(includeSubtags);
     if (cached) return cached;
 
     const matches = this.app.vault
       .getMarkdownFiles()
-      .filter((file) => this.fileHasTag(file, includeChildTags));
-    this.matchingFilesCache.set(includeChildTags, matches);
+      .filter((file) => this.fileHasTag(file, includeSubtags));
+    this.matchingFilesCache.set(includeSubtags, matches);
     return matches;
   }
 
-  private fileHasTag(file: TFile, includeChildTags: boolean): boolean {
+  private fileHasTag(file: TFile, includeSubtags: boolean): boolean {
     const cache = this.app.metadataCache.getFileCache(file);
     const isMatch = (rawTag: string): boolean => {
       const normalized = normalizeTag(rawTag);
       return (
         normalized === this.normalizedTag ||
-        (includeChildTags && normalized.startsWith(`${this.normalizedTag}/`))
+        (includeSubtags && normalized.startsWith(`${this.normalizedTag}/`))
       );
     };
 
@@ -874,19 +874,19 @@ export class ProcessTagModal extends Modal {
     const optionsContainer = contentEl.createDiv({ cls: 'flit-modal-options' });
 
     // Rename notes with subtags checkbox
-    const childTagsContainer = optionsContainer.createDiv({
+    const subtagsContainer = optionsContainer.createDiv({
       cls: 'flit-checkbox-container',
     });
-    const childTagsCheckbox = childTagsContainer.createEl('input', {
+    const subtagsCheckbox = subtagsContainer.createEl('input', {
       type: 'checkbox',
     });
-    childTagsCheckbox.id = 'rename-child-tags';
-    childTagsCheckbox.checked =
-      this.plugin.settings.core.modalCheckboxStates.tagRename.includeChildTags;
+    subtagsCheckbox.id = 'rename-subtags';
+    subtagsCheckbox.checked =
+      this.plugin.settings.core.modalCheckboxStates.tagRename.includeSubtags;
 
-    const childTagsLabel = childTagsContainer.createEl('label');
-    childTagsLabel.setAttribute('for', 'rename-child-tags');
-    childTagsLabel.textContent = t('modals.renameWithChildTags');
+    const subtagsLabel = subtagsContainer.createEl('label');
+    subtagsLabel.setAttribute('for', 'rename-subtags');
+    subtagsLabel.textContent = t('modals.renameWithSubtags');
 
     // Rename excluded folders checkbox
     const excludedFoldersContainer = optionsContainer.createDiv({
@@ -943,8 +943,8 @@ export class ProcessTagModal extends Modal {
     renameButton.addClass('mod-cta');
     renameButton.onclick = async () => {
       // Save checkbox states only when command is run
-      this.plugin.settings.core.modalCheckboxStates.tagRename.includeChildTags =
-        childTagsCheckbox.checked;
+      this.plugin.settings.core.modalCheckboxStates.tagRename.includeSubtags =
+        subtagsCheckbox.checked;
       this.plugin.settings.core.modalCheckboxStates.tagRename.renameExcludedFolders =
         excludedFoldersCheckbox.checked;
       this.plugin.settings.core.modalCheckboxStates.tagRename.renameExcludedTags =
@@ -960,7 +960,7 @@ export class ProcessTagModal extends Modal {
 
       this.close();
       await this.processTagFiles(
-        childTagsCheckbox.checked,
+        subtagsCheckbox.checked,
         excludedFoldersCheckbox.checked,
         excludedTagsCheckbox.checked,
         excludedPropsCheckbox.checked
@@ -974,7 +974,7 @@ export class ProcessTagModal extends Modal {
   }
 
   async processTagFiles(
-    includeChildTags: boolean,
+    includeSubtags: boolean,
     renameExcludedFolders: boolean,
     renameExcludedTags: boolean,
     renameExcludedProperties: boolean
@@ -986,7 +986,7 @@ export class ProcessTagModal extends Modal {
     }
 
     // Copied because the sort below would otherwise reorder the cached list.
-    const filesToProcess = [...this.getMatchingFiles(includeChildTags)];
+    const filesToProcess = [...this.getMatchingFiles(includeSubtags)];
 
     if (filesToProcess.length === 0) {
       verboseLog(this.plugin, `No notes found with ${this.tag}`);

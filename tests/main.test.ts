@@ -1,16 +1,23 @@
 /**
  * Tests for FirstLineIsTitle.loadSettings.
  *
- * Covers the migrations that rewrite stored data before defaults are merged in.
- * They have to run pre-merge because deepMerge copies stored keys the defaults
- * lack, so anything left behind is written back to data.json on the next save.
+ * 4.0.0 dropped every per-key migration in favour of a one-time reset: stored data
+ * whose `dataSchemaVersion` is not the current one is discarded and replaced with the
+ * defaults. These cover both sides of that branch, and that the reset result is
+ * stamped with the current version so it does not reset again on the next load.
  */
 
 import { describe, it, expect, vi } from 'vitest';
 import type { App, PluginManifest } from 'obsidian';
 import FirstLineIsTitle from '../main';
+import {
+  CURRENT_DATA_SCHEMA_VERSION,
+  DEFAULT_SETTINGS,
+} from '../src/constants';
 
-type SettingsRecord = Record<string, Record<string, unknown>>;
+type SettingsRecord = Record<string, Record<string, unknown>> & {
+  dataSchemaVersion: number;
+};
 
 /** Runs loadSettings against the given data.json contents and returns the result. */
 async function loadStoredSettings(stored: unknown): Promise<SettingsRecord> {
@@ -24,115 +31,227 @@ async function loadStoredSettings(stored: unknown): Promise<SettingsRecord> {
 }
 
 describe('FirstLineIsTitle.loadSettings', () => {
-  describe('removed-key migration', () => {
-    it('strips core.preserveModificationDate', async () => {
+  describe('schema-version reset', () => {
+    it('discards stored settings when dataSchemaVersion is absent', async () => {
       const settings = await loadStoredSettings({
-        core: { preserveModificationDate: true },
+        core: { charCount: 42, renameAutomatically: false },
+        exclusions: { excludedFolders: ['Notes'] },
       });
 
-      expect('preserveModificationDate' in settings.core).toBe(false);
-    });
-
-    it('strips core.hasSetPropertyType', async () => {
-      const settings = await loadStoredSettings({
-        core: { hasSetPropertyType: false },
-      });
-
-      expect('hasSetPropertyType' in settings.core).toBe(false);
-    });
-
-    it('strips exclusions.includeSubfolders', async () => {
-      const settings = await loadStoredSettings({
-        exclusions: { includeSubfolders: true },
-      });
-
-      expect('includeSubfolders' in settings.exclusions).toBe(false);
-    });
-
-    it('strips exclusions.includeBodyTags', async () => {
-      const settings = await loadStoredSettings({
-        exclusions: { includeBodyTags: true },
-      });
-
-      expect('includeBodyTags' in settings.exclusions).toBe(false);
-    });
-
-    it('strips exclusions.includeNestedTags', async () => {
-      const settings = await loadStoredSettings({
-        exclusions: { includeNestedTags: true },
-      });
-
-      expect('includeNestedTags' in settings.exclusions).toBe(false);
-    });
-
-    it('strips every removed key from a single stored payload', async () => {
-      const settings = await loadStoredSettings({
-        core: { preserveModificationDate: true, hasSetPropertyType: true },
-        exclusions: {
-          includeSubfolders: true,
-          includeBodyTags: true,
-          includeNestedTags: true,
-        },
-      });
-
-      expect(Object.keys(settings.core)).not.toContain(
-        'preserveModificationDate'
+      expect(settings.core.charCount).toBe(DEFAULT_SETTINGS.core.charCount);
+      expect(settings.core.renameAutomatically).toBe(
+        DEFAULT_SETTINGS.core.renameAutomatically
       );
-      expect(Object.keys(settings.core)).not.toContain('hasSetPropertyType');
-      expect(Object.keys(settings.exclusions)).not.toContain(
-        'includeSubfolders'
-      );
-      expect(Object.keys(settings.exclusions)).not.toContain('includeBodyTags');
-      expect(Object.keys(settings.exclusions)).not.toContain(
-        'includeNestedTags'
+      expect(settings.exclusions.excludedFolders).toEqual(
+        DEFAULT_SETTINGS.exclusions.excludedFolders
       );
     });
 
-    it('is a no-op when no removed key is stored', async () => {
+    it('discards stored settings when dataSchemaVersion is an older number', async () => {
       const settings = await loadStoredSettings({
+        dataSchemaVersion: 3,
         core: { charCount: 42 },
+      });
+
+      expect(settings.core.charCount).toBe(DEFAULT_SETTINGS.core.charCount);
+    });
+
+    it('discards stored settings when dataSchemaVersion is a newer number', async () => {
+      const settings = await loadStoredSettings({
+        dataSchemaVersion: 5,
+        core: { charCount: 42 },
+      });
+
+      expect(settings.core.charCount).toBe(DEFAULT_SETTINGS.core.charCount);
+    });
+
+    it('discards stored settings when dataSchemaVersion is the version as a string', async () => {
+      // The comparison is strict, so a stringified version is a mismatch like any other
+      const settings = await loadStoredSettings({
+        dataSchemaVersion: '4',
+        core: { charCount: 42 },
+      });
+
+      expect(settings.core.charCount).toBe(DEFAULT_SETTINGS.core.charCount);
+    });
+
+    it('drops flat legacy top-level keys rather than carrying them forward', async () => {
+      // Pre-nesting data.json files stored settings flat alongside the nested sections;
+      // deepMerge would copy any survivor back into data.json on the next save.
+      const settings = await loadStoredSettings({
+        excludedFolders: ['Templates'],
+        charCount: 60,
+        safewords: [{ text: 'keep' }],
+        commandVisibility: { renameCurrentFile: false },
+      });
+
+      expect('excludedFolders' in settings).toBe(false);
+      expect('charCount' in settings).toBe(false);
+      expect('safewords' in settings).toBe(false);
+      expect('commandVisibility' in settings).toBe(false);
+    });
+
+    it('resets the exclusion-setup flag so auto-detection runs again', async () => {
+      const settings = await loadStoredSettings({
+        core: { hasSetupExclusions: true },
+      });
+
+      expect(settings.core.hasSetupExclusions).toBe(false);
+    });
+
+    it('starts from the defaults when there is no stored data at all', async () => {
+      const settings = await loadStoredSettings(null);
+
+      expect(settings.core.charCount).toBe(DEFAULT_SETTINGS.core.charCount);
+      expect(settings.dataSchemaVersion).toBe(CURRENT_DATA_SCHEMA_VERSION);
+    });
+
+    it('does not hand out the shared DEFAULT_SETTINGS object', async () => {
+      // Settings are mutated in place (osPreset on every load), so a shared reference
+      // would leak one vault's state into the module-level defaults.
+      const settings = await loadStoredSettings({});
+
+      expect(settings).not.toBe(DEFAULT_SETTINGS);
+      expect(settings.core).not.toBe(DEFAULT_SETTINGS.core);
+      expect(settings.exclusions).not.toBe(DEFAULT_SETTINGS.exclusions);
+    });
+  });
+
+  describe('current-schema merge', () => {
+    it('preserves stored values when dataSchemaVersion matches', async () => {
+      const settings = await loadStoredSettings({
+        dataSchemaVersion: CURRENT_DATA_SCHEMA_VERSION,
+        core: { charCount: 42, renameAutomatically: false },
         exclusions: { excludedFolders: ['Notes'] },
       });
 
       expect(settings.core.charCount).toBe(42);
+      expect(settings.core.renameAutomatically).toBe(false);
       expect(settings.exclusions.excludedFolders).toEqual(['Notes']);
     });
 
-    it('leaves unrelated stored keys untouched', async () => {
+    it('fills unstored keys from the defaults', async () => {
       const settings = await loadStoredSettings({
-        core: {
-          charCount: 42,
-          preserveModificationDate: true,
-          unknownFutureKey: 'kept',
-        },
-        exclusions: {
-          includeBodyTags: true,
-          excludedTags: ['project'],
-        },
+        dataSchemaVersion: CURRENT_DATA_SCHEMA_VERSION,
+        core: { charCount: 42 },
       });
 
       expect(settings.core.charCount).toBe(42);
-      expect(settings.core.unknownFutureKey).toBe('kept');
-      expect(settings.exclusions.excludedTags).toEqual(['project']);
+      expect(settings.core.insertTitle).toBe(DEFAULT_SETTINGS.core.insertTitle);
+      expect(settings.aliases.aliasPropertyKey).toBe(
+        DEFAULT_SETTINGS.aliases.aliasPropertyKey
+      );
     });
 
-    it('keeps the identically named modal checkbox state', async () => {
-      // core.modalCheckboxStates.folderRename.includeSubfolders is a live setting;
-      // only the exclusions-level key of the same name was removed
+    it('keeps the exclusion-setup flag that was already set', async () => {
       const settings = await loadStoredSettings({
-        core: {
-          modalCheckboxStates: { folderRename: { includeSubfolders: false } },
-        },
-        exclusions: { includeSubfolders: true },
+        dataSchemaVersion: CURRENT_DATA_SCHEMA_VERSION,
+        core: { hasSetupExclusions: true },
       });
 
-      const modalStates = settings.core.modalCheckboxStates as Record<
-        string,
-        Record<string, unknown>
-      >;
-
-      expect(modalStates.folderRename.includeSubfolders).toBe(false);
-      expect('includeSubfolders' in settings.exclusions).toBe(false);
+      expect(settings.core.hasSetupExclusions).toBe(true);
     });
+  });
+
+  describe('reset result', () => {
+    it('carries the current dataSchemaVersion after a reset', async () => {
+      const settings = await loadStoredSettings({
+        core: { charCount: 42 },
+      });
+
+      expect(settings.dataSchemaVersion).toBe(CURRENT_DATA_SCHEMA_VERSION);
+    });
+
+    it('does not reset a second time once the version has been written', async () => {
+      // Feeding the reset result back in is what the next plugin load does, so a value
+      // stored after the reset must survive it.
+      const reset = await loadStoredSettings({ core: { charCount: 42 } });
+      reset.core.charCount = 42;
+
+      const reloaded = await loadStoredSettings(reset);
+
+      expect(reloaded.core.charCount).toBe(42);
+      expect(reloaded.dataSchemaVersion).toBe(CURRENT_DATA_SCHEMA_VERSION);
+    });
+  });
+});
+
+describe('pre-4.0.0 settings backup', () => {
+  /** loadSettings against a stubbed adapter, reporting what it wrote where. */
+  async function loadWithAdapter(
+    stored: unknown,
+    opts: { readFails?: boolean; dir?: string | undefined } = {}
+  ) {
+    const writes: Record<string, string> = {};
+    const adapter = {
+      read: vi.fn(async (p: string) => {
+        if (opts.readFails) throw new Error('unreadable');
+        return JSON.stringify(stored);
+      }),
+      write: vi.fn(async (p: string, data: string) => {
+        writes[p] = data;
+      }),
+    };
+    const app = { vault: { adapter } } as unknown as App;
+    const manifest = {
+      dir: 'dir' in opts ? opts.dir : '.obsidian/plugins/first-line-is-title',
+    } as PluginManifest;
+
+    const plugin = new FirstLineIsTitle(app, manifest);
+    // The mocked Plugin base ignores its constructor arguments and builds its
+    // own app/manifest, so these have to be assigned after construction.
+    plugin.app = app;
+    plugin.manifest = manifest;
+    plugin.loadData = vi.fn().mockResolvedValue(stored);
+    plugin.saveData = vi.fn().mockResolvedValue(undefined);
+    await plugin.loadSettings();
+    return { plugin, writes, adapter };
+  }
+
+  it('copies data.json aside before discarding a pre-4.0.0 file', async () => {
+    const { writes } = await loadWithAdapter({
+      renameNotes: 'automatically',
+      core: { charCount: 42 },
+    });
+
+    expect(
+      writes['.obsidian/plugins/first-line-is-title/data_backup.json']
+    ).toContain('renameNotes');
+  });
+
+  it('writes no backup for a genuinely new install', async () => {
+    // Nothing stored means nothing to lose; a backup here would be an empty file
+    // and would wrongly make a new user look like an upgrader.
+    const { adapter } = await loadWithAdapter({});
+    expect(adapter.write).not.toHaveBeenCalled();
+  });
+
+  it('writes no backup when the stored file is already current', async () => {
+    const { adapter } = await loadWithAdapter({
+      dataSchemaVersion: CURRENT_DATA_SCHEMA_VERSION,
+      core: { charCount: 42 },
+    });
+    expect(adapter.write).not.toHaveBeenCalled();
+  });
+
+  it('still resets when the backup cannot be written', async () => {
+    // Losing the backup must not block the reset, or a corrupt data.json would
+    // wedge the plugin on every load.
+    const { plugin } = await loadWithAdapter(
+      { renameNotes: 'automatically', core: { charCount: 42 } },
+      { readFails: true }
+    );
+    expect(plugin.settings.core.charCount).toBe(
+      DEFAULT_SETTINGS.core.charCount
+    );
+  });
+
+  it('resets without a backup when the plugin folder is unknown', async () => {
+    const { plugin, adapter } = await loadWithAdapter(
+      { renameNotes: 'automatically', core: { charCount: 42 } },
+      { dir: undefined }
+    );
+    expect(adapter.read).not.toHaveBeenCalled();
+    expect(plugin.settings.dataSchemaVersion).toBe(CURRENT_DATA_SCHEMA_VERSION);
   });
 });

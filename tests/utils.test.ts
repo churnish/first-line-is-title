@@ -35,7 +35,7 @@ describe('utils', () => {
     });
 
     it('should log when verbose logging is enabled', () => {
-      settings.core.verboseLogging = true;
+      settings.core.debug = true;
       const plugin = { settings };
 
       verboseLog(plugin, 'Test message');
@@ -44,7 +44,7 @@ describe('utils', () => {
     });
 
     it('should log with data when provided', () => {
-      settings.core.verboseLogging = true;
+      settings.core.debug = true;
       const plugin = { settings };
       const data = { foo: 'bar' };
 
@@ -54,7 +54,7 @@ describe('utils', () => {
     });
 
     it('should not log when verbose logging is disabled', () => {
-      settings.core.verboseLogging = false;
+      settings.core.debug = false;
       const plugin = { settings };
 
       verboseLog(plugin, 'Test message');
@@ -380,7 +380,7 @@ describe('utils', () => {
 
   describe('containsFileNameExclusion', () => {
     beforeEach(() => {
-      settings.exclusions.fileNameExclusions = [
+      settings.exclusions.excludedFileNames = [
         {
           text: 'draft',
           onlyAtStart: false,
@@ -392,7 +392,7 @@ describe('utils', () => {
     });
 
     it('should return false when the individual exclusion is disabled', () => {
-      settings.exclusions.fileNameExclusions[0].enabled = false;
+      settings.exclusions.excludedFileNames[0].enabled = false;
 
       expect(containsFileNameExclusion('draft note.md', settings)).toBe(false);
     });
@@ -411,21 +411,21 @@ describe('utils', () => {
     });
 
     it('should respect case sensitivity when enabled', () => {
-      settings.exclusions.fileNameExclusions[0].caseSensitive = true;
+      settings.exclusions.excludedFileNames[0].caseSensitive = true;
 
       expect(containsFileNameExclusion('draft note.md', settings)).toBe(true);
       expect(containsFileNameExclusion('DRAFT note.md', settings)).toBe(false);
     });
 
     it('should match only at start when onlyAtStart is true', () => {
-      settings.exclusions.fileNameExclusions[0].onlyAtStart = true;
+      settings.exclusions.excludedFileNames[0].onlyAtStart = true;
 
       expect(containsFileNameExclusion('draft note.md', settings)).toBe(true);
       expect(containsFileNameExclusion('my draft.md', settings)).toBe(false);
     });
 
     it('should match whole line when onlyWholeLine is true', () => {
-      settings.exclusions.fileNameExclusions[0].onlyWholeLine = true;
+      settings.exclusions.excludedFileNames[0].onlyWholeLine = true;
 
       expect(containsFileNameExclusion('draft.md', settings)).toBe(true);
       expect(containsFileNameExclusion('draft', settings)).toBe(true);
@@ -433,13 +433,13 @@ describe('utils', () => {
     });
 
     it('should skip disabled file name exclusions', () => {
-      settings.exclusions.fileNameExclusions[0].enabled = false;
+      settings.exclusions.excludedFileNames[0].enabled = false;
 
       expect(containsFileNameExclusion('draft note.md', settings)).toBe(false);
     });
 
     it('should skip empty file name exclusions', () => {
-      settings.exclusions.fileNameExclusions = [
+      settings.exclusions.excludedFileNames = [
         {
           text: '',
           onlyAtStart: false,
@@ -453,7 +453,7 @@ describe('utils', () => {
     });
 
     it('should check multiple file name exclusions', () => {
-      settings.exclusions.fileNameExclusions = [
+      settings.exclusions.excludedFileNames = [
         {
           text: 'draft',
           onlyAtStart: false,
@@ -478,7 +478,7 @@ describe('utils', () => {
     });
 
     it('should handle file name exclusions with special characters', () => {
-      settings.exclusions.fileNameExclusions = [
+      settings.exclusions.excludedFileNames = [
         {
           text: '[draft]',
           onlyAtStart: false,
@@ -492,8 +492,8 @@ describe('utils', () => {
     });
 
     it('should trim filenames and file name exclusions for whole line comparison', () => {
-      settings.exclusions.fileNameExclusions[0].onlyWholeLine = true;
-      settings.exclusions.fileNameExclusions[0].text = '  draft  ';
+      settings.exclusions.excludedFileNames[0].onlyWholeLine = true;
+      settings.exclusions.excludedFileNames[0].text = '  draft  ';
 
       expect(containsFileNameExclusion('  draft  .md', settings)).toBe(true);
     });
@@ -772,7 +772,7 @@ describe('utils', () => {
       settings.exclusions.excludedFolders = [];
       settings.exclusions.excludedTags = [];
       settings.exclusions.excludedProperties = [];
-      settings.exclusions.fileNameExclusions = [];
+      settings.exclusions.excludedFileNames = [];
     });
 
     describe('blank entry removal', () => {
@@ -833,14 +833,14 @@ describe('utils', () => {
       });
 
       it('should remove file name exclusions with blank text', () => {
-        settings.exclusions.fileNameExclusions = [
+        settings.exclusions.excludedFileNames = [
           makeFileNameExclusion({ text: '' }),
           makeFileNameExclusion({ text: 'draft' }),
           makeFileNameExclusion({ text: '  ' }),
         ];
 
         expect(normalizeExclusionLists(settings)).toBe(true);
-        expect(settings.exclusions.fileNameExclusions).toEqual([
+        expect(settings.exclusions.excludedFileNames).toEqual([
           makeFileNameExclusion({ text: 'draft' }),
         ]);
       });
@@ -853,14 +853,14 @@ describe('utils', () => {
           enabled: false,
           caseSensitive: true,
         });
-        settings.exclusions.fileNameExclusions = [
+        settings.exclusions.excludedFileNames = [
           makeFileNameExclusion({ text: '' }),
           kept,
         ];
 
         normalizeExclusionLists(settings);
 
-        expect(settings.exclusions.fileNameExclusions).toEqual([kept]);
+        expect(settings.exclusions.excludedFileNames).toEqual([kept]);
       });
 
       it('should collapse an all-blank list to an empty array', () => {
@@ -911,13 +911,13 @@ describe('utils', () => {
       });
 
       it('should not deduplicate file name exclusions', () => {
-        settings.exclusions.fileNameExclusions = [
+        settings.exclusions.excludedFileNames = [
           makeFileNameExclusion({ text: 'draft' }),
           makeFileNameExclusion({ text: 'draft', onlyAtStart: true }),
         ];
 
         expect(normalizeExclusionLists(settings)).toBe(false);
-        expect(settings.exclusions.fileNameExclusions).toHaveLength(2);
+        expect(settings.exclusions.excludedFileNames).toHaveLength(2);
       });
     });
 
@@ -928,7 +928,7 @@ describe('utils', () => {
         settings.exclusions.excludedProperties = [
           { key: 'status', value: 'draft' },
         ];
-        settings.exclusions.fileNameExclusions = [makeFileNameExclusion()];
+        settings.exclusions.excludedFileNames = [makeFileNameExclusion()];
 
         expect(normalizeExclusionLists(settings)).toBe(false);
       });
@@ -947,7 +947,7 @@ describe('utils', () => {
       key: CharKey,
       overrides: Partial<CharReplacementConfig> = {}
     ) => {
-      const config = settings.replaceCharacters.charReplacements[key];
+      const config = settings.characterReplacements.charReplacements[key];
       config.enabled = true;
       Object.assign(config, overrides);
       return config;
@@ -1005,7 +1005,7 @@ describe('utils', () => {
       });
 
       it('leaves text untouched when title conversion is off', () => {
-        settings.core.convertReplacementCharactersInTitle = false;
+        settings.core.convertReplacementChars = false;
         enableChar('slash');
 
         expect(reverseCharacterReplacements('a ∕ b', settings)).toBe('a ∕ b');

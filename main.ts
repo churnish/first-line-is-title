@@ -1,7 +1,7 @@
-import { Notice, Plugin, TFile, TFolder } from 'obsidian';
+import { normalizePath, Notice, Plugin, TFile, TFolder } from 'obsidian';
 import { around } from 'monkey-around';
 import { PluginSettings } from './src/types';
-import { DEFAULT_SETTINGS } from './src/constants';
+import { CURRENT_DATA_SCHEMA_VERSION, DEFAULT_SETTINGS } from './src/constants';
 import { initI18n, t } from './src/i18n';
 import {
   verboseLog,
@@ -11,7 +11,6 @@ import {
   normalizeExclusionLists,
 } from './src/utils';
 import { FirstLineIsTitleSettings } from './src/settings/settings-main';
-import { applyLocalizedDefaults } from './src/settings/settings-base';
 import { RenameEngine } from './src/core/rename-engine';
 import { ContextMenuManager } from './src/ui/context-menus';
 import { FolderOperations } from './src/operations/folder-operations';
@@ -41,6 +40,11 @@ export default class FirstLineIsTitle extends Plugin {
   isFullyLoaded: boolean = false;
   pluginLoadTime: number = 0;
   recentlyRenamedPaths: Set<string> = new Set();
+
+  // Set by `loadSettings` when it discards a pre-4.0.0 file, read once by the
+  // notice below. Transient by design: the schema stamp makes the reset a
+  // one-time event, so no persisted "already shown" flag is needed.
+  private settingsWereReset = false;
 
   cacheManager: CacheManager;
   fileStateManager: FileStateManager;
@@ -158,7 +162,7 @@ export default class FirstLineIsTitle extends Plugin {
 
   // Debug logging helper for setting changes
   debugLog(settingName: string, value: unknown): void {
-    if (this.settings.core.verboseLogging) {
+    if (this.settings.core.debug) {
       console.debug(
         `Setting changed: ${settingName} = ${JSON.stringify(value)}`
       );
@@ -172,7 +176,7 @@ export default class FirstLineIsTitle extends Plugin {
     editorContent?: string
   ): void {
     if (
-      !this.settings.core.verboseLogging ||
+      !this.settings.core.debug ||
       !this.settings.core.debugOutputFullContent
     ) {
       return;
@@ -195,7 +199,7 @@ export default class FirstLineIsTitle extends Plugin {
 
   // Output structured settings when debug mode is enabled - only non-default values
   outputAllSettings(): void {
-    if (!this.settings.core.verboseLogging) {
+    if (!this.settings.core.debug) {
       return;
     }
 
@@ -431,9 +435,9 @@ export default class FirstLineIsTitle extends Plugin {
     // Update last usage date
     this.updateLastUsageDate(today);
 
-    // Check for first-time setup
-    if (!this.settings.core.hasShownFirstTimeNotice) {
-      this.showFirstTimeNotice();
+    // Upgraders whose settings were just discarded get one persistent notice.
+    if (this.settingsWereReset) {
+      this.showSettingsResetNotice();
       return;
     }
 
@@ -466,10 +470,10 @@ export default class FirstLineIsTitle extends Plugin {
     return daysDiff > 30;
   }
 
-  private showFirstTimeNotice(): void {
-    new Notice(t('notifications.firstTimeNotice'), 10000);
-    this.settings.core.hasShownFirstTimeNotice = true;
-    void this.saveSettings();
+  private showSettingsResetNotice(): void {
+    // Duration 0 keeps it up until dismissed: a timed notice is easy to miss,
+    // and this is the only place a user is told their settings were replaced.
+    new Notice(t('notifications.settingsReset'), 0);
   }
 
   private showInactivityNotice(): void {
@@ -498,10 +502,7 @@ export default class FirstLineIsTitle extends Plugin {
     await this.loadSettings();
 
     // Reset Debug mode if more than 24 hours have passed since it was enabled
-    if (
-      this.settings.core.verboseLogging &&
-      this.settings.core.debugEnabledTimestamp
-    ) {
+    if (this.settings.core.debug && this.settings.core.debugEnabledTimestamp) {
       const enabledTime = new Date(
         this.settings.core.debugEnabledTimestamp
       ).getTime();
@@ -509,7 +510,7 @@ export default class FirstLineIsTitle extends Plugin {
       const hoursPassed = (currentTime - enabledTime) / (1000 * 60 * 60);
 
       if (hoursPassed >= 24) {
-        this.settings.core.verboseLogging = false;
+        this.settings.core.debug = false;
         this.settings.core.debugEnabledTimestamp = ''; // Clear stale timestamp
         await this.saveSettings();
       }
@@ -562,15 +563,15 @@ export default class FirstLineIsTitle extends Plugin {
     // are now lazy-loaded on first access for faster plugin load time
 
     // Auto-detect OS every time plugin loads
-    this.settings.replaceCharacters.osPreset = detectOS();
+    this.settings.characterReplacements.osPreset = detectOS();
     await this.saveSettings();
 
-    if (this.settings.core.verboseLogging) {
+    if (this.settings.core.debug) {
       console.debug(`Plugin loaded - build ${BUILD_GIT_HASH}`);
     }
     verboseLog(
       this,
-      `Detected OS: \`${this.settings.replaceCharacters.osPreset}\``
+      `Detected OS: \`${this.settings.characterReplacements.osPreset}\``
     );
 
     // Initialize first-enable logic and exclusions setup
@@ -619,7 +620,7 @@ export default class FirstLineIsTitle extends Plugin {
 
   private setupDebugConsoleAPI(): void {
     const enableDebug = async () => {
-      this.settings.core.verboseLogging = true;
+      this.settings.core.debug = true;
       this.settings.core.debugEnabledTimestamp = this.getCurrentTimestamp();
       await this.saveSettings();
       console.debug('🐛 Debug mode enabled (will auto-disable after 24 hours)');
@@ -627,7 +628,7 @@ export default class FirstLineIsTitle extends Plugin {
     };
 
     const disableDebug = async () => {
-      this.settings.core.verboseLogging = false;
+      this.settings.core.debug = false;
       this.settings.core.debugEnabledTimestamp = ''; // Clear timestamp
       await this.saveSettings();
       console.debug('Debug mode disabled');
@@ -724,39 +725,61 @@ export default class FirstLineIsTitle extends Plugin {
     const loadedData = ((await this.loadData()) ||
       {}) as Partial<PluginSettings>;
 
-    // Migrate pre-3.12 `renameNotes: 'automatically' | 'manually'` to the
-    // `renameAutomatically: boolean` toggle it was replaced with.
-    const rawCore = loadedData.core as
-      | (Record<string, unknown> & Partial<PluginSettings['core']>)
-      | undefined;
-    if (rawCore && typeof rawCore.renameNotes === 'string') {
-      rawCore.renameAutomatically = rawCore.renameNotes === 'automatically';
-      delete rawCore.renameNotes;
+    // 4.0.0 replaced every per-key migration with a one-time reset. Stored data from
+    // an older schema is discarded wholesale rather than merged: the pre-nesting
+    // layout left dozens of flat top-level keys and whole dead subsystems in
+    // data.json that nothing reads any more, and deepMerge copies stored keys the
+    // defaults lack, so every one of them would be written back forever.
+    //
+    // Resetting is deliberately not special-cased anywhere else. Defaults carry
+    // `hasSetupExclusions: false`, so the Excalidraw and template-folder
+    // auto-detection runs again, and the reset itself raises a persistent
+    // notice pointing at the backup.
+    const isCurrentSchema =
+      loadedData.dataSchemaVersion === CURRENT_DATA_SCHEMA_VERSION;
+
+    // Copy the old file aside before discarding it. Guarded on there being
+    // something to lose, so a genuinely new install writes no backup and gets
+    // the first-run notice rather than the reset one.
+    if (!isCurrentSchema && Object.keys(loadedData).length > 0) {
+      this.settingsWereReset = true;
+      await this.backUpPriorSettings();
     }
 
-    // Settings dropped from the type and defaults must be deleted before the merge:
-    // deepMerge copies stored keys the defaults lack, which would write them back forever.
-    delete rawCore?.preserveModificationDate;
-    delete rawCore?.hasSetPropertyType;
-
-    const rawExclusions = loadedData.exclusions as
-      | (Record<string, unknown> & Partial<PluginSettings['exclusions']>)
-      | undefined;
-    delete rawExclusions?.includeSubfolders;
-    delete rawExclusions?.includeBodyTags;
-    delete rawExclusions?.includeNestedTags;
-
-    // Use deep merge to preserve nested properties
-    this.settings = deepMerge(DEFAULT_SETTINGS, loadedData);
-
-    // Localize default file name exclusion example (only while it's still the
-    // untouched default, so a user's own edit is never overwritten)
-    applyLocalizedDefaults(this.settings);
+    // deepMerge deep-copies its defaults, so an empty source yields a fresh clone.
+    // DEFAULT_SETTINGS itself must never be handed out: settings are mutated in place.
+    this.settings = deepMerge(
+      DEFAULT_SETTINGS,
+      isCurrentSchema ? loadedData : {}
+    );
 
     // Stored lists can predate the current normalization rules, so clean them on load
     const hasChanges = normalizeExclusionLists(this.settings);
     if (hasChanges) {
       await this.saveSettings();
+    }
+  }
+
+  /**
+   * Copies `data.json` to `data_backup.json` beside it before the schema reset
+   * discards the original. The 4.0.0 release notes tell users where to find it;
+   * nothing in the UI mentions it, so this reports nothing back.
+   *
+   * Uses the adapter rather than the Vault API because the plugin's own folder
+   * lives under `.obsidian/`, which is outside the vault's file index. Failure is
+   * deliberately non-fatal: a missing backup must not stop the plugin loading.
+   */
+  private async backUpPriorSettings(): Promise<void> {
+    const pluginDir = this.manifest?.dir;
+    if (!pluginDir) return;
+
+    const source = normalizePath(`${pluginDir}/data.json`);
+    const backup = normalizePath(`${pluginDir}/data_backup.json`);
+    try {
+      const raw = await this.app.vault.adapter.read(source);
+      await this.app.vault.adapter.write(backup, raw);
+    } catch {
+      // Nothing to do: the reset proceeds either way.
     }
   }
 

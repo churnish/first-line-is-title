@@ -45,7 +45,7 @@ describe('DebugUtils', () => {
 
   describe('debugLog', () => {
     it('should log when verbose logging is enabled', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
 
       debugUtils.debugLog('testSetting', 'testValue');
 
@@ -55,7 +55,7 @@ describe('DebugUtils', () => {
     });
 
     it('should not log when verbose logging is disabled', () => {
-      plugin.settings.core.verboseLogging = false;
+      plugin.settings.core.debug = false;
 
       debugUtils.debugLog('testSetting', 'testValue');
 
@@ -63,7 +63,7 @@ describe('DebugUtils', () => {
     });
 
     it('should JSON stringify complex values', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
       const complexValue = { foo: 'bar', nested: { value: 123 } };
 
       debugUtils.debugLog('complexSetting', complexValue);
@@ -74,7 +74,7 @@ describe('DebugUtils', () => {
     });
 
     it('should handle array values', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
 
       debugUtils.debugLog('arrayTest', [1, 2, 3]);
 
@@ -84,7 +84,7 @@ describe('DebugUtils', () => {
     });
 
     it('should handle boolean values', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
 
       debugUtils.debugLog('boolSetting', true);
 
@@ -94,7 +94,7 @@ describe('DebugUtils', () => {
     });
 
     it('should handle null values', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
 
       debugUtils.debugLog('nullSetting', null);
 
@@ -104,7 +104,7 @@ describe('DebugUtils', () => {
     });
 
     it('should handle undefined values', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
 
       debugUtils.debugLog('undefinedSetting', undefined);
 
@@ -122,7 +122,7 @@ describe('DebugUtils', () => {
     });
 
     it('should output file content when both flags are enabled', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
       plugin.settings.core.debugOutputFullContent = true;
       const content = 'Test file content';
 
@@ -135,7 +135,7 @@ describe('DebugUtils', () => {
     });
 
     it('should not output when verbose logging is disabled', () => {
-      plugin.settings.core.verboseLogging = false;
+      plugin.settings.core.debug = false;
       plugin.settings.core.debugOutputFullContent = true;
 
       debugUtils.outputDebugFileContent(file, 'MODIFIED', 'content');
@@ -144,7 +144,7 @@ describe('DebugUtils', () => {
     });
 
     it('should not output when debugOutputFullContent is disabled', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
       plugin.settings.core.debugOutputFullContent = false;
 
       debugUtils.outputDebugFileContent(file, 'MODIFIED', 'content');
@@ -153,7 +153,7 @@ describe('DebugUtils', () => {
     });
 
     it('should use N/A message when no editor content provided', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
       plugin.settings.core.debugOutputFullContent = true;
 
       debugUtils.outputDebugFileContent(file, 'CREATED');
@@ -164,7 +164,7 @@ describe('DebugUtils', () => {
     });
 
     it('should handle empty string content', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
       plugin.settings.core.debugOutputFullContent = true;
 
       debugUtils.outputDebugFileContent(file, 'MODIFIED', '');
@@ -173,7 +173,7 @@ describe('DebugUtils', () => {
     });
 
     it('should handle different action types', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
       plugin.settings.core.debugOutputFullContent = true;
 
       debugUtils.outputDebugFileContent(file, 'CREATED', 'content');
@@ -186,7 +186,7 @@ describe('DebugUtils', () => {
     });
 
     it('should output multiline content correctly', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
       plugin.settings.core.debugOutputFullContent = true;
       const multilineContent = 'Line 1\nLine 2\nLine 3';
 
@@ -196,7 +196,7 @@ describe('DebugUtils', () => {
     });
 
     it('should output content with special characters', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
       plugin.settings.core.debugOutputFullContent = true;
       const specialContent = 'Content with # * / special chars';
 
@@ -208,7 +208,7 @@ describe('DebugUtils', () => {
 
   describe('outputAllSettings', () => {
     it('should output all settings when verbose logging is enabled', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
 
       debugUtils.outputAllSettings();
 
@@ -223,7 +223,7 @@ describe('DebugUtils', () => {
     });
 
     it('should not output when verbose logging is disabled', () => {
-      plugin.settings.core.verboseLogging = false;
+      plugin.settings.core.debug = false;
 
       debugUtils.outputAllSettings();
 
@@ -231,7 +231,7 @@ describe('DebugUtils', () => {
     });
 
     it('should output formatted JSON with indentation', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
 
       debugUtils.outputAllSettings();
 
@@ -244,7 +244,7 @@ describe('DebugUtils', () => {
     });
 
     it('should output complete settings object', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
       plugin.settings.core.charCount = 999;
       plugin.settings.exclusions.excludedFolders = ['test-folder'];
 
@@ -264,7 +264,7 @@ describe('DebugUtils', () => {
 
   describe('edge cases', () => {
     it('should handle being called multiple times', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
 
       debugUtils.debugLog('setting1', 'value1');
       debugUtils.debugLog('setting2', 'value2');
@@ -274,13 +274,13 @@ describe('DebugUtils', () => {
     });
 
     it('should handle toggling verbose logging', () => {
-      plugin.settings.core.verboseLogging = false;
+      plugin.settings.core.debug = false;
       debugUtils.debugLog('test1', 'value1');
 
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
       debugUtils.debugLog('test2', 'value2');
 
-      plugin.settings.core.verboseLogging = false;
+      plugin.settings.core.debug = false;
       debugUtils.debugLog('test3', 'value3');
 
       expect(consoleSpy).toHaveBeenCalledTimes(1);
@@ -290,15 +290,15 @@ describe('DebugUtils', () => {
     });
 
     it('should handle very large settings object', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
       const largeArray = Array(1000).fill('item');
-      plugin.settings.customRules.customReplacements = largeArray as any;
+      plugin.settings.customReplacements.rules = largeArray as any;
 
       expect(() => debugUtils.outputAllSettings()).not.toThrow();
     });
 
     it('should handle circular references gracefully', () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
       const circularObj: any = { prop: 'value' };
       circularObj.self = circularObj;
 

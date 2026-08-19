@@ -44,7 +44,7 @@ export type TagMatchingMode =
   | 'In Properties and note body'
   | 'In Properties only'
   | 'In note body only';
-export type FileReadMethod = 'Editor' | 'Cache' | 'File';
+export type ContentReadMethod = 'Editor' | 'Cache' | 'File';
 
 export type PropertyHidingOption = 'never' | 'always' | 'when_empty';
 
@@ -61,18 +61,19 @@ export interface CoreSettings {
   manualNotificationMode: NotificationMode;
   charCount: number;
   checkInterval: number;
-  fileReadMethod: FileReadMethod;
+  contentReadMethod: ContentReadMethod;
 
   // New file handling
-  insertTitleOnCreation: boolean;
-  convertReplacementCharactersInTitle: boolean;
+  insertTitle: boolean;
+  convertReplacementChars: boolean;
+  formatAsHeading: boolean;
   moveCursorToFirstLine: boolean;
   placeCursorAtLineEnd: boolean;
   newNoteDelay: number;
 
   // UI visibility
   enableContextMenus: boolean;
-  enableVaultSearchContextMenu: boolean;
+  enableSearchCommands: boolean;
 
   // Context menu command groups
   enableFileCommands: boolean;
@@ -80,10 +81,9 @@ export interface CoreSettings {
   enableTagCommands: boolean;
 
   // Internal state and debugging
-  verboseLogging: boolean;
+  debug: boolean;
   debugOutputFullContent: boolean;
   debugEnabledTimestamp: string;
-  hasShownFirstTimeNotice: boolean;
   hasSetupExclusions: boolean;
   lastUsageDate: string;
   hasEnabledForbiddenChars: boolean;
@@ -97,7 +97,7 @@ export interface CoreSettings {
       renameExcludedProperties: boolean;
     };
     tagRename: {
-      includeChildTags: boolean;
+      includeSubtags: boolean;
       renameExcludedFolders: boolean;
       renameExcludedTags: boolean;
       renameExcludedProperties: boolean;
@@ -111,7 +111,7 @@ export interface CoreSettings {
       includeSubfolders: boolean;
     };
     tagDisable: {
-      includeChildTags: boolean;
+      includeSubtags: boolean;
     };
   };
 }
@@ -123,33 +123,34 @@ export interface ExclusionSettings {
   folderScopeStrategy: ExclusionStrategy;
   tagScopeStrategy: ExclusionStrategy;
   propertyScopeStrategy: ExclusionStrategy;
+  fileNameScopeStrategy: ExclusionStrategy;
   excludedFolders: string[];
   excludedTags: string[];
   excludedProperties: ExcludedProperty[];
-  excludeSubfolders: boolean;
+  matchSubfolders: boolean;
   tagMatchingMode: TagMatchingMode;
-  excludeChildTags: boolean;
+  matchSubtags: boolean;
   disableRenamingKey: string;
   disableRenamingValue: string;
-  fileNameExclusions: FileNameExclusion[];
+  excludedFileNames: FileNameExclusion[];
 }
 
 /**
- * Replace characters settings (forbidden chars)
+ * Character replacements settings (forbidden chars)
  */
-export interface ReplaceCharactersSettings {
+export interface CharacterReplacementsSettings {
   enableForbiddenCharReplacements: boolean;
   osPreset: OSPreset;
   charReplacements: CharReplacements;
 }
 
 /**
- * Custom rules settings
+ * Custom replacements settings
  */
-export interface CustomRulesSettings {
+export interface CustomReplacementsSettings {
   enableCustomReplacements: boolean;
-  customReplacements: CustomReplacement[];
-  applyCustomRulesAfterForbiddenChars: boolean;
+  rules: CustomReplacement[];
+  applyAfterForbiddenChars: boolean;
 }
 
 /**
@@ -184,9 +185,8 @@ export interface MarkupStrippingSettings {
   stripMathBlockMarkup: boolean;
   detectDiagrams: boolean;
   grabTitleFromCardLink: boolean;
-  applyCustomRulesInAlias: boolean;
-  applyCustomRulesAfterMarkupStripping: boolean;
-  addHeadingToTitle: boolean;
+  applyCustomReplacementsInAlias: boolean;
+  applyCustomReplacementsAfterMarkupStripping: boolean;
 }
 
 /**
@@ -195,7 +195,7 @@ export interface MarkupStrippingSettings {
 export interface AliasSettings {
   enableAliases: boolean;
   truncateAlias: boolean;
-  addAliasOnlyIfFirstLineDiffers: boolean;
+  addAliasOnlyIfTitleDiffers: boolean;
   aliasPropertyKey: string;
   hideAliasProperty: PropertyHidingOption;
   hideAliasInSidebar: boolean;
@@ -207,10 +207,16 @@ export interface AliasSettings {
  * Structured plugin settings organized by feature
  */
 export interface PluginSettings {
+  /**
+   * Schema version of the persisted data.json. Stored data whose version does not
+   * match `CURRENT_DATA_SCHEMA_VERSION` is discarded and replaced with the defaults
+   * rather than migrated key by key — see `loadSettings()` in `main.ts`.
+   */
+  dataSchemaVersion: number;
   core: CoreSettings;
   exclusions: ExclusionSettings;
-  replaceCharacters: ReplaceCharactersSettings;
-  customRules: CustomRulesSettings;
+  characterReplacements: CharacterReplacementsSettings;
+  customReplacements: CustomReplacementsSettings;
   markupStripping: MarkupStrippingSettings;
   aliases: AliasSettings;
 }

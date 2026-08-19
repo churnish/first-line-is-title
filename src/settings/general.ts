@@ -1,5 +1,9 @@
 import { SettingDefinitionItem, SettingDefinitionGroup } from 'obsidian';
-import { FirstLineIsTitlePlugin, appendEmphasis } from './settings-base';
+import {
+  appendEmphasis,
+  buildButtonRow,
+  FirstLineIsTitlePlugin,
+} from './settings-base';
 import { RenameAllFilesModal } from '../modals';
 import { getOwnerWindow } from '../utils/owner-window';
 import { t } from '../i18n';
@@ -71,12 +75,12 @@ export function buildGeneralDefinitions(
  * Settings that only take effect the moment a note is created, grouped away from
  * the rename settings above them because nothing here fires on an existing note.
  */
-export function buildNoteCreationGroup(
+export function buildNewNotesGroup(
   plugin: FirstLineIsTitlePlugin
 ): SettingDefinitionGroup {
   return {
     type: 'group',
-    heading: t('settings.tabs.noteCreationGroup'),
+    heading: t('settings.sections.newNotesGroup'),
     items: [
       {
         name: t('settings.general.moveCursorToFirstLine.name'),
@@ -96,39 +100,39 @@ export function buildNoteCreationGroup(
         },
       },
       {
-        name: t('settings.general.insertTitleOnCreation.name'),
+        name: t('settings.general.insertTitle.name'),
         desc: buildEmphasizedDescription(
-          'settings.general.insertTitleOnCreation.desc.part1',
-          'settings.general.insertTitleOnCreation.desc.untitled',
-          'settings.general.insertTitleOnCreation.desc.part2'
+          'settings.general.insertTitle.desc.part1',
+          'settings.general.insertTitle.desc.untitled',
+          'settings.general.insertTitle.desc.part2'
         ),
         control: {
           type: 'toggle',
-          key: 'core.insertTitleOnCreation',
+          key: 'core.insertTitle',
         },
       },
       {
-        name: t('settings.general.convertReplacementCharactersInTitle.name'),
+        name: t('settings.general.convertReplacementChars.name'),
         desc: buildEmphasizedDescription(
-          'settings.general.convertReplacementCharactersInTitle.desc.part1',
-          'settings.general.convertReplacementCharactersInTitle.desc.replaceCharacters',
-          'settings.general.convertReplacementCharactersInTitle.desc.part2'
+          'settings.general.convertReplacementChars.desc.part1',
+          'settings.general.convertReplacementChars.desc.characterReplacements',
+          'settings.general.convertReplacementChars.desc.part2'
         ),
         visible: () =>
-          plugin.settings.core.insertTitleOnCreation &&
-          plugin.settings.replaceCharacters.enableForbiddenCharReplacements,
+          plugin.settings.core.insertTitle &&
+          plugin.settings.characterReplacements.enableForbiddenCharReplacements,
         control: {
           type: 'toggle',
-          key: 'core.convertReplacementCharactersInTitle',
+          key: 'core.convertReplacementChars',
         },
       },
       {
         name: t('settings.general.formatAsHeading.name'),
         desc: t('settings.general.formatAsHeading.desc'),
-        visible: () => plugin.settings.core.insertTitleOnCreation,
+        visible: () => plugin.settings.core.insertTitle,
         control: {
           type: 'toggle',
-          key: 'markupStripping.addHeadingToTitle',
+          key: 'core.formatAsHeading',
         },
       },
     ],
@@ -148,15 +152,12 @@ export function buildFooterDefinitions(
       // turning the whole row into a click target.
       name: t('settings.general.renameAllNotes.name'),
       desc: t('settings.general.renameAllNotes.desc'),
-      render: (setting) => {
-        setting.addButton((button) =>
-          button
-            .setButtonText(t('settings.general.renameAllNotes.button'))
-            .onClick(() => {
-              new RenameAllFilesModal(plugin.app, plugin).open();
-            })
-        );
-      },
+      render: buildButtonRow({
+        text: t('settings.general.renameAllNotes.button'),
+        onClick: () => {
+          new RenameAllFilesModal(plugin.app, plugin).open();
+        },
+      }),
     },
   ];
 }
@@ -175,33 +176,27 @@ export function buildFooterDefinitions(
 export function buildSupportGroup(): SettingDefinitionGroup {
   return {
     type: 'group',
-    heading: t('settings.tabs.supportGroup'),
+    heading: t('settings.sections.supportGroup'),
     items: [
       {
         name: t('settings.general.help.name'),
         desc: t('settings.general.help.desc'),
-        render: (setting) => {
-          setting.addButton((button) =>
-            button
-              .setButtonText(t('settings.general.help.button'))
-              .onClick(() => {
-                getOwnerWindow(setting.settingEl).open(HELP_URL, '_blank');
-              })
-          );
-        },
+        render: buildButtonRow({
+          text: t('settings.general.help.button'),
+          onClick: (setting) => {
+            getOwnerWindow(setting.settingEl).open(HELP_URL, '_blank');
+          },
+        }),
       },
       {
         name: t('settings.general.sendFeedback.name'),
         desc: t('settings.general.sendFeedback.desc'),
-        render: (setting) => {
-          setting.addButton((button) =>
-            button
-              .setButtonText(t('settings.general.sendFeedback.button'))
-              .onClick(() => {
-                getOwnerWindow(setting.settingEl).open(FEEDBACK_URL, '_blank');
-              })
-          );
-        },
+        render: buildButtonRow({
+          text: t('settings.general.sendFeedback.button'),
+          onClick: (setting) => {
+            getOwnerWindow(setting.settingEl).open(FEEDBACK_URL, '_blank');
+          },
+        }),
       },
     ],
   };

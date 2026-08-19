@@ -124,6 +124,14 @@ npm run build
 - Persist settings using `this.loadData()` / `this.saveData()`.
 - Use stable command IDs; avoid renaming once released.
 
+## Settings schema
+
+- **4.0.0 resets stored settings**: `loadSettings()` discards any `data.json` whose `dataSchemaVersion` does not equal `CURRENT_DATA_SCHEMA_VERSION` and starts from `DEFAULT_SETTINGS`. `hasSetupExclusions: false` re-runs exclusion auto-detection and `hasShownFirstTimeNotice: false` re-fires the first-run notice — NEVER special-case either consequence.
+- **NEVER write migration code before 4.0.0 ships**: every pre-4.0.0 `data.json` is discarded wholesale, so a migration would have nothing to migrate. Rename or remove the persisted key directly.
+- **Rename stale persisted keys while the window is open**: until 4.0.0 ships, renaming a persisted key costs nothing. After it ships, each rename costs either a migration or a `CURRENT_DATA_SCHEMA_VERSION` bump that resets every user's settings.
+- **Renaming a key in a vault already stamped with the current version leaves an orphan**: the version still matches, so `deepMerge` runs and copies the stale key forward while the renamed key takes defaults. Clear such test vaults by hand.
+- **A persisted-key rename is NOT a symbol rename**: it appears as the interface field, the `DEFAULT_SETTINGS` entry, plain read sites, a dot-path string in the settings control (`key: 'core.insertTitle'`) that no symbol search finds, the locale namespace in both `en.json` and `ru.json`, and test fixtures. Rename long or capitalised names BEFORE short section names, and run `npx tsc --noEmit` between passes — line-wrapped property access and object-literal fixture keys escape a dot-path regex.
+
 ## Versioning & releases
 
 - Bump `version` in `manifest.json` (SemVer) and update `versions.json` to map plugin version → minimum app version.

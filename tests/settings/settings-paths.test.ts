@@ -89,8 +89,8 @@ describe('settings-paths', () => {
 
     it('round-trips with getPath', () => {
       const obj: Record<string, unknown> = {};
-      setPath(obj, 'exclusions.fileNameExclusions', ['x']);
-      expect(getPath(obj, 'exclusions.fileNameExclusions')).toEqual(['x']);
+      setPath(obj, 'exclusions.excludedFileNames', ['x']);
+      expect(getPath(obj, 'exclusions.excludedFileNames')).toEqual(['x']);
     });
   });
 });

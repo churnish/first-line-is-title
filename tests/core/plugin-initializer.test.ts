@@ -36,7 +36,7 @@ function makePlugin(): TestPlugin {
 }
 
 function enabledCharKeys(settings: PluginSettings): CharKey[] {
-  const { charReplacements } = settings.replaceCharacters;
+  const { charReplacements } = settings.characterReplacements;
   return (Object.keys(charReplacements) as CharKey[]).filter(
     (key) => charReplacements[key].enabled
   );
@@ -56,7 +56,7 @@ describe('PluginInitializer', () => {
 
   describe('initializeFirstEnableLogic — forbidden chars', () => {
     beforeEach(() => {
-      plugin.settings.replaceCharacters.enableForbiddenCharReplacements = true;
+      plugin.settings.characterReplacements.enableForbiddenCharReplacements = true;
       plugin.settings.core.hasEnabledForbiddenChars = false;
     });
 
@@ -86,7 +86,7 @@ describe('PluginInitializer', () => {
       await initializer.initializeFirstEnableLogic();
 
       expect(
-        plugin.settings.replaceCharacters.charReplacements.backslash.enabled
+        plugin.settings.characterReplacements.charReplacements.backslash.enabled
       ).toBe(false);
     });
 
@@ -118,7 +118,7 @@ describe('PluginInitializer', () => {
     });
 
     it('does nothing while the master toggle is off', async () => {
-      plugin.settings.replaceCharacters.enableForbiddenCharReplacements = false;
+      plugin.settings.characterReplacements.enableForbiddenCharReplacements = false;
       const before = enabledCharKeys(plugin.settings);
 
       await initializer.initializeFirstEnableLogic();
@@ -130,9 +130,9 @@ describe('PluginInitializer', () => {
 
   describe('initializeFirstEnableLogic — custom replacements', () => {
     beforeEach(() => {
-      plugin.settings.customRules.enableCustomReplacements = true;
+      plugin.settings.customReplacements.enableCustomReplacements = true;
       plugin.settings.core.hasEnabledCustomReplacements = false;
-      plugin.settings.customRules.customReplacements.forEach((rule) => {
+      plugin.settings.customReplacements.rules.forEach((rule) => {
         rule.enabled = false;
       });
     });
@@ -141,7 +141,7 @@ describe('PluginInitializer', () => {
       await initializer.initializeFirstEnableLogic();
 
       expect(
-        plugin.settings.customRules.customReplacements.every((r) => r.enabled)
+        plugin.settings.customReplacements.rules.every((r) => r.enabled)
       ).toBe(true);
       expect(plugin.settings.core.hasEnabledCustomReplacements).toBe(true);
     });
@@ -152,7 +152,7 @@ describe('PluginInitializer', () => {
       await initializer.initializeFirstEnableLogic();
 
       expect(
-        plugin.settings.customRules.customReplacements.some((r) => r.enabled)
+        plugin.settings.customReplacements.rules.some((r) => r.enabled)
       ).toBe(false);
       expect(plugin.saveSettings).not.toHaveBeenCalled();
     });
@@ -160,9 +160,9 @@ describe('PluginInitializer', () => {
 
   describe('initializeFirstEnableLogic — persistence', () => {
     it('saves once even when both cascades fire in the same run', async () => {
-      plugin.settings.replaceCharacters.enableForbiddenCharReplacements = true;
+      plugin.settings.characterReplacements.enableForbiddenCharReplacements = true;
       plugin.settings.core.hasEnabledForbiddenChars = false;
-      plugin.settings.customRules.enableCustomReplacements = true;
+      plugin.settings.customReplacements.enableCustomReplacements = true;
       plugin.settings.core.hasEnabledCustomReplacements = false;
 
       await initializer.initializeFirstEnableLogic();

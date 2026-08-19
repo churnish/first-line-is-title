@@ -10,7 +10,7 @@ describe('createTestSettings', () => {
       ...DEFAULT_SETTINGS.exclusions.excludedFolders,
     ];
     const pristineFileNameExclusionCount =
-      DEFAULT_SETTINGS.exclusions.fileNameExclusions.length;
+      DEFAULT_SETTINGS.exclusions.excludedFileNames.length;
 
     const first = createTestSettings();
     const second = createTestSettings();
@@ -21,7 +21,7 @@ describe('createTestSettings', () => {
     expect(first.core).not.toBe(second.core);
 
     first.exclusions.excludedFolders = ['Notes'];
-    first.exclusions.fileNameExclusions.push({
+    first.exclusions.excludedFileNames.push({
       text: 'draft',
       onlyAtStart: false,
       onlyWholeLine: false,
@@ -32,11 +32,11 @@ describe('createTestSettings', () => {
     expect(DEFAULT_SETTINGS.exclusions.excludedFolders).toEqual(
       pristineExcludedFolders
     );
-    expect(DEFAULT_SETTINGS.exclusions.fileNameExclusions).toHaveLength(
+    expect(DEFAULT_SETTINGS.exclusions.excludedFileNames).toHaveLength(
       pristineFileNameExclusionCount
     );
     expect(second.exclusions.excludedFolders).toEqual(pristineExcludedFolders);
-    expect(second.exclusions.fileNameExclusions).toHaveLength(
+    expect(second.exclusions.excludedFileNames).toHaveLength(
       pristineFileNameExclusionCount
     );
   });
@@ -44,11 +44,11 @@ describe('createTestSettings', () => {
   it('should merge overrides per leaf, keeping untouched siblings at their defaults', () => {
     const settings = createTestSettings({
       core: {
-        insertTitleOnCreation: true,
+        insertTitle: true,
       },
     });
 
-    expect(settings.core.insertTitleOnCreation).toBe(true);
+    expect(settings.core.insertTitle).toBe(true);
     expect(settings.core.renameAutomatically).toBe(
       DEFAULT_SETTINGS.core.renameAutomatically
     );
@@ -64,8 +64,8 @@ describe('createTestSettings', () => {
     });
 
     expect(settings.exclusions.excludedFolders).toEqual(['Notes', 'Archive']);
-    expect(settings.exclusions.excludeSubfolders).toBe(
-      DEFAULT_SETTINGS.exclusions.excludeSubfolders
+    expect(settings.exclusions.matchSubfolders).toBe(
+      DEFAULT_SETTINGS.exclusions.matchSubfolders
     );
   });
 });

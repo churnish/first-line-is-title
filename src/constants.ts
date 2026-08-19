@@ -1,6 +1,14 @@
 import { EXCLUSION_STRATEGY, PluginSettings, TagMatchingMode } from './types';
 
+/**
+ * Schema version of the settings this build understands. Bump it whenever the stored
+ * shape changes in a way that is not worth migrating: `loadSettings()` discards any
+ * data.json carrying a different version and starts from `DEFAULT_SETTINGS`.
+ */
+export const CURRENT_DATA_SCHEMA_VERSION = 4;
+
 export const DEFAULT_SETTINGS: PluginSettings = {
+  dataSchemaVersion: CURRENT_DATA_SCHEMA_VERSION,
   core: {
     // Rename behavior
     renameAutomatically: true,
@@ -11,21 +19,22 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     manualNotificationMode: 'Always',
     charCount: 100,
     checkInterval: 0,
-    fileReadMethod: 'Editor',
+    contentReadMethod: 'Editor',
 
     // New file handling
     // On by default: a fresh install does nothing visible otherwise. Existing
     // users keep a stored `false` — main.ts merges loaded data over these, so
     // only keys absent from data.json pick up a changed default.
-    insertTitleOnCreation: true,
-    convertReplacementCharactersInTitle: true,
+    insertTitle: true,
+    convertReplacementChars: true,
+    formatAsHeading: false,
     moveCursorToFirstLine: true,
     placeCursorAtLineEnd: true,
     newNoteDelay: 0,
 
     // UI visibility
     enableContextMenus: true,
-    enableVaultSearchContextMenu: true,
+    enableSearchCommands: true,
 
     // Context menu command groups
     enableFileCommands: true,
@@ -33,10 +42,9 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     enableTagCommands: true,
 
     // Internal state and debugging
-    verboseLogging: false,
+    debug: false,
     debugOutputFullContent: false,
     debugEnabledTimestamp: '',
-    hasShownFirstTimeNotice: false,
     hasSetupExclusions: false,
     lastUsageDate: '',
     hasEnabledForbiddenChars: false,
@@ -50,7 +58,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         renameExcludedProperties: false,
       },
       tagRename: {
-        includeChildTags: true,
+        includeSubtags: true,
         renameExcludedFolders: false,
         renameExcludedTags: false,
         renameExcludedProperties: false,
@@ -64,7 +72,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         includeSubfolders: true,
       },
       tagDisable: {
-        includeChildTags: true,
+        includeSubtags: true,
       },
     },
   },
@@ -72,28 +80,21 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     folderScopeStrategy: EXCLUSION_STRATEGY.ONLY_EXCLUDE,
     tagScopeStrategy: EXCLUSION_STRATEGY.ONLY_EXCLUDE,
     propertyScopeStrategy: EXCLUSION_STRATEGY.ONLY_EXCLUDE,
+    fileNameScopeStrategy: EXCLUSION_STRATEGY.ONLY_EXCLUDE,
     // Empty, not a seeded blank row: deepMerge replaces arrays wholesale, so a seeded
     // entry would materialise a dead rule on every fresh install. The lists render
     // their own empty state.
     excludedFolders: [],
     excludedTags: [],
     excludedProperties: [],
-    excludeSubfolders: true,
+    matchSubfolders: true,
     tagMatchingMode: 'In Properties and note body' as TagMatchingMode,
-    excludeChildTags: true,
+    matchSubtags: true,
     disableRenamingKey: 'no rename',
     disableRenamingValue: 'true',
-    fileNameExclusions: [
-      {
-        text: 'To do',
-        onlyAtStart: false,
-        onlyWholeLine: false,
-        enabled: false,
-        caseSensitive: false,
-      },
-    ],
+    excludedFileNames: [],
   },
-  replaceCharacters: {
+  characterReplacements: {
     enableForbiddenCharReplacements: false,
     osPreset: 'macOS',
     charReplacements: {
@@ -183,9 +184,9 @@ export const DEFAULT_SETTINGS: PluginSettings = {
       },
     },
   },
-  customRules: {
+  customReplacements: {
     enableCustomReplacements: false,
-    customReplacements: [
+    rules: [
       {
         searchText: '- [ ] ',
         replaceText: '✔️ ',
@@ -201,7 +202,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         enabled: false,
       },
     ],
-    applyCustomRulesAfterForbiddenChars: false,
+    applyAfterForbiddenChars: false,
   },
   markupStripping: {
     stripMarkupSettings: {
@@ -232,14 +233,13 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     stripMathBlockMarkup: true,
     detectDiagrams: true,
     grabTitleFromCardLink: true,
-    applyCustomRulesInAlias: false,
-    applyCustomRulesAfterMarkupStripping: false,
-    addHeadingToTitle: false,
+    applyCustomReplacementsInAlias: false,
+    applyCustomReplacementsAfterMarkupStripping: false,
   },
   aliases: {
     enableAliases: false,
     truncateAlias: false,
-    addAliasOnlyIfFirstLineDiffers: false,
+    addAliasOnlyIfTitleDiffers: false,
     aliasPropertyKey: 'aliases',
     hideAliasProperty: 'never' as const,
     hideAliasInSidebar: false,

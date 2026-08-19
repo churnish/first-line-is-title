@@ -5,7 +5,7 @@ import { createPluginLink, buildPluginLinkRouterGroup } from './plugin-links';
 
 /**
  * A markup-type toggle: `id` is the locale namespace under
- * `settings.stripMarkup.`, `path` the dot-path under `markupStripping.`.
+ * `settings.markupStripping.`, `path` the dot-path under `markupStripping.`.
  */
 interface MarkupToggle {
   id: string;
@@ -41,8 +41,8 @@ const MARKUP_TOGGLES: MarkupToggle[] = [
 ];
 
 /**
- * Terms that some descriptions bold (or quote, in Russian) instead of
- * rendering as a code sample. Only ever one per description, always in part 1.
+ * Terms that some descriptions quote as a UI label instead of rendering as a
+ * code sample. Only ever one per description, always in part 1.
  */
 const EMPHASISED_TERM_KEYS = ['table', 'mathBlock', 'diagram'];
 
@@ -99,13 +99,13 @@ function buildMultiPartDescription(descKey: string): DocumentFragment {
 /** Description for the Templater toggle — a link plus an inline code sample. */
 function buildTemplaterDescription(): DocumentFragment {
   return createFragment((frag) => {
-    frag.appendText(t('settings.stripMarkup.templater.desc.part1'));
+    frag.appendText(t('settings.markupStripping.templater.desc.part1'));
     createPluginLink(frag, 'templater-obsidian', 'Templater');
-    frag.appendText(t('settings.stripMarkup.templater.desc.part2'));
+    frag.appendText(t('settings.markupStripping.templater.desc.part2'));
     frag.createEl('code', {
-      text: t('settings.stripMarkup.templater.desc.code'),
+      text: t('settings.markupStripping.templater.desc.code'),
     });
-    frag.appendText(t('settings.stripMarkup.templater.desc.part3'));
+    frag.appendText(t('settings.markupStripping.templater.desc.part3'));
   });
 }
 
@@ -116,8 +116,10 @@ export function buildMarkupStrippingPage(
 
   for (const toggle of MARKUP_TOGGLES) {
     items.push({
-      name: t(`settings.stripMarkup.${toggle.id}.name`),
-      desc: buildMultiPartDescription(`settings.stripMarkup.${toggle.id}.desc`),
+      name: t(`settings.markupStripping.${toggle.id}.name`),
+      desc: buildMultiPartDescription(
+        `settings.markupStripping.${toggle.id}.desc`
+      ),
       control: {
         type: 'toggle',
         key: `markupStripping.${toggle.path}`,
@@ -126,9 +128,9 @@ export function buildMarkupStrippingPage(
 
     if (toggle.id === 'codeBlocks') {
       items.push({
-        name: t('settings.stripMarkup.detectDiagrams.name'),
+        name: t('settings.markupStripping.detectDiagrams.name'),
         desc: buildMultiPartDescription(
-          'settings.stripMarkup.detectDiagrams.desc'
+          'settings.markupStripping.detectDiagrams.desc'
         ),
         visible: () =>
           plugin.settings.markupStripping.stripMarkupSettings.codeBlocks,
@@ -141,8 +143,8 @@ export function buildMarkupStrippingPage(
 
     if (toggle.id === 'comments') {
       items.push({
-        name: t('settings.stripMarkup.commentsEntirely.name'),
-        desc: t('settings.stripMarkup.commentsEntirely.desc'),
+        name: t('settings.markupStripping.commentsEntirely.name'),
+        desc: t('settings.markupStripping.commentsEntirely.desc'),
         visible: () =>
           plugin.settings.markupStripping.stripMarkupSettings.comments,
         control: {
@@ -154,7 +156,7 @@ export function buildMarkupStrippingPage(
   }
 
   items.push({
-    name: t('settings.stripMarkup.templater.name'),
+    name: t('settings.markupStripping.templater.name'),
     desc: buildTemplaterDescription(),
     control: {
       type: 'toggle',
@@ -166,8 +168,8 @@ export function buildMarkupStrippingPage(
 
   return {
     type: 'page',
-    name: t('settings.tabs.stripMarkup'),
-    desc: t('settings.stripMarkup.desc'),
+    name: t('settings.sections.markupStripping'),
+    desc: t('settings.markupStripping.desc'),
     items,
   };
 }

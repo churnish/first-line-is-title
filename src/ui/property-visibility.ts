@@ -12,12 +12,10 @@ export class PropertyVisibility {
 
   /**
    * Parse comma-separated property keys from settings
-   * @returns Array of property keys, defaults to ['aliases'] if empty
+   * @returns Array of property keys, empty when the setting is blank
    */
   private getAliasPropertyKeys(): string[] {
-    const aliasPropertyKey =
-      this.settings.aliases.aliasPropertyKey || 'aliases';
-    return aliasPropertyKey
+    return this.settings.aliases.aliasPropertyKey
       .split(',')
       .map((key) => key.trim())
       .filter((key) => key.length > 0);
@@ -228,6 +226,14 @@ export class PropertyVisibility {
     }
 
     const propertyKeys = this.getAliasPropertyKeys();
+
+    // A blank alias property name leaves nothing to hide. The
+    // `cleanupPropertyObserver()` above has already un-hidden whatever a
+    // previous key hid, so this only avoids installing a document-wide
+    // observer that could never match a property.
+    if (propertyKeys.length === 0) {
+      return;
+    }
 
     if (
       this.settings.aliases.hideAliasProperty === 'always' ||

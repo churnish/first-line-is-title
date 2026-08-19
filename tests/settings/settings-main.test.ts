@@ -30,12 +30,12 @@ vi.mock('../../src/utils', () => ({
 }));
 
 // Page builders are covered by their own tabs; stub them to isolate the shell.
-vi.mock('../../src/settings/tab-general', () => ({
+vi.mock('../../src/settings/general', () => ({
   buildGeneralDefinitions: vi.fn(() => []),
-  buildNoteCreationGroup: vi.fn(() => ({
+  buildNewNotesGroup: vi.fn(() => ({
     type: 'group',
-    heading: 'settings.tabs.noteCreationGroup',
-    items: [{ name: 'settings.general.insertTitleOnCreation.name' }],
+    heading: 'settings.sections.newNotesGroup',
+    items: [{ name: 'settings.general.insertTitle.name' }],
   })),
   buildFooterDefinitions: vi.fn(() => [
     { name: 'settings.general.renameAllNotes.name', render: vi.fn() },
@@ -45,38 +45,41 @@ vi.mock('../../src/settings/tab-general', () => ({
     items: [{ name: 'settings.general.sendFeedback.name', render: vi.fn() }],
   })),
 }));
-vi.mock('../../src/settings/tab-exclusions', () => ({
+vi.mock('../../src/settings/exclusions', () => ({
   buildExclusionsPage: vi.fn(() => ({ type: 'page', name: 'Exclusions' })),
 }));
-vi.mock('../../src/settings/tab-replace-characters', () => ({
+vi.mock('../../src/settings/character-replacements', () => ({
   buildCharacterReplacementsPage: vi.fn(() => ({
     type: 'page',
     name: 'Character replacements',
   })),
 }));
-vi.mock('../../src/settings/tab-custom-rules', () => ({
-  buildCustomRulesPage: vi.fn(() => ({ type: 'page', name: 'Custom rules' })),
+vi.mock('../../src/settings/custom-replacements', () => ({
+  buildCustomReplacementsPage: vi.fn(() => ({
+    type: 'page',
+    name: 'Custom replacements',
+  })),
 }));
-vi.mock('../../src/settings/tab-strip-markup', () => ({
+vi.mock('../../src/settings/markup-stripping', () => ({
   buildMarkupStrippingPage: vi.fn(() => ({
     type: 'page',
     name: 'Markup stripping',
   })),
 }));
-vi.mock('../../src/settings/tab-alias', () => ({
+vi.mock('../../src/settings/alias', () => ({
   buildAliasPage: vi.fn(() => ({ type: 'page', name: 'Alias' })),
 }));
-vi.mock('../../src/settings/tab-commands', () => ({
+vi.mock('../../src/settings/commands', () => ({
   buildCommandsPage: vi.fn(() => ({ type: 'page', name: 'Commands' })),
 }));
-vi.mock('../../src/settings/tab-other', () => ({
+vi.mock('../../src/settings/other', () => ({
   buildOtherPage: vi.fn(() => ({ type: 'page', name: 'Advanced' })),
 }));
 
 import { FirstLineIsTitleSettings } from '../../src/settings/settings-main';
 import { PluginInitializer } from '../../src/core/plugin-initializer';
 import { normalizeExclusionLists } from '../../src/utils';
-import { buildSupportGroup } from '../../src/settings/tab-general';
+import { buildSupportGroup } from '../../src/settings/general';
 
 interface TestPlugin {
   app: App;
@@ -124,7 +127,7 @@ describe('FirstLineIsTitleSettings', () => {
         .map((def) => (def as { name?: string }).name);
 
     // Matched by heading, not by type — other groups sit alongside this one.
-    const ADVANCED_HEADING = 'settings.tabs.advancedGroup';
+    const ADVANCED_HEADING = 'settings.sections.advancedGroup';
 
     const advancedGroupIndex = () =>
       tab
@@ -149,18 +152,18 @@ describe('FirstLineIsTitleSettings', () => {
         'Alias',
         'Character replacements',
         'Commands',
-        'Custom rules',
+        'Custom replacements',
         'Markup stripping',
         'Advanced',
       ]);
     });
 
-    it('orders the page-level action, Exclusions and Note creation between General and Advanced', () => {
+    it('orders the page-level action, Exclusions and New notes between General and Advanced', () => {
       const defs = tab.getSettingDefinitions();
       const advanced = advancedGroupIndex();
 
       expect((defs[advanced - 1] as { heading?: string }).heading).toBe(
-        'settings.tabs.noteCreationGroup'
+        'settings.sections.newNotesGroup'
       );
       expect((defs[advanced - 2] as { name?: string }).name).toBe('Exclusions');
       expect((defs[advanced - 3] as { name?: string }).name).toBe(
@@ -170,10 +173,10 @@ describe('FirstLineIsTitleSettings', () => {
 
     it('puts the feedback group last', () => {
       const defs = tab.getSettingDefinitions();
-      // tab-general is mocked here, so asserting the group's shape would only
+      // general.ts is mocked here, so asserting the group's shape would only
       // re-read this file's own fixture. Placement is the one thing
       // settings-main actually decides; the shape is pinned in
-      // tab-general.test.ts against the real builder.
+      // general.test.ts against the real builder.
       expect(defs[defs.length - 1]).toBe(
         vi.mocked(buildSupportGroup).mock.results[0].value
       );
@@ -205,33 +208,40 @@ describe('FirstLineIsTitleSettings', () => {
     });
 
     it('still saves exactly once when a cascade mutates several settings', async () => {
-      await tab.setControlValue('customRules.enableCustomReplacements', false);
+      await tab.setControlValue(
+        'customReplacements.enableCustomReplacements',
+        false
+      );
       expect(plugin.saveSettings).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('force-off cascades', () => {
-    it('preserves convertReplacementCharactersInTitle when char replacements go off', async () => {
-      plugin.settings.core.convertReplacementCharactersInTitle = true;
+    it('preserves convertReplacementChars when char replacements go off', async () => {
+      plugin.settings.core.convertReplacementChars = true;
       await tab.setControlValue(
-        'replaceCharacters.enableForbiddenCharReplacements',
+        'characterReplacements.enableForbiddenCharReplacements',
         false
       );
-      expect(plugin.settings.core.convertReplacementCharactersInTitle).toBe(
-        true
-      );
+      expect(plugin.settings.core.convertReplacementChars).toBe(true);
     });
 
-    it('clears applyCustomRulesInAlias when custom rules go off', async () => {
-      plugin.settings.markupStripping.applyCustomRulesInAlias = true;
-      await tab.setControlValue('customRules.enableCustomReplacements', false);
-      expect(plugin.settings.markupStripping.applyCustomRulesInAlias).toBe(
+    it('clears applyCustomReplacementsInAlias when custom replacements go off', async () => {
+      plugin.settings.markupStripping.applyCustomReplacementsInAlias = true;
+      await tab.setControlValue(
+        'customReplacements.enableCustomReplacements',
         false
       );
+      expect(
+        plugin.settings.markupStripping.applyCustomReplacementsInAlias
+      ).toBe(false);
     });
 
     it('re-renders via update() so force-written siblings never show a stale value', async () => {
-      await tab.setControlValue('customRules.enableCustomReplacements', false);
+      await tab.setControlValue(
+        'customReplacements.enableCustomReplacements',
+        false
+      );
       expect(update).toHaveBeenCalledTimes(1);
       expect(refreshDomState).not.toHaveBeenCalled();
     });
@@ -240,28 +250,34 @@ describe('FirstLineIsTitleSettings', () => {
   describe('first-enable cascades', () => {
     it('bulk-enables custom replacements the first time they are switched on', async () => {
       plugin.settings.core.hasEnabledCustomReplacements = false;
-      plugin.settings.customRules.customReplacements.forEach((rule) => {
+      plugin.settings.customReplacements.rules.forEach((rule) => {
         rule.enabled = false;
       });
 
-      await tab.setControlValue('customRules.enableCustomReplacements', true);
+      await tab.setControlValue(
+        'customReplacements.enableCustomReplacements',
+        true
+      );
 
       expect(
-        plugin.settings.customRules.customReplacements.every((r) => r.enabled)
+        plugin.settings.customReplacements.rules.every((r) => r.enabled)
       ).toBe(true);
       expect(plugin.settings.core.hasEnabledCustomReplacements).toBe(true);
     });
 
     it('does not bulk-enable again once the latch is set', async () => {
       plugin.settings.core.hasEnabledCustomReplacements = true;
-      plugin.settings.customRules.customReplacements.forEach((rule) => {
+      plugin.settings.customReplacements.rules.forEach((rule) => {
         rule.enabled = false;
       });
 
-      await tab.setControlValue('customRules.enableCustomReplacements', true);
+      await tab.setControlValue(
+        'customReplacements.enableCustomReplacements',
+        true
+      );
 
       expect(
-        plugin.settings.customRules.customReplacements.some((r) => r.enabled)
+        plugin.settings.customReplacements.rules.some((r) => r.enabled)
       ).toBe(false);
     });
 
@@ -277,16 +293,16 @@ describe('FirstLineIsTitleSettings', () => {
       expect(plugin.settings.core.hasEnabledAliases).toBe(true);
     });
 
-    it('does not seed applyCustomRulesInAlias when custom rules are disabled', async () => {
+    it('does not seed applyCustomReplacementsInAlias when custom replacements are disabled', async () => {
       plugin.settings.core.hasEnabledAliases = false;
-      plugin.settings.customRules.enableCustomReplacements = false;
-      plugin.settings.markupStripping.applyCustomRulesInAlias = false;
+      plugin.settings.customReplacements.enableCustomReplacements = false;
+      plugin.settings.markupStripping.applyCustomReplacementsInAlias = false;
 
       await tab.setControlValue('aliases.enableAliases', true);
 
-      expect(plugin.settings.markupStripping.applyCustomRulesInAlias).toBe(
-        false
-      );
+      expect(
+        plugin.settings.markupStripping.applyCustomReplacementsInAlias
+      ).toBe(false);
     });
   });
 
@@ -295,7 +311,7 @@ describe('FirstLineIsTitleSettings', () => {
     // core.hasEnabledForbiddenChars — whichever fires first permanently locks
     // the other out, so the two must enable an identical key set.
     const enabledCharKeys = (settings: PluginSettings): CharKey[] => {
-      const { charReplacements } = settings.replaceCharacters;
+      const { charReplacements } = settings.characterReplacements;
       return (Object.keys(charReplacements) as CharKey[])
         .filter((key) => charReplacements[key].enabled)
         .sort();
@@ -308,7 +324,7 @@ describe('FirstLineIsTitleSettings', () => {
         fresh as never
       );
       await freshTab.setControlValue(
-        'replaceCharacters.enableForbiddenCharReplacements',
+        'characterReplacements.enableForbiddenCharReplacements',
         true
       );
       return fresh.settings;
@@ -316,7 +332,7 @@ describe('FirstLineIsTitleSettings', () => {
 
     async function afterPluginLoad(): Promise<PluginSettings> {
       const fresh = makePlugin();
-      fresh.settings.replaceCharacters.enableForbiddenCharReplacements = true;
+      fresh.settings.characterReplacements.enableForbiddenCharReplacements = true;
       await new PluginInitializer(fresh as never).initializeFirstEnableLogic();
       return fresh.settings;
     }
@@ -333,7 +349,7 @@ describe('FirstLineIsTitleSettings', () => {
         await afterPluginLoad(),
       ]) {
         expect(
-          settings.replaceCharacters.charReplacements.backslash.enabled
+          settings.characterReplacements.charReplacements.backslash.enabled
         ).toBe(false);
       }
     });

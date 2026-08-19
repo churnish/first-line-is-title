@@ -379,6 +379,21 @@ export class EditorLifecycleManager {
       return;
     }
 
+    // Skip the plugin's own programmatic writes. CodeMirror fires editor-change for
+    // view.editor.replaceRange/setLine exactly as it does for a keystroke, and the creation
+    // delay guard above only covers newNoteDelay > 0 - at the default 0 this is the only
+    // thing keeping title insertion from opening a second, independent entry into the rename
+    // pipeline. It has to be checked here rather than only in processEditorChangeOptimal:
+    // this handler runs synchronously with the write, while that one runs from a throttle
+    // timer, by which point the flag has already been cleared.
+    if (this.plugin.fileStateManager.isEditorSyncing(filePath)) {
+      verboseLog(
+        this.plugin,
+        `Editor change from plugin's own write, skipping throttle: ${filePath}`
+      );
+      return;
+    }
+
     // Get current first line
     const currentFirstLine = this.extractFirstLineFromEditor(editor, file);
 

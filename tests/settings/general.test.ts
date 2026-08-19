@@ -15,9 +15,9 @@ vi.mock('../../src/i18n', () => ({
 
 import {
   buildFooterDefinitions,
-  buildNoteCreationGroup,
+  buildNewNotesGroup,
   buildSupportGroup,
-} from '../../src/settings/tab-general';
+} from '../../src/settings/general';
 
 /** Drives a `render` callback without pulling in a real Setting. */
 function captureButton(render: (setting: never) => void) {
@@ -55,7 +55,7 @@ describe('buildSupportGroup', () => {
   it('returns a Support group holding both outbound rows', () => {
     const group = buildSupportGroup();
     expect(group.type).toBe('group');
-    expect(group.heading).toBe('settings.tabs.supportGroup');
+    expect(group.heading).toBe('settings.sections.supportGroup');
     expect(group.items).toHaveLength(2);
   });
 
@@ -102,20 +102,20 @@ describe('buildSupportGroup', () => {
   });
 });
 
-describe('buildNoteCreationGroup', () => {
-  it('groups the five creation-time settings under the Note creation heading', () => {
+describe('buildNewNotesGroup', () => {
+  it('groups the five creation-time settings under the New notes heading', () => {
     // `visible` predicates are lazy, so no settings are read at build time
-    const group = buildNoteCreationGroup({} as never);
+    const group = buildNewNotesGroup({} as never);
 
     expect(group.type).toBe('group');
-    expect(group.heading).toBe('settings.tabs.noteCreationGroup');
+    expect(group.heading).toBe('settings.sections.newNotesGroup');
     expect(
       (group.items as unknown as { name?: string }[]).map((item) => item.name)
     ).toEqual([
       'settings.general.moveCursorToFirstLine.name',
       'settings.general.placeCursorAtLineEnd.name',
-      'settings.general.insertTitleOnCreation.name',
-      'settings.general.convertReplacementCharactersInTitle.name',
+      'settings.general.insertTitle.name',
+      'settings.general.convertReplacementChars.name',
       'settings.general.formatAsHeading.name',
     ]);
   });

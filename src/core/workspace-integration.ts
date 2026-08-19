@@ -1,7 +1,6 @@
-import { TFile, MarkdownView, ViewWithFileEditor } from 'obsidian';
+import { TFile, MarkdownView } from 'obsidian';
 import { around } from 'monkey-around';
 import { verboseLog } from '../utils';
-import { RenameAllFilesModal } from '../modals';
 import FirstLineIsTitle from '../../main';
 import { FileCreationCoordinator } from './file-creation-coordinator';
 import { TIMING } from '../constants/timing';
@@ -63,13 +62,6 @@ export class WorkspaceIntegration {
       t('commands.putFirstLineInTitle'),
       () => {
         void this.plugin.commandRegistrar.executeRenameCurrentFile();
-      }
-    );
-    this.plugin.addRibbonIcon(
-      'file-stack',
-      t('commands.putFirstLineInTitleAllNotes'),
-      () => {
-        new RenameAllFilesModal(this.app, this.plugin).open();
       }
     );
     this.plugin.addRibbonIcon(
@@ -169,14 +161,18 @@ export class WorkspaceIntegration {
 
           // Define processing function first
           const processFileCreation = async () => {
-            // Capture initial content immediately from the specific file's editor
+            // Capture initial content immediately from the specific file's editor.
+            // This is the one leaf scan of the creation path: the view it resolves is threaded
+            // to every step that needs it, instead of each re-running the scan.
             let initialContent = '';
+            let createdFileView: MarkdownView | null = null;
             try {
               const leaves = app.workspace.getLeavesOfType('markdown');
               for (const leaf of leaves) {
                 if (!(leaf.view instanceof MarkdownView)) continue;
                 const view = leaf.view;
                 if (view.file?.path === file.path && view.editor) {
+                  createdFileView = view;
                   initialContent = view.editor.getValue();
                   verboseLog(
                     plugin,
@@ -233,51 +229,48 @@ export class WorkspaceIntegration {
                 );
 
               // Execute title insertion and cursor positioning immediately (not affected by newNoteDelay)
+              let titleInsertionSettledCursor = false;
               if (actions.shouldInsertTitle) {
                 verboseLog(plugin, `CREATE: Inserting title for: ${file.path}`);
-                await plugin.fileOperations.insertTitleOnCreation(
+                const titleResult = await plugin.fileOperations.insertTitle(
                   file,
-                  initialContent
+                  initialContent,
+                  createdFileView
                 );
+                // Optional chain keeps this working against doubles that resolve undefined
+                titleInsertionSettledCursor =
+                  titleResult?.cursorPositioned ?? false;
               }
 
-              if (actions.shouldMoveCursor) {
+              // Skip the delayed pass when insertion already placed the cursor and left the
+              // view in its final mode - it would re-read the whole editor only to arrive at
+              // the state the note is already in. The cursor-only path (nothing inserted)
+              // still runs, as does the case where a mode transition is still owed.
+              if (actions.shouldMoveCursor && !titleInsertionSettledCursor) {
                 verboseLog(
                   plugin,
                   `CREATE: Moving cursor for: ${file.path} (placeCursorAtEnd: ${actions.placeCursorAtEnd})`
                 );
 
                 window.setTimeout(() => {
-                  // Re-check if file has a view after delay
-                  const leaves = app.workspace.getLeavesOfType('markdown');
-                  let fileHasView = false;
-                  for (const leaf of leaves) {
-                    if (!(leaf.view instanceof MarkdownView)) continue;
-                    if (leaf.view.file?.path === file.path) {
-                      fileHasView = true;
-                      break;
-                    }
-                  }
-
-                  if (fileHasView) {
-                    // Use coordinator's explicit placeCursorAtEnd decision
-                    // This respects the decision tree outcomes from Nodes 16-18
-                    void plugin.fileOperations.handleCursorPositioning(
-                      file,
-                      !actions.shouldInsertTitle,
-                      actions.placeCursorAtEnd
-                    );
-                  } else {
-                    verboseLog(
-                      plugin,
-                      `Skipping cursor positioning - no view found (canvas): ${file.path}`
-                    );
-                  }
+                  // No view hint across this timer: handleCursorPositioning resolves the view
+                  // itself, and a hint captured before the delay could name a closed leaf.
+                  // It already skips when nothing matches, which is what the pre-scan did.
+                  //
+                  // Use coordinator's explicit placeCursorAtEnd decision
+                  // This respects the decision tree outcomes from Nodes 16-18
+                  void plugin.fileOperations.handleCursorPositioning(
+                    file,
+                    !actions.shouldInsertTitle,
+                    actions.placeCursorAtEnd
+                  );
                 }, TIMING.RAF_CURSOR_POSITIONING_DELAY_MS);
               }
 
               // Rename file if automatic mode - respects newNoteDelay setting
-              const processRename = async () => {
+              // viewHint is only supplied when this runs synchronously with the creation
+              // handler; the delayed branch passes null because its leaf may be gone by then
+              const processRename = async (viewHint: MarkdownView | null) => {
                 try {
                   if (settings.renameAutomatically && plugin.isFullyLoaded) {
                     verboseLog(
@@ -287,21 +280,15 @@ export class WorkspaceIntegration {
 
                     // Get current editor content if file is open
                     let editorContent: string | undefined;
-                    const leaves = app.workspace.getLeavesOfType('markdown');
-                    for (const leaf of leaves) {
-                      // Cast to ViewWithFileEditor to access MarkdownView properties
-                      const view = leaf.view as ViewWithFileEditor;
-                      if (
-                        view &&
-                        view.file &&
-                        view.file.path === file.path &&
-                        view.editor
-                      ) {
-                        const value = view.editor.getValue();
-                        if (typeof value === 'string') {
-                          editorContent = value;
-                        }
-                        break;
+                    const renameView =
+                      plugin.fileOperations.resolveMarkdownViewForFile(
+                        file,
+                        viewHint
+                      );
+                    if (renameView) {
+                      const value = renameView.editor.getValue();
+                      if (typeof value === 'string') {
+                        editorContent = value;
                       }
                     }
                     // hasActiveEditor=true because we just verified editor exists
@@ -333,7 +320,7 @@ export class WorkspaceIntegration {
               // Execute rename with delay (if configured)
               if (settings.newNoteDelay === 0) {
                 // No delay - process immediately without blocking events
-                await processRename();
+                await processRename(createdFileView);
               } else {
                 // Has delay - use timer and block events during delay
                 verboseLog(
@@ -341,7 +328,7 @@ export class WorkspaceIntegration {
                   `CREATE: Scheduling rename in ${settings.newNoteDelay}ms: ${file.name}`
                 );
                 const timer = window.setTimeout(() => {
-                  void processRename();
+                  void processRename(null);
                 }, settings.newNoteDelay);
                 plugin.editorLifecycle.setCreationDelayTimer(file.path, timer);
               }

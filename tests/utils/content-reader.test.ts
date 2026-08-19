@@ -79,8 +79,8 @@ describe('content-reader', () => {
       expect(result).toBe(editorContent);
     });
 
-    it('should use cached read when fileReadMethod is Cache', async () => {
-      plugin.settings.core.fileReadMethod = 'Cache';
+    it('should use cached read when contentReadMethod is Cache', async () => {
+      plugin.settings.core.contentReadMethod = 'Cache';
       app.vault.cachedRead = vi.fn().mockResolvedValue('Cached content');
 
       const result = await readFileContent(plugin, file);
@@ -89,8 +89,8 @@ describe('content-reader', () => {
       expect(app.vault.cachedRead).toHaveBeenCalledWith(file);
     });
 
-    it('should use direct read when fileReadMethod is File', async () => {
-      plugin.settings.core.fileReadMethod = 'File';
+    it('should use direct read when contentReadMethod is File', async () => {
+      plugin.settings.core.contentReadMethod = 'File';
       app.vault.read = vi.fn().mockResolvedValue('File content');
 
       const result = await readFileContent(plugin, file);
@@ -100,7 +100,7 @@ describe('content-reader', () => {
     });
 
     it('should use cached read for Editor method when no editor available', async () => {
-      plugin.settings.core.fileReadMethod = 'Editor';
+      plugin.settings.core.contentReadMethod = 'Editor';
       app.vault.cachedRead = vi.fn().mockResolvedValue('Fallback content');
 
       const result = await readFileContent(plugin, file);
@@ -110,7 +110,7 @@ describe('content-reader', () => {
     });
 
     it('should use fresh read when preferFresh is true', async () => {
-      plugin.settings.core.fileReadMethod = 'Editor';
+      plugin.settings.core.contentReadMethod = 'Editor';
       app.vault.read = vi.fn().mockResolvedValue('Fresh content');
 
       const result = await readFileContent(plugin, file, { preferFresh: true });
@@ -120,7 +120,7 @@ describe('content-reader', () => {
     });
 
     it('should use fresh read when fileStateManager indicates need', async () => {
-      plugin.settings.core.fileReadMethod = 'Editor';
+      plugin.settings.core.contentReadMethod = 'Editor';
       plugin.fileStateManager.needsFreshRead = vi.fn().mockReturnValue(true);
       app.vault.read = vi.fn().mockResolvedValue('Fresh content');
 
@@ -180,7 +180,7 @@ describe('content-reader', () => {
     });
 
     it('should log when verbose logging is enabled', async () => {
-      plugin.settings.core.verboseLogging = true;
+      plugin.settings.core.debug = true;
       // In vitest v4, spyOn on a pre-mocked vi.fn() shares call history with the
       // global mock from setup.ts. mockClear() resets the count for this test.
       const consoleSpy = vi.spyOn(console, 'debug');
@@ -193,7 +193,7 @@ describe('content-reader', () => {
     });
 
     it('should not log when verbose logging is disabled', async () => {
-      plugin.settings.core.verboseLogging = false;
+      plugin.settings.core.debug = false;
       // In vitest v4, spyOn on a pre-mocked vi.fn() shares call history with the
       // global mock from setup.ts. mockClear() resets the count for this test.
       const consoleSpy = vi.spyOn(console, 'debug');
@@ -205,8 +205,8 @@ describe('content-reader', () => {
       expect(consoleSpy).not.toHaveBeenCalled();
     });
 
-    it('should handle unknown fileReadMethod with cached read', async () => {
-      plugin.settings.core.fileReadMethod = 'Unknown' as any;
+    it('should handle unknown contentReadMethod with cached read', async () => {
+      plugin.settings.core.contentReadMethod = 'Unknown' as any;
       app.vault.cachedRead = vi.fn().mockResolvedValue('Cached content');
 
       const result = await readFileContent(plugin, file);
@@ -215,8 +215,8 @@ describe('content-reader', () => {
       expect(app.vault.cachedRead).toHaveBeenCalledWith(file);
     });
 
-    it('should handle unknown fileReadMethod with fresh read when preferFresh', async () => {
-      plugin.settings.core.fileReadMethod = 'Unknown' as any;
+    it('should handle unknown contentReadMethod with fresh read when preferFresh', async () => {
+      plugin.settings.core.contentReadMethod = 'Unknown' as any;
       app.vault.read = vi.fn().mockResolvedValue('Fresh content');
 
       const result = await readFileContent(plugin, file, { preferFresh: true });

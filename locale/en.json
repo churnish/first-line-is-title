@@ -57,7 +57,7 @@
     "settingsCleared": "Settings have been cleared",
     "settingsImported": "Settings have been imported successfully",
     "invalidImportFile": "Invalid settings file. Please select a valid JSON file.",
-    "firstTimeNotice": "Please open First Line is Title settings to set your preferences. Please ensure your files are regularly backed up.",
+    "settingsReset": "Due to major changes, all First Line is Title settings have been reset. A backup of your settings can be found in your Obsidian config folder under plugins/first-line-is-title/data_backup.json.",
     "inactivityNotice": "First Line is Title is still active. Please ensure your settings and file backups are up to date.",
     "disabledRenamingForNNotes": "Disabled renaming for {{count}} notes",
     "enabledRenamingForNNotes": "Enabled renaming for {{count}} notes",
@@ -96,8 +96,8 @@
     "renameInExcludedFolders": "Rename notes in excluded folders",
     "renameWithExcludedTags": "Rename notes with excluded tags",
     "renameWithExcludedProperties": "Rename notes with excluded properties",
-    "renameWithChildTags": "Rename notes with subtags (e.g., #tag/subtag)",
-    "resetAllSettings": "This will reset all plugin settings to their default values and delete all custom rules. This cannot be undone.",
+    "renameWithSubtags": "Rename notes with subtags (e.g., #tag/subtag)",
+    "resetAllSettings": "This will reset all plugin settings to their default values and delete all user rules. This cannot be undone.",
     "disableEnableAddProperty": "This will add the property ",
     "disableEnableRemoveProperty": "This will remove the property ",
     "propertyTo": " to ",
@@ -134,19 +134,20 @@
   },
   "settings": {
     "common": {
-      "restoreDefault": "Restore default"
+      "restoreDefault": "Restore default",
+      "enabled": "Enabled"
     },
-    "tabs": {
+    "sections": {
       "exclusions": "Exclusions",
-      "replaceCharacters": "Character replacements",
-      "customRules": "Custom rules",
-      "stripMarkup": "Markup stripping",
+      "characterReplacements": "Character replacements",
+      "customReplacements": "Custom replacements",
+      "markupStripping": "Markup stripping",
       "alias": "Alias",
       "commands": "Commands",
       "other": "Other",
       "advancedGroup": "Advanced",
-      "noteCreationGroup": "Note creation",
-      "supportGroup": "Support"
+      "supportGroup": "Support",
+      "newNotesGroup": "New notes"
     },
     "general": {
       "renameAutomatically": {
@@ -158,30 +159,30 @@
         "desc": "Also rename notes when they become active in the editor."
       },
       "onlyRenameIfHeading": {
-        "name": "Only rename if heading",
+        "name": "Rename only if heading",
         "desc": "Don't rename notes if the first line is not a heading."
       },
       "moveCursorToFirstLine": {
         "name": "Move cursor to first line",
-        "desc": "Place the cursor in the first line when creating a new note."
+        "desc": "Place the cursor in the first line on note creation."
       },
       "placeCursorAtLineEnd": {
         "name": "Place cursor at line end",
         "desc": "When moving the cursor to a first line with content, place it at the end of the line instead of the start."
       },
-      "insertTitleOnCreation": {
+      "insertTitle": {
         "name": "Insert title",
         "desc": {
-          "part1": "Place the file name in the first line when creating a new empty note (unless ",
+          "part1": "Place the file name in the first line when creating an empty note (unless ",
           "untitled": "Untitled",
           "part2": ")."
         }
       },
-      "convertReplacementCharactersInTitle": {
+      "convertReplacementChars": {
         "name": "Convert replacement characters",
         "desc": {
-          "part1": "When inserting title on note creation, convert forbidden character replacements back to their original forms, as set in ",
-          "replaceCharacters": "Character replacements",
+          "part1": "When inserting title on note creation, convert replacements for forbidden characters back to their original forms, as set in ",
+          "characterReplacements": "Character replacements",
           "part2": " settings."
         }
       },
@@ -195,12 +196,12 @@
       },
       "renameAllNotes": {
         "name": "Rename all notes",
-        "desc": "Rename every note in the vault. Can also be run from Command palette or the ribbon.",
+        "desc": "Rename every note in the vault. Can also be run from Command palette.",
         "button": "Rename"
       },
       "sendFeedback": {
         "name": "Send feedback",
-        "desc": "Request improvements or report issues.",
+        "desc": "Request improvements or report bugs.",
         "button": "Open"
       },
       "help": {
@@ -244,7 +245,7 @@
           "inPropertiesOnly": "In properties only",
           "inBodyOnly": "In note body only"
         },
-        "matchChildTags": {
+        "matchSubtags": {
           "name": "Match subtags",
           "desc": "For example, also match #tag/subtag if #tag is listed below."
         },
@@ -281,13 +282,17 @@
         "emptyState": "No properties added."
       },
       "disableProperty": {
-        "title": "Property to disable renaming",
+        "title": "Property that disables renaming",
         "alwaysRespected": "Always respected — cannot get overridden by any command.",
         "caseInsensitive": "Case-insensitive.",
         "updateWarning": "Changing this will not automatically update properties that have been previously added to notes. Update manually after changing."
       },
       "fileNames": {
         "title": "File name matches",
+        "exclusionMode": {
+          "name": "Exclusion mode",
+          "desc": "Set how file names should be excluded."
+        },
         "addButton": "Add match",
         "emptyState": "No matches added.",
         "headers": {
@@ -309,10 +314,11 @@
         "name": "Alias property name",
         "desc": "Set the property name in which to insert the alias.",
         "quickSwitcher": "Use “aliases” to make the alias searchable in Quick switcher and link suggestions.",
-        "multipleProperties": "To populate multiple properties, separate by comma (e.g., “aliases, title”)."
+        "multipleProperties": "To populate multiple properties, separate by comma (e.g., “aliases, title”).",
+        "placeholder": "Property name"
       },
-      "onlyAddIfDiffers": {
-        "name": "Only add alias if first line differs from title",
+      "addAliasOnlyIfTitleDiffers": {
+        "name": "Add alias only if title differs from first line",
         "desc": "For example, if the file name was truncated, or some characters have been omitted or replaced."
       },
       "truncateAlias": {
@@ -325,11 +331,11 @@
           "part3": " settings."
         }
       },
-      "applyCustomRules": {
-        "name": "Apply custom rules",
+      "applyCustomReplacements": {
+        "name": "Apply custom replacements",
         "desc": {
           "part1": "Apply custom text replacements to alias, as set in ",
-          "customRules": "Custom rules",
+          "customReplacements": "Custom replacements",
           "part2": " settings."
         }
       },
@@ -337,11 +343,11 @@
         "name": "Strip markup",
         "desc": {
           "part1": "Omit markup syntax in alias, as set in ",
-          "stripMarkup": "Markup stripping",
+          "markupStripping": "Markup stripping",
           "part2": " settings."
         }
       },
-      "keepEmptyProperty": {
+      "keepEmptyAliasProperty": {
         "name": "Keep empty alias property",
         "desc": "When the plugin removes the first line alias and no other aliases remain, keep the empty property rather than delete it."
       },
@@ -349,7 +355,7 @@
         "name": "Place last in list",
         "desc": "Place alias last in list-type property."
       },
-      "hideProperty": {
+      "hideAliasProperty": {
         "name": "Hide alias property",
         "desc": "Hide the alias property in Reading view and Live Preview. Will always remain visible in Source view.",
         "never": "Never",
@@ -361,7 +367,6 @@
         "desc": "Also hide the property in the properties sidebar."
       },
       "limitations": {
-        "title": "Limitations",
         "bullet1": {
           "part1": "First line alias will not update when editing in page preview or Canvas. Using ",
           "part2": " is recommended."
@@ -369,9 +374,9 @@
         "bullet2": "Due to Obsidian bug, “modified externally” notifications may occasionally appear when updating alias."
       }
     },
-    "replaceCharacters": {
+    "characterReplacements": {
       "name": "Replace forbidden characters",
-      "desc": "Replace forbidden file name characters with safe alternatives.",
+      "desc": "Replace characters forbidden in file name with safe alternatives.",
       "toggleDesc": "Replace characters not allowed in Obsidian file names with safe alternatives. Turn this off to strip them entirely.",
       "trimNote": {
         "part1": "Enable ",
@@ -414,25 +419,16 @@
       },
       "emptyPlaceholder": "Empty"
     },
-    "customRules": {
-      "name": "Enable custom rules",
-      "desc": "Apply custom text replacements to file name.",
-      "listHeading": "Rules",
-      "rulesAppliedSequentially": "Rules are applied sequentially from top to bottom.",
+    "customReplacements": {
+      "name": "Enable custom replacements",
+      "desc": "Configure custom text replacements for file name.",
+      "toggleDesc": "Apply custom text replacements to file name.",
+      "rulesApplyTopToBottom": "Rules apply top to bottom.",
       "whitespacePreserved": "Whitespace preserved.",
       "leaveBlank": {
         "part1": "Leave ",
         "replaceWith": "Replace with",
         "part2": " blank to omit text entirely."
-      },
-      "untitledWarning": {
-        "part1": "If ",
-        "replaceWith": "Replace with",
-        "part2": " is blank and ",
-        "textToReplace": "Text to replace",
-        "part3": " matches the whole line, the file name becomes ",
-        "untitled": "Untitled",
-        "part4": "."
       },
       "headers": {
         "enable": "Enable",
@@ -443,24 +439,23 @@
       },
       "addReplacement": "Add replacement",
       "processingOrder": {
-        "title": "Processing order",
         "applyAfterForbidden": "Apply after stripping or replacing forbidden characters",
         "asSetInReplace": {
           "part1": "As set in ",
-          "replaceCharacters": "Character replacements",
+          "characterReplacements": "Character replacements",
           "part2": " settings."
         },
         "applyAfterMarkup": "Apply after markup stripping",
         "asSetInStrip": {
           "part1": "As set in ",
-          "stripMarkup": "Markup stripping",
+          "markupStripping": "Markup stripping",
           "part2": " settings."
         }
       },
-      "emptyState": "No custom rules.",
+      "emptyState": "No custom replacements.",
       "emptyRule": "Empty rule"
     },
-    "stripMarkup": {
+    "markupStripping": {
       "desc": "Omit markup syntax in file name.",
       "headings": {
         "name": "Strip heading markup",
@@ -720,7 +715,7 @@
         "onTitleChange": "On title change",
         "never": "Never"
       },
-      "grabCardLink": {
+      "grabTitleFromCardLink": {
         "name": "Grab title from card link",
         "desc": {
           "part1": "If a note starts with a card link created with ",
@@ -747,9 +742,12 @@
         "name": "Debug",
         "desc": "Log all of the plugin's activity to the developer console."
       },
-      "debugOutputContent": {
+      "debugOutputFullContent": {
         "name": "Output full file content in console",
         "desc": "Log the complete content of files (including YAML frontmatter) whenever they are modified."
+      },
+      "troubleshooting": {
+        "title": "Troubleshooting"
       },
       "configuration": {
         "title": "Configuration"
@@ -775,7 +773,12 @@
     },
     "errors": {
       "saveFailed": "Failed to save settings",
-      "importFailed": "Failed to import settings"
+      "importFailed": "Failed to import settings",
+      "importIncompatible": "This settings file comes from an incompatible plugin version. Your current settings were left unchanged."
+    },
+    "ruleCount": {
+      "one": "{{count}} rule",
+      "many": "{{count}} rules"
     }
   }
 }
