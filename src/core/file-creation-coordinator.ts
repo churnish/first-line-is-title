@@ -193,7 +193,7 @@ export class FileCreationCoordinator {
       }
       this.recordDecision('in-template-folder', 'N');
 
-      // folder-templates-mode: Is Enable folder templates ON?
+      // folder-templates-mode: Is the trigger mode set to folder templates?
       if (this.isFolderTemplatesEnabled()) {
         this.recordDecision('folder-templates-mode', 'Y');
 
@@ -213,7 +213,7 @@ export class FileCreationCoordinator {
       }
       this.recordDecision('folder-templates-mode', 'N');
 
-      // regex-templates-mode: Is Enable file regex templates ON? (only reached if folder-templates-mode:N)
+      // regex-templates-mode: Is the trigger mode set to file regex templates? (only reached if folder-templates-mode:N)
       if (this.isFileRegexEnabled()) {
         this.recordDecision('regex-templates-mode', 'Y');
 
@@ -493,6 +493,15 @@ export class FileCreationCoordinator {
     return templater?.settings as Record<string, unknown> | undefined;
   }
 
+  /** Templater's template-matching mode. Replaced the `enable_folder_templates` and
+   * `enable_file_templates` booleans, which its settings migration deletes — reading those returns
+   * `undefined` on every current install, silently. Independent of the device-local trigger gate:
+   * this picks WHICH templates apply, not WHETHER Templater fires. */
+  private templaterTriggerMode(): 'folder' | 'regex' | 'none' {
+    const mode = this.getTemplaterSettings()?.trigger_on_file_creation_mode;
+    return mode === 'folder' || mode === 'regex' ? mode : 'none';
+  }
+
   /**
    * templater-enabled: Check if Templater plugin is installed and enabled
    */
@@ -504,7 +513,13 @@ export class FileCreationCoordinator {
    * templater-trigger: Check if Templater's "Trigger on new file creation" is enabled
    */
   private isTemplaterTriggerOn(): boolean {
-    return this.getTemplaterSettings()?.trigger_on_file_creation === true;
+    // Device-local, NOT in `plugin.settings`: Templater moved this out of the synced settings so
+    // that syncing a vault cannot arm code execution on a device the user has not trusted. It
+    // gates `on_file_creation` ahead of the mode, so the mode alone does not mean Templater fires.
+    const local = this.plugin.app.loadLocalStorage(
+      'templater-local-settings'
+    ) as Record<string, unknown> | null;
+    return local?.trigger_on_file_creation === true;
   }
 
   /**
@@ -520,10 +535,10 @@ export class FileCreationCoordinator {
   }
 
   /**
-   * folder-templates-mode: Check if Templater's "Enable folder templates" is ON
+   * folder-templates-mode: Check if Templater's trigger mode is set to folder templates
    */
   private isFolderTemplatesEnabled(): boolean {
-    return this.getTemplaterSettings()?.enable_folder_templates === true;
+    return this.templaterTriggerMode() === 'folder';
   }
 
   /**
@@ -558,10 +573,10 @@ export class FileCreationCoordinator {
   }
 
   /**
-   * regex-templates-mode: Check if Templater's "Enable file regex templates" is ON
+   * regex-templates-mode: Check if Templater's trigger mode is set to file regex templates
    */
   private isFileRegexEnabled(): boolean {
-    return this.getTemplaterSettings()?.enable_file_templates === true;
+    return this.templaterTriggerMode() === 'regex';
   }
 
   /**

@@ -423,12 +423,15 @@ describe('FileCreationCoordinator', () => {
     });
     mockApp.plugins.plugins['templater-obsidian'] = {
       settings: {
-        trigger_on_file_creation: true,
+        trigger_on_file_creation_mode: 'folder',
         templates_folder: 'Templates',
-        enable_folder_templates: true,
         folder_templates: [{ folder: 'notes', template: 'Templates/daily.md' }],
       },
     };
+    // The trigger lives in device-local storage, never in Templater's synced settings
+    mockApp.loadLocalStorage = vi.fn().mockReturnValue({
+      trigger_on_file_creation: true,
+    });
     // The rename lands during the templater-event wait, so the name name-excluded cleared is stale by template-excluded.
     // Deferred rather than fired inline: the coordinator's own `eventRef` is still in its temporal dead zone while `on` is running.
     const fireTemplaterEvent = (
@@ -471,5 +474,98 @@ describe('FileCreationCoordinator', () => {
     expect(result.shouldInsertTitle).toBe(true);
     expect(result.shouldMoveCursor).toBe(true);
     expect(result.placeCursorAtEnd).toBe(true);
+  });
+
+  describe('Templater gates', () => {
+    /** Installs Templater with synced settings and a device-local trigger state.
+     * The tag rule is what sends the walk down the Templater branch at tag-property-exclusions;
+     * without it the walk exits at tag-property-exclusions:N and never reaches these gates. */
+    function installTemplater(
+      syncedSettings: Record<string, unknown>,
+      localSettings: Record<string, unknown> | undefined
+    ) {
+      applyExclusions({ excludedTags: ['exclude-me'] });
+      mockApp.plugins.plugins['templater-obsidian'] = {
+        settings: { templates_folder: 'Templates', ...syncedSettings },
+      };
+      // Templater keeps the trigger out of its synced settings, so the coordinator reads it here
+      mockApp.loadLocalStorage = vi.fn().mockReturnValue(localSettings);
+    }
+
+    it('takes the folder branch when the trigger is on and the mode is folder', async () => {
+      file.parent = createMockFolder('notes');
+      installTemplater(
+        {
+          trigger_on_file_creation_mode: 'folder',
+          // Deliberately non-matching: a matching entry would enter the templater-event wait against
+          // a mock `workspace.on` that never fires, stalling the run for the full timeout
+          folder_templates: [
+            { folder: 'other', template: 'Templates/other.md' },
+          ],
+        },
+        { trigger_on_file_creation: true }
+      );
+
+      const result = await determineActions('');
+
+      expect(result.decisionPath).toContain('templater-trigger:Y');
+      expect(result.decisionPath).toContain('folder-templates-mode:Y');
+    });
+
+    it('falls through to the regex branch when the mode is regex', async () => {
+      // `file_templates` left absent so regex-template-matches:N returns before the templater-event wait
+      installTemplater(
+        { trigger_on_file_creation_mode: 'regex' },
+        { trigger_on_file_creation: true }
+      );
+
+      const result = await determineActions('');
+
+      expect(result.decisionPath).toContain('templater-trigger:Y');
+      expect(result.decisionPath).toContain('folder-templates-mode:N');
+      expect(result.decisionPath).toContain('regex-templates-mode:Y');
+    });
+
+    it('takes neither template branch when the mode is none', async () => {
+      installTemplater(
+        { trigger_on_file_creation_mode: 'none' },
+        { trigger_on_file_creation: true }
+      );
+
+      const result = await determineActions('');
+
+      expect(result.decisionPath).toContain('templater-trigger:Y');
+      expect(result.decisionPath).toContain('folder-templates-mode:N');
+      expect(result.decisionPath).toContain('regex-templates-mode:N');
+    });
+
+    it('takes neither template branch when the mode key is absent', async () => {
+      installTemplater({}, { trigger_on_file_creation: true });
+
+      const result = await determineActions('');
+
+      expect(result.decisionPath).toContain('folder-templates-mode:N');
+    });
+
+    it('stops at the trigger gate when the device-local trigger is off', async () => {
+      // The state every freshly migrated and every newly synced device starts in
+      installTemplater({ trigger_on_file_creation_mode: 'folder' }, undefined);
+
+      const result = await determineActions('');
+
+      expect(result.decisionPath).toContain('templater-trigger:N');
+    });
+
+    it('ignores the pre-migration folder-template boolean', async () => {
+      // Pins the decision to drop the legacy fallback: re-adding it must be a deliberate test change
+      installTemplater(
+        { enable_folder_templates: true },
+        { trigger_on_file_creation: true }
+      );
+
+      const result = await determineActions('');
+
+      expect(result.decisionPath).toContain('folder-templates-mode:N');
+    });
   });
 });
