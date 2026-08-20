@@ -897,4 +897,61 @@ describe('RenameEngine', () => {
       expect(result.split('\n').length).toBe(1000);
     });
   });
+  // The consolidated alias step in processFile matches on the outcome's `reason`. The
+  // successful-rename outcome once carried no reason at all, so the gate skipped exactly
+  // the case that renames a file, and only the manual commands noticed — the editor-change
+  // handlers call updateAliasIfNeeded themselves.
+  describe('processFile alias gate', () => {
+    beforeEach(() => {
+      plugin.settings.aliases.enableAliases = true;
+      plugin.app.vault.getAbstractFileByPath = vi.fn().mockReturnValue(file);
+    });
+
+    function stubOutcome(outcome: { success: boolean; reason: string }) {
+      return vi
+        .spyOn(renameEngine as any, 'processFileInternal')
+        .mockResolvedValue(outcome);
+    }
+
+    it('should update the alias after a successful rename', async () => {
+      stubOutcome({ success: true, reason: 'renamed' });
+
+      await renameEngine.processFile(file);
+
+      expect(plugin.aliasManager.updateAliasIfNeeded).toHaveBeenCalledTimes(1);
+    });
+
+    it('should update the alias when no rename was needed', async () => {
+      stubOutcome({ success: true, reason: 'no-rename-needed' });
+
+      await renameEngine.processFile(file);
+
+      expect(plugin.aliasManager.updateAliasIfNeeded).toHaveBeenCalledTimes(1);
+    });
+
+    it('should update the alias when empty content was retained', async () => {
+      stubOutcome({ success: false, reason: 'empty-content-retained' });
+
+      await renameEngine.processFile(file);
+
+      expect(plugin.aliasManager.updateAliasIfNeeded).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not update the alias when the file was excluded', async () => {
+      stubOutcome({ success: false, reason: 'excluded' });
+
+      await renameEngine.processFile(file);
+
+      expect(plugin.aliasManager.updateAliasIfNeeded).not.toHaveBeenCalled();
+    });
+
+    it('should not update the alias when aliases are disabled', async () => {
+      plugin.settings.aliases.enableAliases = false;
+      stubOutcome({ success: true, reason: 'renamed' });
+
+      await renameEngine.processFile(file);
+
+      expect(plugin.aliasManager.updateAliasIfNeeded).not.toHaveBeenCalled();
+    });
+  });
 });

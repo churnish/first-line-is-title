@@ -1,5 +1,4 @@
 import {
-  Platform,
   SettingDefinitionItem,
   SettingDefinitionPage,
   Notice,
@@ -100,10 +99,7 @@ export function buildAliasPage(
             key: 'aliases.enableAliases',
           },
         },
-        // Desktop-only: the caveats it lists have no mobile equivalent.
-        buildDescRow(buildLimitationsNote(), {
-          visible: () => aliasesEnabled() && !Platform.isMobile,
-        }),
+        buildDescRow(buildLimitationsNote(), { visible: aliasesEnabled }),
       ],
     },
     {

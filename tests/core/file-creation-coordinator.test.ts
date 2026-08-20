@@ -99,7 +99,7 @@ describe('FileCreationCoordinator', () => {
     expect(result.placeCursorAtEnd).toBe(true);
     // Sole breadcrumb assertion in the suite, kept as a smoke check that the tree still walks the expected nodes
     expect(result.decisionPath).toBe(
-      '1Y → 2N → 2bN → 2cN → 3N → 14C → 17Y → 18N'
+      'feature-enabled:Y → folder-excluded:N → content-excluded:N → name-excluded:N → tag-property-exclusions:N → features:both → cursor-at-end:Y → content-below-yaml:N'
     );
   });
 
@@ -279,7 +279,7 @@ describe('FileCreationCoordinator', () => {
     expect(renameVerdicts).toContain(false);
   });
 
-  it('short-circuits at folder exclusion (Node 2) without calling content exclusion check', async () => {
+  it('short-circuits at folder exclusion (folder-excluded) without calling content exclusion check', async () => {
     mockPlugin.settings = createTestSettings({
       core: {
         ...structuredClone(DEFAULT_SETTINGS.core),
@@ -301,7 +301,7 @@ describe('FileCreationCoordinator', () => {
     expect(mockExclusionGate).toHaveBeenCalledTimes(0);
   });
 
-  it('does nothing when the file name matches an enabled file-name exclusion (Node 2c)', async () => {
+  it('does nothing when the file name matches an enabled file-name exclusion (name-excluded)', async () => {
     mockPlugin.settings = createTestSettings({
       core: {
         ...structuredClone(DEFAULT_SETTINGS.core),
@@ -327,12 +327,12 @@ describe('FileCreationCoordinator', () => {
     expect(result.shouldInsertTitle).toBe(false);
     expect(result.shouldMoveCursor).toBe(false);
     expect(result.placeCursorAtEnd).toBe(false);
-    // One, not zero: 2c runs after 2b, so the content gate has already fired — this pins that ordering
+    // One, not zero: name-excluded runs after content-excluded, so the content gate has already fired — this pins that ordering
     expect(mockExclusionGate).toHaveBeenCalledTimes(1);
   });
 
   // Every other fixture is `test.md`, whose name, basename and path all match the exclusion text alike, so a `file.name` → `file.path` swap here would stay green while silently diverging from the rename path, which matches on the name only
-  it('proceeds for a file inside an excluded-sounding folder, pinning Node 2c to the file name rather than the path', async () => {
+  it('proceeds for a file inside an excluded-sounding folder, pinning name-excluded to the file name rather than the path', async () => {
     file = createMockFile('excluded-term/note.md');
     mockPlugin.settings = createTestSettings({
       core: {
@@ -359,7 +359,7 @@ describe('FileCreationCoordinator', () => {
     expect(result.shouldMoveCursor).toBe(true);
   });
 
-  it('proceeds to settings hub when content not excluded, no Templater, and no exclusions configured (Node 3N regression baseline)', async () => {
+  it('proceeds to settings hub when content not excluded, no Templater, and no exclusions configured (tag-property-exclusions:N regression baseline)', async () => {
     const result = await determineActions('');
 
     expect(mockExclusionGate).toHaveBeenCalledTimes(1);
@@ -368,7 +368,7 @@ describe('FileCreationCoordinator', () => {
     expect(result.placeCursorAtEnd).toBe(true);
   });
 
-  it('excludes at Node 2b through the real exclusion gate, not a stub', async () => {
+  it('excludes at content-excluded through the real exclusion gate, not a stub', async () => {
     const { FileOperations } =
       await import('../../src/operations/file-operations');
     mockPlugin.settings = createTestSettings({
@@ -398,7 +398,7 @@ describe('FileCreationCoordinator', () => {
     expect(result.placeCursorAtEnd).toBe(false);
   });
 
-  it('does nothing when Templater renames the note into a file-name exclusion after Node 2c cleared it (Node 13b)', async () => {
+  it('does nothing when Templater renames the note into a file-name exclusion after name-excluded cleared it (name-excluded-after-template)', async () => {
     file = createMockFile('notes/test.md');
     file.parent = createMockFolder('notes');
     mockPlugin.settings = createTestSettings({
@@ -408,7 +408,7 @@ describe('FileCreationCoordinator', () => {
         moveCursorToFirstLine: true,
       },
       exclusions: {
-        // A configured tag rule is what sends the walk down the Templater branch at Node 3
+        // A configured tag rule is what sends the walk down the Templater branch at tag-property-exclusions
         excludedTags: ['exclude-me'],
         excludedFileNames: [
           {
@@ -429,7 +429,7 @@ describe('FileCreationCoordinator', () => {
         folder_templates: [{ folder: 'notes', template: 'Templates/daily.md' }],
       },
     };
-    // The rename lands during the Node 12 wait, so the name Node 2c cleared is stale by Node 13.
+    // The rename lands during the templater-event wait, so the name name-excluded cleared is stale by template-excluded.
     // Deferred rather than fired inline: the coordinator's own `eventRef` is still in its temporal dead zone while `on` is running.
     const fireTemplaterEvent = (
       _name: string,
@@ -450,10 +450,10 @@ describe('FileCreationCoordinator', () => {
     expect(result.shouldInsertTitle).toBe(false);
     expect(result.shouldMoveCursor).toBe(false);
     expect(result.placeCursorAtEnd).toBe(false);
-    expect(result.decisionPath).toContain('13bY');
+    expect(result.decisionPath).toContain('name-excluded-after-template:Y');
   });
 
-  it('proceeds to settings hub when content not excluded, tag rules configured, and Templater not installed (Node 4N regression baseline)', async () => {
+  it('proceeds to settings hub when content not excluded, tag rules configured, and Templater not installed (templater-enabled:N regression baseline)', async () => {
     mockPlugin.settings = createTestSettings({
       core: {
         ...structuredClone(DEFAULT_SETTINGS.core),

@@ -1,5 +1,5 @@
 import { App, Setting, SettingDefinitionRender, TFile } from 'obsidian';
-import { PluginSettings } from '../types';
+import { PluginSettings, RenameOutcome } from '../types';
 import { UNIVERSAL_FORBIDDEN_CHARS, WINDOWS_ANDROID_CHARS } from '../constants';
 import { detectOS } from '../utils';
 import { getCurrentLocale, t } from '../i18n';
@@ -18,7 +18,7 @@ export interface FirstLineIsTitlePlugin {
       providedContent?: string,
       isBatchOperation?: boolean,
       exclusionOverrides?: Record<string, boolean>
-    ): Promise<{ success: boolean; reason?: string }>;
+    ): Promise<RenameOutcome>;
   };
   propertyManager?: { ensurePropertyTypeIsCheckbox(): Promise<void> };
   updatePropertyVisibility?: () => void;

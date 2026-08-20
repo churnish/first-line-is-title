@@ -1,5 +1,5 @@
 import { TFile, Editor, Notice, MarkdownView } from 'obsidian';
-import { TitleRegionCache } from '../types';
+import { TitleRegionCache, RenameOutcome, RenameOutcomeReason } from '../types';
 import { TIMING, LIMITS } from '../constants/timing';
 import {
   verboseLog,
@@ -383,7 +383,7 @@ export class RenameEngine {
     },
     hasActiveEditor?: boolean,
     editor?: Editor
-  ): Promise<{ success: boolean; reason?: string }> {
+  ): Promise<RenameOutcome> {
     this.plugin.trackUsage();
     verboseLog(this.plugin, `Processing file: ${file.path}`, { noDelay });
 
@@ -440,13 +440,13 @@ export class RenameEngine {
 
       // Handle alias in ONE place - after processFileInternal completes
       // This consolidates alias logic instead of scattering it across multiple code paths
-      const aliasHandlingReasons = [
-        'success',
+      const aliasHandlingReasons: readonly RenameOutcomeReason[] = [
+        'renamed',
         'no-rename-needed',
         'empty-content-retained',
       ];
       if (
-        aliasHandlingReasons.includes(result.reason || '') &&
+        aliasHandlingReasons.includes(result.reason) &&
         this.plugin.settings.aliases.enableAliases
       ) {
         await this.updateAliasWithCoordination(file, showNotices);
@@ -528,7 +528,7 @@ export class RenameEngine {
     },
     hasActiveEditor?: boolean,
     editor?: Editor
-  ): Promise<{ success: boolean; reason?: string }> {
+  ): Promise<RenameOutcome> {
     // Central gate: check policy requirements and always-on safeguards
     const { canModify, reason } = canModifyFile(
       file,
@@ -1255,7 +1255,7 @@ export class RenameEngine {
         }
       }
 
-      return { success: true };
+      return { success: true, reason: 'renamed' };
     } catch (error) {
       // The rename never took the path and only notifyFileRenamed releases
       // reservations, so keeping this one would wedge the title for the rest of

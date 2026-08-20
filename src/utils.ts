@@ -29,7 +29,6 @@ export {
   isFileInConfiguredFolders,
   fileHasExcludedProperties,
   shouldProcessFile,
-  containsFileNameExclusion,
   isExcludedByFileName,
 } from './utils/file-exclusions';
 
@@ -175,7 +174,6 @@ export function canModifyFile(
 // - isFileInConfiguredFolders → utils/file-exclusions.ts
 // - fileHasExcludedProperties → utils/file-exclusions.ts
 // - shouldProcessFile → utils/file-exclusions.ts
-// - containsFileNameExclusion → utils/file-exclusions.ts
 // - isExcludedByFileName → utils/file-exclusions.ts
 // - deepMerge → utils/deep-merge.ts
 
@@ -860,7 +858,8 @@ export function reverseCharacterReplacements(
   const replacementCounts = new Map<string, number>();
   const enabledReplacements: string[] = [];
   for (const settingKey of Object.values(CHAR_TO_SETTING_KEY)) {
-    const replacement = settings.characterReplacements.charReplacements[settingKey];
+    const replacement =
+      settings.characterReplacements.charReplacements[settingKey];
     if (replacement.enabled && replacement.replacement) {
       replacementCounts.set(
         replacement.replacement,
@@ -881,7 +880,8 @@ export function reverseCharacterReplacements(
   for (const [originalChar, settingKey] of Object.entries(
     CHAR_TO_SETTING_KEY
   )) {
-    const replacement = settings.characterReplacements.charReplacements[settingKey];
+    const replacement =
+      settings.characterReplacements.charReplacements[settingKey];
     if (replacement.enabled && replacement.replacement) {
       // Skip if this replacement string is used by multiple enabled characters (ambiguous)
       const count = replacementCounts.get(replacement.replacement) || 0;

@@ -286,10 +286,11 @@ function hasActiveFileNameExclusions(settings: PluginSettings): boolean {
 }
 
 /**
- * Raw matcher: does the name match any live rule? Strategy-agnostic — callers gating a
- * rename want `isExcludedByFileName`, which reads the user's exclusion mode.
+ * Raw matcher: does the name match any live rule? Strategy-agnostic, and deliberately not
+ * exported — a caller gating a rename must go through `isExcludedByFileName` so the user's
+ * exclusion mode is applied.
  */
-export function containsFileNameExclusion(
+function containsFileNameExclusion(
   filename: string,
   settings: PluginSettings
 ): boolean {

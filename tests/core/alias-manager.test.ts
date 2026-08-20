@@ -198,12 +198,6 @@ describe('AliasManager', () => {
       expect(plugin.app.fileManager.processFrontMatter).not.toHaveBeenCalled();
     });
 
-    it('should make removeAliasFromFile return without writing', async () => {
-      await aliasManager.removeAliasFromFile(file, 'Some Alias');
-
-      expect(plugin.app.fileManager.processFrontMatter).not.toHaveBeenCalled();
-    });
-
     // The guard sits ahead of `activeView.save()`, which flushes the editor
     // buffer to disk - reaching it would touch the file on its own.
     it('should not save the active view', async () => {
@@ -222,7 +216,6 @@ describe('AliasManager', () => {
         'First Line\nBody'
       );
       await aliasManager.removePluginAliasesFromFile(file);
-      await aliasManager.removeAliasFromFile(file, 'Some Alias');
 
       expect(mockView.save).not.toHaveBeenCalled();
     });

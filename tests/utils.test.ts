@@ -5,7 +5,7 @@ import {
   detectOS,
   canModifyFile,
   hasDisablePropertyInFile,
-  containsFileNameExclusion,
+  isExcludedByFileName,
   extractTitle,
   normalizeExclusionLists,
   reverseCharacterReplacements,
@@ -378,7 +378,7 @@ describe('utils', () => {
     });
   });
 
-  describe('containsFileNameExclusion', () => {
+  describe('isExcludedByFileName', () => {
     beforeEach(() => {
       settings.exclusions.excludedFileNames = [
         {
@@ -394,48 +394,48 @@ describe('utils', () => {
     it('should return false when the individual exclusion is disabled', () => {
       settings.exclusions.excludedFileNames[0].enabled = false;
 
-      expect(containsFileNameExclusion('draft note.md', settings)).toBe(false);
+      expect(isExcludedByFileName('draft note.md', settings)).toBe(false);
     });
 
     it('should detect excluded file name in filename', () => {
-      expect(containsFileNameExclusion('draft note.md', settings)).toBe(true);
+      expect(isExcludedByFileName('draft note.md', settings)).toBe(true);
     });
 
     it('should detect excluded file name without extension', () => {
-      expect(containsFileNameExclusion('My draft', settings)).toBe(true);
+      expect(isExcludedByFileName('My draft', settings)).toBe(true);
     });
 
     it('should be case-insensitive by default', () => {
-      expect(containsFileNameExclusion('DRAFT note.md', settings)).toBe(true);
-      expect(containsFileNameExclusion('Draft Note.md', settings)).toBe(true);
+      expect(isExcludedByFileName('DRAFT note.md', settings)).toBe(true);
+      expect(isExcludedByFileName('Draft Note.md', settings)).toBe(true);
     });
 
     it('should respect case sensitivity when enabled', () => {
       settings.exclusions.excludedFileNames[0].caseSensitive = true;
 
-      expect(containsFileNameExclusion('draft note.md', settings)).toBe(true);
-      expect(containsFileNameExclusion('DRAFT note.md', settings)).toBe(false);
+      expect(isExcludedByFileName('draft note.md', settings)).toBe(true);
+      expect(isExcludedByFileName('DRAFT note.md', settings)).toBe(false);
     });
 
     it('should match only at start when onlyAtStart is true', () => {
       settings.exclusions.excludedFileNames[0].onlyAtStart = true;
 
-      expect(containsFileNameExclusion('draft note.md', settings)).toBe(true);
-      expect(containsFileNameExclusion('my draft.md', settings)).toBe(false);
+      expect(isExcludedByFileName('draft note.md', settings)).toBe(true);
+      expect(isExcludedByFileName('my draft.md', settings)).toBe(false);
     });
 
     it('should match whole line when onlyWholeLine is true', () => {
       settings.exclusions.excludedFileNames[0].onlyWholeLine = true;
 
-      expect(containsFileNameExclusion('draft.md', settings)).toBe(true);
-      expect(containsFileNameExclusion('draft', settings)).toBe(true);
-      expect(containsFileNameExclusion('draft note.md', settings)).toBe(false);
+      expect(isExcludedByFileName('draft.md', settings)).toBe(true);
+      expect(isExcludedByFileName('draft', settings)).toBe(true);
+      expect(isExcludedByFileName('draft note.md', settings)).toBe(false);
     });
 
     it('should skip disabled file name exclusions', () => {
       settings.exclusions.excludedFileNames[0].enabled = false;
 
-      expect(containsFileNameExclusion('draft note.md', settings)).toBe(false);
+      expect(isExcludedByFileName('draft note.md', settings)).toBe(false);
     });
 
     it('should skip empty file name exclusions', () => {
@@ -449,7 +449,7 @@ describe('utils', () => {
         },
       ];
 
-      expect(containsFileNameExclusion('any file.md', settings)).toBe(false);
+      expect(isExcludedByFileName('any file.md', settings)).toBe(false);
     });
 
     it('should check multiple file name exclusions', () => {
@@ -470,11 +470,9 @@ describe('utils', () => {
         },
       ];
 
-      expect(containsFileNameExclusion('draft note.md', settings)).toBe(true);
-      expect(containsFileNameExclusion('todo list.md', settings)).toBe(true);
-      expect(containsFileNameExclusion('final version.md', settings)).toBe(
-        false
-      );
+      expect(isExcludedByFileName('draft note.md', settings)).toBe(true);
+      expect(isExcludedByFileName('todo list.md', settings)).toBe(true);
+      expect(isExcludedByFileName('final version.md', settings)).toBe(false);
     });
 
     it('should handle file name exclusions with special characters', () => {
@@ -488,14 +486,14 @@ describe('utils', () => {
         },
       ];
 
-      expect(containsFileNameExclusion('[draft] note.md', settings)).toBe(true);
+      expect(isExcludedByFileName('[draft] note.md', settings)).toBe(true);
     });
 
     it('should trim filenames and file name exclusions for whole line comparison', () => {
       settings.exclusions.excludedFileNames[0].onlyWholeLine = true;
       settings.exclusions.excludedFileNames[0].text = '  draft  ';
 
-      expect(containsFileNameExclusion('  draft  .md', settings)).toBe(true);
+      expect(isExcludedByFileName('  draft  .md', settings)).toBe(true);
     });
   });
 

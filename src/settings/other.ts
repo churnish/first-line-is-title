@@ -6,7 +6,8 @@ import {
 } from 'obsidian';
 import { buildButtonRow, FirstLineIsTitlePlugin } from './settings-base';
 import { PluginSettings } from '../types';
-import { CURRENT_DATA_SCHEMA_VERSION, DEFAULT_SETTINGS } from '../constants';
+import { evaluateSettingsImport } from './import-guard';
+import { DEFAULT_SETTINGS } from '../constants';
 import { deepMerge, verboseLog } from '../utils';
 import { t } from '../i18n';
 import { PluginInitializer } from '../core/plugin-initializer';
@@ -76,30 +77,8 @@ function importSettingsFromFile(
     reader.readAsText(selectedFile, 'UTF-8');
     reader.onload = (readerEvent) => {
       void (async () => {
-        let importedJson: Record<string, unknown> | undefined;
         const content = readerEvent.target?.result;
-        if (typeof content === 'string') {
-          try {
-            const parsed: unknown = JSON.parse(content);
-            // `JSON.parse` returns null, numbers and strings without throwing.
-            // Those used to fall past the `if (importedJson)` guard below and
-            // end the import silently, with no notice.
-            if (
-              typeof parsed !== 'object' ||
-              parsed === null ||
-              Array.isArray(parsed)
-            ) {
-              throw new Error('not a settings object');
-            }
-            importedJson = parsed as Record<string, unknown>;
-          } catch {
-            const notice = new Notice(t('notifications.invalidImportFile'));
-            notice.containerEl.addClass('mod-warning');
-            console.error(t('notifications.invalidImportFile'));
-            input.remove();
-            return;
-          }
-        } else {
+        if (typeof content !== 'string') {
           const notice = new Notice(
             t('settings.errors.importFailed') ?? 'Invalid file format'
           );
@@ -108,76 +87,75 @@ function importSettingsFromFile(
           return;
         }
 
-        if (importedJson) {
-          // `loadSettings()` discards any data.json whose schema version does not
-          // match, so this path must not become a back door around that gate.
-          // Refusing is also the only non-destructive option: `dataSchemaVersion`
-          // is itself a settings key, so the filter below would copy a mismatched
-          // one straight through, and the next load would then silently wipe every
-          // setting the user still had.
-          if (importedJson.dataSchemaVersion !== CURRENT_DATA_SCHEMA_VERSION) {
-            const notice = new Notice(t('settings.errors.importIncompatible'));
-            notice.containerEl.addClass('mod-warning');
-            input.remove();
-            return;
-          }
-
-          // Pre-filter before merging: deepMerge writes a non-object source value straight over an object default, so an entry like {"exclusions": "x"} would survive and throw on every downstream read
-          const compatibleOverrides: Record<string, unknown> = {};
-          for (const setting in plugin.settings) {
-            if (setting in importedJson) {
-              const importedValue = importedJson[setting];
-              const existingValue =
-                plugin.settings[setting as keyof typeof plugin.settings];
-              // `typeof` alone lets an array through where an object branch
-              // lives (both report 'object'), and deepMerge replaces the whole
-              // branch with it — so compare array-ness too.
-              if (
-                typeof importedValue === typeof existingValue &&
-                Array.isArray(importedValue) === Array.isArray(existingValue)
-              ) {
-                compatibleOverrides[setting] = importedValue;
-              } else {
-                console.warn(
-                  `Import: skipping ${setting} due to type mismatch (expected ${typeof existingValue}, got ${typeof importedValue})`
-                );
-              }
-            }
-          }
-
-          // Merge rather than assign whole branches, so keys an older export predates keep their defaults instead of going undefined
-          const newSettings = deepMerge(
-            DEFAULT_SETTINGS,
-            compatibleOverrides as Partial<PluginSettings>
-          );
-
-          // Deep copy for rollback (reference would be unsafe if settings were modified in-place)
-          const previousSettings = cloneSettings(plugin.settings);
-          try {
-            plugin.settings = newSettings;
-            await plugin.saveSettings();
-          } catch {
-            // Rollback to previous settings on save failure
-            plugin.settings = previousSettings;
-            const notice = new Notice(t('settings.errors.saveFailed'));
-            notice.containerEl.addClass('mod-warning');
-            input.remove();
-            return;
-          }
-
-          const notice = new Notice(t('notifications.settingsImported'));
-          notice.containerEl.addClass('mod-success');
-
-          // Refresh UI - wrap in try-finally to ensure input cleanup
-          try {
-            tab.update();
-          } finally {
-            input.remove();
-          }
+        const verdict = evaluateSettingsImport(content);
+        if (verdict.kind === 'unreadable') {
+          const notice = new Notice(t('notifications.invalidImportFile'));
+          notice.containerEl.addClass('mod-warning');
+          console.error(t('notifications.invalidImportFile'));
+          input.remove();
+          return;
+        }
+        if (verdict.kind === 'incompatible-schema') {
+          const notice = new Notice(t('settings.errors.importIncompatible'));
+          notice.containerEl.addClass('mod-warning');
+          input.remove();
           return;
         }
 
-        input.remove();
+        const importedJson = verdict.settings;
+
+        // Pre-filter before merging: deepMerge writes a non-object source value straight over an object default, so an entry like {"exclusions": "x"} would survive and throw on every downstream read
+        const compatibleOverrides: Record<string, unknown> = {};
+        for (const setting in plugin.settings) {
+          if (setting in importedJson) {
+            const importedValue = importedJson[setting];
+            const existingValue =
+              plugin.settings[setting as keyof typeof plugin.settings];
+            // `typeof` alone lets an array through where an object branch
+            // lives (both report 'object'), and deepMerge replaces the whole
+            // branch with it — so compare array-ness too.
+            if (
+              typeof importedValue === typeof existingValue &&
+              Array.isArray(importedValue) === Array.isArray(existingValue)
+            ) {
+              compatibleOverrides[setting] = importedValue;
+            } else {
+              console.warn(
+                `Import: skipping ${setting} due to type mismatch (expected ${typeof existingValue}, got ${typeof importedValue})`
+              );
+            }
+          }
+        }
+
+        // Merge rather than assign whole branches, so keys an older export predates keep their defaults instead of going undefined
+        const newSettings = deepMerge(
+          DEFAULT_SETTINGS,
+          compatibleOverrides as Partial<PluginSettings>
+        );
+
+        // Deep copy for rollback (reference would be unsafe if settings were modified in-place)
+        const previousSettings = cloneSettings(plugin.settings);
+        try {
+          plugin.settings = newSettings;
+          await plugin.saveSettings();
+        } catch {
+          // Rollback to previous settings on save failure
+          plugin.settings = previousSettings;
+          const notice = new Notice(t('settings.errors.saveFailed'));
+          notice.containerEl.addClass('mod-warning');
+          input.remove();
+          return;
+        }
+
+        const notice = new Notice(t('notifications.settingsImported'));
+        notice.containerEl.addClass('mod-success');
+
+        // Refresh UI - wrap in try-finally to ensure input cleanup
+        try {
+          tab.update();
+        } finally {
+          input.remove();
+        }
       })();
     };
   };

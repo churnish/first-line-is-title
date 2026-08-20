@@ -27,6 +27,35 @@ export interface TitleRegionCache {
   lastUpdated: number;
 }
 
+/** Every outcome `RenameEngine.processFile` can report. */
+export type RenameOutcomeReason =
+  | 'renamed'
+  | 'no-rename-needed'
+  | 'empty-content-retained'
+  | 'already-processing'
+  | 'error'
+  | 'excluded'
+  | 'file-name-exclusion'
+  | 'file-not-found'
+  | 'footnote-popover-edit'
+  | 'global-rate-limited'
+  | 'max-conflicts-exceeded'
+  | 'not-heading'
+  | 'not-markdown'
+  | 'property-disabled'
+  | 'read-error'
+  | 'recently-renamed'
+  | 'self-referential'
+  | 'time-rate-limited';
+
+// `reason` is required, not optional: the alias gate in `processFile` matches on it, and the
+// successful-rename path used to omit it, so the gate silently skipped the one outcome that
+// renames a file. Requiring it makes any future drift a compile error.
+export interface RenameOutcome {
+  success: boolean;
+  reason: RenameOutcomeReason;
+}
+
 export type OSPreset = 'macOS' | 'Windows' | 'Linux';
 export type NotificationMode = 'Always' | 'On title change' | 'Never';
 /**
