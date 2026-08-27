@@ -33,7 +33,6 @@ export class MenuDefinitions {
    */
   getTagMenuConfig(): MenuConfig {
     return {
-      addSeparator: true,
       items: [
         {
           id: 'tag-put-first-line-in-title',
@@ -106,7 +105,6 @@ export class MenuDefinitions {
    */
   getFolderMenuConfig(): MenuConfig {
     return {
-      addSeparator: true,
       items: [
         {
           id: 'folder-put-first-line-in-title',
@@ -179,7 +177,6 @@ export class MenuDefinitions {
    */
   getFileMenuConfig(): MenuConfig {
     return {
-      addSeparator: true,
       items: [
         {
           id: 'file-put-first-line-in-title',

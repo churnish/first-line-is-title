@@ -20,7 +20,7 @@ export class ContextMenuManager {
 
   constructor(plugin: FirstLineIsTitlePlugin) {
     this.plugin = plugin;
-    this.menuRenderer = new MenuRenderer(plugin);
+    this.menuRenderer = new MenuRenderer();
     this.menuDefinitions = new MenuDefinitions(plugin);
   }
 
@@ -252,8 +252,7 @@ export class ContextMenuManager {
 
     const hasRenameCommand = totalFiles > 0;
 
-    menu.addSeparator();
-
+    // No separator here — see MenuRenderer.render for why.
     if (hasRenameCommand) {
       menu.addItem((item) => {
         item

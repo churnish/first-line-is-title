@@ -1,5 +1,4 @@
 import { Menu, MenuItem } from 'obsidian';
-import FirstLineIsTitlePlugin from '../../main';
 
 /**
  * Declarative Menu Configuration System
@@ -22,33 +21,30 @@ export interface MenuItemConfig {
 
 export interface MenuConfig {
   items: MenuItemConfig[];
-  addSeparator?: boolean;
 }
 
 /**
  * Renders menu items from declarative configuration
  */
 export class MenuRenderer {
-  constructor(private plugin: FirstLineIsTitlePlugin) {}
-
   /**
-   * Render menu items from configuration
+   * Render menu items from configuration.
+   *
+   * Never add a separator before these items. Obsidian buckets section-less menu
+   * items — every plugin that skips setSection() — into one group, and buckets
+   * separators there too, so injecting one splits that shared group and strands
+   * our items in a section of their own.
+   *
    * @param menu Obsidian Menu instance
    * @param config Menu configuration
    * @param context Context object passed to visibility/onClick functions
    */
   render(menu: Menu, config: MenuConfig, context: unknown): void {
-    const visibleItems = this.getVisibleItems(config, context);
-
-    if (config.addSeparator && visibleItems.length > 0) {
-      menu.addSeparator();
-    }
-
     this.renderItems(
       (cb) => {
         menu.addItem(cb);
       },
-      visibleItems,
+      this.getVisibleItems(config, context),
       context
     );
   }
@@ -92,12 +88,5 @@ export class MenuRenderer {
           });
       });
     }
-  }
-
-  /**
-   * Check if menu has any visible items
-   */
-  hasVisibleItems(config: MenuConfig, context: unknown): boolean {
-    return config.items.some((item) => item.visible(context));
   }
 }

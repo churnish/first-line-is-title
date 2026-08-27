@@ -57,7 +57,7 @@ export class NotebookNavigatorIntegration {
   private registeredAgainst: object | null | undefined = undefined;
 
   constructor(private plugin: FirstLineIsTitle) {
-    this.menuRenderer = new MenuRenderer(plugin);
+    this.menuRenderer = new MenuRenderer();
     this.menuDefinitions = new MenuDefinitions(plugin);
   }
 

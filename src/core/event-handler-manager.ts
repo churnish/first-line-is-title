@@ -107,16 +107,11 @@ export class EventHandlerManager {
         if (markdownFiles.length > 0 && folders.length > 0) return;
         if (markdownFiles.length === 0 && folders.length === 0) return;
 
-        let hasVisibleItems = false;
-
         // Handle multiple Markdown files
         if (markdownFiles.length > 0) {
           if (!this.plugin.settings.core.enableFileCommands) return;
 
-          if (!hasVisibleItems) {
-            menu.addSeparator();
-            hasVisibleItems = true;
-          }
+          // No separator here — see MenuRenderer.render for why.
           menu.addItem((item) => {
             item
               .setTitle(
@@ -266,8 +261,7 @@ export class EventHandlerManager {
 
           if (files.length < 1) return;
 
-          menu.addSeparator();
-
+          // No separator here — see MenuRenderer.render for why.
           menu.addItem((item) => {
             item
               .setTitle(tp('commands.putFirstLineInTitleNNotes', files.length))
