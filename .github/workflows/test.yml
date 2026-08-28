@@ -3,8 +3,24 @@ name: Tests
 on:
   push:
     branches: ['**']
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+      - '.gitignore'
+      - 'LICENSE'
+      - 'archive/**'
+      - 'docs/**'
+      - 'version-bump.mjs'
   pull_request:
     branches: ['**']
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+      - '.gitignore'
+      - 'LICENSE'
+      - 'archive/**'
+      - 'docs/**'
+      - 'version-bump.mjs'
 
 jobs:
   test:
@@ -21,5 +37,11 @@ jobs:
           node-version: '20'
 
       - run: npm install
+
+      - run: npm run lint
+
+      # esbuild strips types without checking them, so nothing else in the
+      # pipeline would notice a type error.
+      - run: npx tsc --noEmit
 
       - run: npm test

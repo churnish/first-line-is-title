@@ -5,7 +5,7 @@ import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 
 export default defineConfig([
   {
-    ignores: ['**', '!src/**', '!main.ts', '!tests/**'],
+    ignores: ['**', '!src/**', '!main.ts', '!tests/**', '!package.json'],
   },
 
   ...obsidianmd.configs.recommended,
@@ -37,7 +37,8 @@ export default defineConfig([
   // real test-tree rot) but relaxes everything that only fires because mocks and
   // fixtures deliberately use patterns production code should not.
   {
-    files: ['tests/**/*.ts'],
+    // Matches the '!tests/**' un-ignore exactly. A narrower glob such as tests/**/*.ts leaves every other extension under tests/ linted as production code with no relaxation.
+    files: ['tests/**'],
     rules: {
       // obsidianmd/* encodes plugin-runtime constraints (no innerHTML, deferred
       // views, etc.) that don't apply to test fixtures and mocks.
