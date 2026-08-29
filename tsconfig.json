@@ -11,6 +11,7 @@
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,
+    "strictBindCallApply": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
