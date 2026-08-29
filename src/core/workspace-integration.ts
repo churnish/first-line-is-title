@@ -88,9 +88,7 @@ export class WorkspaceIntegration {
         checkCallback(original) {
           return function (checking: boolean): boolean | void {
             // First call the original save logic
-            const result = (original ? original.call(this, checking) : true) as
-              | boolean
-              | void;
+            const result = original ? original.call(this, checking) : true;
 
             // If not checking and save succeeded, run our rename logic - process immediately regardless of check interval
             if (!checking && settings.core.renameOnSave) {

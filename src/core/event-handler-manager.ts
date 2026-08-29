@@ -217,7 +217,7 @@ export class EventHandlerManager {
             return function (this: Menu, ...args: unknown[]) {
               remove();
               plugin.contextMenuManager.addTagMenuItems(this, tagInfo.tagName);
-              return old.apply(this, args) as Menu;
+              return old.apply(this, args);
             };
           },
         });
