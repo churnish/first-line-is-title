@@ -2,7 +2,20 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
 import { basename, dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
+
+const run = (command) => execSync(command, { stdio: 'inherit' });
+const capture = (command) => execSync(command, { encoding: 'utf8' }).trim();
+const captureLines = (command) => capture(command).split('\n').filter(Boolean);
+const gitAdd = (path) => run(`git add "${path}"`);
+const commandSucceeds = (command) => {
+  try {
+    execSync(command, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 const isPreflight = process.argv.includes('--preflight');
 const targetVersion = process.env.npm_package_version;
@@ -11,19 +24,31 @@ const targetVersion = process.env.npm_package_version;
 const WEB_EDITED_DOCS = ['README', 'CONTRIBUTING'];
 
 function isMergeInProgress() {
-  try {
-    execSync('git rev-parse -q --verify MERGE_HEAD', { stdio: 'ignore' });
-    return true;
-  } catch {
-    return false;
-  }
+  return commandSucceeds('git rev-parse -q --verify MERGE_HEAD');
+}
+
+// `resolveFromOrigin` is every prefix-matching path in origin's tree, conflicted or not: the release takes these docs from origin whole, and the checkout doubles as the conflict resolution.
+export function classifyConflicts(conflicted, originFiles, prefixes) {
+  const matchesPrefix = (file) =>
+    prefixes.some((prefix) => file.startsWith(prefix));
+  return {
+    resolveFromOrigin: originFiles.filter(matchesPrefix),
+    unexpected: conflicted.filter((file) => !matchesPrefix(file)),
+  };
+}
+
+function abortOnUnexpectedConflicts(unexpected) {
+  if (unexpected.length === 0) return;
+  run('git merge --abort');
+  console.error(
+    `\n⚠ Unexpected merge conflicts: ${unexpected.join(', ')}. The merge has been aborted; resolve manually before releasing.\n`
+  );
+  process.exit(1);
 }
 
 function mergeOriginMain() {
   // Matches npm's own clean check (`git status --porcelain=v1 -uno`), which ignores untracked files. Using the stricter default would skip the merge on a stray scratch file, and the release would then fail at postversion with a non-fast-forward push.
-  const dirty = execSync('git status --porcelain -uno', {
-    encoding: 'utf8',
-  }).trim();
+  const dirty = capture('git status --porcelain -uno');
   if (dirty) {
     console.warn(
       '\n⚠ Working tree is not clean; skipping the origin/main merge.\n'
@@ -33,7 +58,7 @@ function mergeOriginMain() {
 
   // Only the fetch is allowed to fail softly — an offline release can still proceed, but every step after it leaves repository state behind and must surface.
   try {
-    execSync('git fetch origin', { stdio: 'inherit' });
+    run('git fetch origin');
   } catch (err) {
     console.warn(`\n⚠ Could not fetch origin: ${err.message}\n`);
     return;
@@ -41,44 +66,33 @@ function mergeOriginMain() {
 
   // Merging rather than copying keeps the web-edit commits in local history, which is what lets postversion fast-forward instead of force-pushing over them.
   try {
-    execSync('git merge origin/main --no-commit --no-ff', { stdio: 'inherit' });
+    run('git merge origin/main --no-commit --no-ff');
   } catch {
     // Expected whenever both sides touched these files; resolved just below.
   }
 
-  const conflicted = execSync('git diff --name-only --diff-filter=U', {
-    encoding: 'utf8',
-  })
-    .split('\n')
-    .filter(Boolean);
+  const conflicted = captureLines('git diff --name-only --diff-filter=U');
+  // Read before the abort decision because the classification needs both lists. ls-tree is read-only and reads the origin tree, so it works mid-merge.
+  // Filtered rather than pathspec'd: ls-tree does not support glob pathspecs and returns an empty list for one instead of failing, which would silently stop syncing both files.
+  const originFiles = captureLines('git ls-tree --name-only origin/main');
 
   // A conflict anywhere else means the histories diverged in a way this script has no business resolving unattended.
-  const unexpected = conflicted.filter(
-    (f) => !WEB_EDITED_DOCS.some((prefix) => f.startsWith(prefix))
+  const { resolveFromOrigin, unexpected } = classifyConflicts(
+    conflicted,
+    originFiles,
+    WEB_EDITED_DOCS
   );
-  if (unexpected.length > 0) {
-    execSync('git merge --abort', { stdio: 'inherit' });
-    console.error(
-      `\n⚠ Unexpected merge conflicts: ${unexpected.join(', ')}. The merge has been aborted; resolve manually before releasing.\n`
-    );
-    process.exit(1);
-  }
+  abortOnUnexpectedConflicts(unexpected);
 
   // `git checkout <tree-ish> -- <path>` writes the index as well as the worktree, resolving a conflicted path outright, so no separate `git add` is needed.
-  // Filtered here rather than by a pathspec: ls-tree does not support glob pathspecs and returns an empty list for one instead of failing, which would silently stop syncing both files.
-  const files = execSync('git ls-tree --name-only origin/main', {
-    encoding: 'utf8',
-  })
-    .split('\n')
-    .filter((f) => WEB_EDITED_DOCS.some((prefix) => f.startsWith(prefix)));
-  for (const file of files) {
-    execSync(`git checkout origin/main -- "${file}"`, { stdio: 'inherit' });
+  for (const file of resolveFromOrigin) {
+    run(`git checkout origin/main -- "${file}"`);
     console.log(`Updated ${file} from GitHub`);
   }
 
   // MERGE_HEAD is absent when origin had nothing new. Committing here keeps the merge as its own commit rather than folding it into npm's version commit.
   if (isMergeInProgress()) {
-    execSync('git commit --no-edit', { stdio: 'inherit' });
+    run('git commit --no-edit');
     console.log('Merged origin/main');
   }
 
@@ -91,43 +105,53 @@ function mergeOriginMain() {
   }
 }
 
-// release.yml installs with no lockfile, so CI resolves the newest version inside every range. The gates have to run against that same tree — gating a staler local one is what let 82 lint errors reach CI after the tag was already pushed.
-function updateDependencies() {
+// Classifies `npm outdated --json` output. 'unknown' means the probe itself failed — a registry or network error exits non-zero exactly like a real "outdated" result does.
+export function readOutdated(stdout, packageName) {
   let info;
-  let probeFailed = false;
+  try {
+    const entry = JSON.parse(stdout)[packageName];
+    // npm emits an array under a package key when one name has several outdated entries.
+    info = Array.isArray(entry) ? entry[0] : entry;
+  } catch {
+    return { status: 'unknown' };
+  }
+  // An absent key means npm found nothing outdated for this package, not that the probe failed.
+  if (!info) return { status: 'current' };
+  return {
+    status: info.current === info.latest ? 'current' : 'outdated',
+    info,
+  };
+}
+
+// release.yml installs with no lockfile, so CI resolves the newest version inside every range. The gates have to run against that same tree — gating a staler local one is what let 82 lint errors reach CI after the tag was already pushed.
+// npm resolves upward to the workspace root from here, so these commands reify the shared tree — the AGENTS.md prohibition carves this out explicitly.
+function updateDependencies() {
+  // Everything else moves within its declared range, which is what CI's fresh install resolves to anyway. An interactive confirmation prompt was removed from here: it ran after the gates, so nothing re-checked what it changed, and it blocked on stdin.
+  console.log('\n▶ Updating dependencies');
+  run('npm update');
+
+  let outdated = { status: 'current' };
   // `npm outdated` exits non-zero when something IS outdated, so the catch is the normal path and the try body's value is discarded. `encoding` is what makes err.stdout a parseable string rather than a Buffer.
   try {
-    execSync('npm outdated eslint-plugin-obsidianmd --json', {
-      encoding: 'utf8',
-    });
+    capture('npm outdated eslint-plugin-obsidianmd --json');
   } catch (err) {
-    try {
-      const entry = JSON.parse(err.stdout)['eslint-plugin-obsidianmd'];
-      // npm emits an array under a package key when one name has several outdated entries.
-      info = Array.isArray(entry) ? entry[0] : entry;
-    } catch {
-      // A registry or network failure exits non-zero too, and would otherwise be indistinguishable from "nothing outdated".
-      probeFailed = true;
+    outdated = readOutdated(err.stdout, 'eslint-plugin-obsidianmd');
+    if (outdated.status === 'unknown') {
       console.warn(
         `\n⚠ Could not read npm outdated; the eslint-plugin freshness check did not run.\n${err.stderr || ''}`
       );
     }
   }
 
-  if (!probeFailed && info && info.current !== info.latest) {
+  if (outdated.status === 'outdated') {
+    const { info } = outdated;
     console.log(
       `\nUpdating eslint-plugin-obsidianmd: ${info.current} → ${info.latest}`
     );
     // Not `npm update`: that is capped by the declared range, and a caret on a 0.x version admits patch bumps only — so it can never cross the minor bumps that are this package's release cadence.
-    // The declared range is deliberately NOT staged here. npm snapshots package.json before preversion and writes that snapshot back afterwards, so any edit made now is discarded — the version phase re-applies it instead.
-    execSync('npm install --save-dev eslint-plugin-obsidianmd@latest', {
-      stdio: 'inherit',
-    });
+    // `--no-save` keeps package.json clean so a failed gate leaves no dirty tree to block the retry — `npm version` refuses to start on one. The version phase writes the range from the installed copy. Runs after `npm update` because that would otherwise pull the install back inside the declared range.
+    run('npm install --save-dev eslint-plugin-obsidianmd@latest --no-save');
   }
-
-  // Everything else moves within its declared range, which is what CI's fresh install resolves to anyway. An interactive confirmation prompt was removed from here: it ran after the gates, so nothing re-checked what it changed, and it blocked on stdin.
-  console.log('\n▶ Updating dependencies');
-  execSync('npm update', { stdio: 'inherit' });
 }
 
 // Both npm commands above reify the hoisted workspace, not just this plugin, so a failure after them has left the other members and the root lockfile changed.
@@ -139,11 +163,9 @@ function warnWorkspaceMutated() {
 
 // ── Pre-flight checks ──
 
-if (isPreflight) {
+function runPreflight() {
   // postversion pushes `main` by name, so releasing from anywhere else tags a commit that main does not contain and pushes a stale main alongside it.
-  const branch = execSync('git rev-parse --abbrev-ref HEAD', {
-    encoding: 'utf8',
-  }).trim();
+  const branch = capture('git rev-parse --abbrev-ref HEAD');
   if (branch !== 'main') {
     console.error(`\n⚠ On branch ${branch}. Releases must be cut from main.\n`);
     process.exit(1);
@@ -180,7 +202,7 @@ if (isPreflight) {
   for (const gate of gates) {
     console.log(`\n▶ ${gate.label}`);
     try {
-      execSync(gate.command, { stdio: 'inherit' });
+      run(gate.command);
     } catch {
       console.error(
         `\n⚠ ${gate.label} failed.${gate.hint ? ` ${gate.hint}` : ''}\n`
@@ -190,84 +212,95 @@ if (isPreflight) {
     }
   }
 
+  // No `process.exit(0)` on the success path: returning lets Node exit naturally and flush stdout, which a pipe would otherwise truncate.
   console.log('\n✓ All pre-flight gates passed.\n');
-  // Pre-flight ends here. Everything below runs only in the `version` phase, after npm has rewritten package.json's version field.
-  process.exit(0);
 }
 
 // ── Version phase ──
 
-if (!targetVersion) {
-  console.error('\n⚠ npm_package_version is not set. Run via npm version.\n');
-  process.exit(1);
-}
-
-// ── Sync shared docs ──
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-// Source of truth for docs copied verbatim into every plugin. Not the odkb repo: these describe this workspace's own release machinery, not shared Obsidian knowledge.
-const sharedDocsDir = join(__dirname, '..', 'local');
-
-const sharedDocs = ['release-guide.md'];
-for (const doc of sharedDocs) {
-  const src = join(sharedDocsDir, doc);
-  if (existsSync(src)) {
-    const dest = join('docs', doc);
-    writeFileSync(dest, readFileSync(src, 'utf8'));
-    execSync(`git add "${dest}"`, { stdio: 'inherit' });
-    console.log(`Synced ${doc} from local/`);
-  } else {
-    console.warn(`Skipping ${doc}: not found at ${src}`);
+// Runs only after npm has rewritten package.json's version field.
+function runVersionPhase() {
+  if (!targetVersion) {
+    console.error('\n⚠ npm_package_version is not set. Run via npm version.\n');
+    process.exit(1);
   }
-}
 
-// npm hoists most packages to the workspace root and nests only what cannot hoist, so look upward rather than assuming either location.
-function installedVersion(packageName) {
-  let dir = process.cwd();
-  for (;;) {
-    const candidate = join(dir, 'node_modules', packageName, 'package.json');
-    if (existsSync(candidate)) {
-      return JSON.parse(readFileSync(candidate, 'utf8')).version;
+  // ── Sync shared docs ──
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  // Source of truth for docs copied verbatim into every plugin. Not the odkb repo: these describe this workspace's own release machinery, not shared Obsidian knowledge.
+  const sharedDocsDir = join(__dirname, '..', 'local');
+
+  const sharedDocs = ['release-guide.md'];
+  for (const doc of sharedDocs) {
+    const src = join(sharedDocsDir, doc);
+    if (existsSync(src)) {
+      const dest = join('docs', doc);
+      writeFileSync(dest, readFileSync(src, 'utf8'));
+      gitAdd(dest);
+      console.log(`Synced ${doc} from local/`);
+    } else {
+      console.warn(`Skipping ${doc}: not found at ${src}`);
     }
-    const parent = dirname(dir);
-    if (parent === dir) return null;
-    dir = parent;
+  }
+
+  // npm hoists most packages to the workspace root and nests only what cannot hoist, so look upward rather than assuming either location.
+  function installedVersion(packageName) {
+    let dir = process.cwd();
+    for (;;) {
+      const candidate = join(dir, 'node_modules', packageName, 'package.json');
+      if (existsSync(candidate)) {
+        return JSON.parse(readFileSync(candidate, 'utf8')).version;
+      }
+      const parent = dirname(dir);
+      if (parent === dir) return null;
+      dir = parent;
+    }
+  }
+
+  // Applied here because preflight installs with `--no-save`, keeping the tree clean through the gates; this phase persists the range from the installed copy.
+  const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+  const installed = installedVersion('eslint-plugin-obsidianmd');
+  const declared = pkg.devDependencies?.['eslint-plugin-obsidianmd'];
+  if (installed && declared && declared !== `^${installed}`) {
+    pkg.devDependencies['eslint-plugin-obsidianmd'] = `^${installed}`;
+    writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+    gitAdd('package.json');
+    console.log(`Updated eslint-plugin-obsidianmd range to ^${installed}`);
+  }
+
+  const manifest = JSON.parse(readFileSync('manifest.json', 'utf8'));
+  manifest.version = targetVersion;
+  writeFileSync('manifest.json', JSON.stringify(manifest, null, '\t') + '\n');
+  gitAdd('manifest.json');
+
+  const versions = existsSync('versions.json')
+    ? JSON.parse(readFileSync('versions.json', 'utf8'))
+    : {};
+  const lastMinVersion = Object.values(versions).pop();
+  if (lastMinVersion !== manifest.minAppVersion) {
+    versions[targetVersion] = manifest.minAppVersion;
+    writeFileSync('versions.json', JSON.stringify(versions, null, '\t') + '\n');
+    gitAdd('versions.json');
+    console.log(`Updated versions.json for ${targetVersion}`);
+  }
+
+  console.log(`Updated manifest.json to version ${targetVersion}`);
+
+  const pluginName = basename(__dirname);
+  const deepwikiPlugins = ['dynamic-views', 'first-line-is-title'];
+  if (deepwikiPlugins.includes(pluginName)) {
+    console.log(
+      `\n🔄 After release, refresh the wiki: https://deepwiki.com/churnish/${pluginName}\n`
+    );
   }
 }
 
-// Re-applied here because npm discarded the range preflight installed: it snapshots package.json before preversion and writes that snapshot back before running this phase.
-const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
-const installed = installedVersion('eslint-plugin-obsidianmd');
-const declared = pkg.devDependencies?.['eslint-plugin-obsidianmd'];
-if (installed && declared && declared !== `^${installed}`) {
-  pkg.devDependencies['eslint-plugin-obsidianmd'] = `^${installed}`;
-  writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-  execSync('git add package.json', { stdio: 'inherit' });
-  console.log(`Updated eslint-plugin-obsidianmd range to ^${installed}`);
-}
-
-const manifest = JSON.parse(readFileSync('manifest.json', 'utf8'));
-manifest.version = targetVersion;
-writeFileSync('manifest.json', JSON.stringify(manifest, null, '\t') + '\n');
-execSync('git add manifest.json', { stdio: 'inherit' });
-
-const versions = existsSync('versions.json')
-  ? JSON.parse(readFileSync('versions.json', 'utf8'))
-  : {};
-const lastMinVersion = Object.values(versions).pop();
-if (lastMinVersion !== manifest.minAppVersion) {
-  versions[targetVersion] = manifest.minAppVersion;
-  writeFileSync('versions.json', JSON.stringify(versions, null, '\t') + '\n');
-  execSync('git add versions.json', { stdio: 'inherit' });
-  console.log(`Updated versions.json for ${targetVersion}`);
-}
-
-console.log(`Updated manifest.json to version ${targetVersion}`);
-
-const pluginName = basename(__dirname);
-const deepwikiPlugins = ['dynamic-views', 'first-line-is-title'];
-if (deepwikiPlugins.includes(pluginName)) {
-  console.log(
-    `\n🔄 After release, refresh the wiki: https://deepwiki.com/churnish/${pluginName}\n`
-  );
+// Dispatch only when executed directly: importing the module for its predicates must not run a release. `npm test` sets npm_package_version, so an unguarded dispatch would have a vitest worker execute the version phase for real.
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  if (isPreflight) runPreflight();
+  else runVersionPhase();
 }
