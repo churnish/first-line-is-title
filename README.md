@@ -1,5 +1,3 @@
-# First Line is Title
-
 English • [Русский](https://github.com/churnish/first-line-is-title/blob/main/README_RU.md)
 
 Automatically set the first line as note title, just like in Apple Notes. Forget about manual file name entry or nondescript timestamps.
@@ -11,22 +9,20 @@ Automatically set the first line as note title, just like in Apple Notes. Forget
 ## Features
 
 - Rename notes automatically or manually.
-- Move cursor to first line on note creation.
 - Put any first line content in title or headings only.
+- Exclude select folders, tags, properties, file names or notes from renaming, or only enable renaming in some.
+- Move cursor to first line on note creation.
+- Insert file name in first line on note creation.
+- Populate first line alias property — make forbidden characters searchable in Quick switcher and link suggestions, or set as note title in other plugins.
+- Commands to batch rename all notes in folder, all notes with tag, all search results, or whole vault.
 - Replace characters forbidden in file names with safe alternatives, or omit them entirely.
-- Strip Markdown syntax from file names.
-- Add custom replacement rules.
-- Automatically populate first line alias property — make forbidden characters searchable in Quick switcher and link suggester, or set as note title in other plugins.
-- Commands to batch rename all notes in folder, all notes with tag, all search results, or entire vault.
-- Automatically insert file name in first line on note creation.
-- Exclude select notes, folders, tags, properties or file names from renaming, or only enable renaming in some.
-- Command to convert selection containing forbidden characters into valid internal link, with original text preserved as alias.
+- Configure custom text replacements.
+- Strip markup syntax in file name.
+- Command to convert selection containing forbidden characters into valid internal link, with original text preserved as link display text.
 
 ## File integrity
 
-- Only notes that are currently open in the editor are processed, along with any notes you explicitly select for batch operations (like renaming all notes in a folder).
-- By default, note modification time is preserved on rename.
-- Multiple safeguards are in place to prevent unintended changes but **regular [backups](https://help.obsidian.md/backup) remain your ultimate safety net**.
+Only notes that are currently open in the editor are processed, along with any notes you explicitly select for batch operations (like renaming all notes in a folder). Multiple safeguards are in place to prevent unintended changes but **regular vault [backups](https://help.obsidian.md/backup) remain your ultimate safety net**.
 
 ## Commands
 
@@ -61,7 +57,7 @@ Automatically set the first line as note title, just like in Apple Notes. Forget
 | <a href="#file-folder-tag-and-vault-search-context-menu"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/square-x-dark.svg"><img src=".github/icons/square-x.svg" width="15" height="15"></picture></a>&nbsp;Disable renaming          | Exclude selected note(s), folder(s) or tag from renaming.        |
 | <a href="#file-folder-tag-and-vault-search-context-menu"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/icons/square-check-dark.svg"><img src=".github/icons/square-check.svg" width="15" height="15"></picture></a>&nbsp;Enable renaming   | Stop excluding selected note(s), folder(s) or tag from renaming. |
 
-## Installation
+## Install
 
 Until **First Line is Title** appears in the plugin directory, to install it:
 
@@ -85,6 +81,6 @@ Until **First Line is Title** appears in the plugin directory, to install it:
 
 ## Support
 
-- Found a bug or have a feature request? [Open an issue](https://github.com/churnish/first-line-is-title/issues).
 - Have a question? [Start a discussion](https://github.com/churnish/first-line-is-title/discussions).
+- Have a feature request or found a bug? [Open an issue](https://github.com/churnish/first-line-is-title/issues).
 - Contributors welcome.
