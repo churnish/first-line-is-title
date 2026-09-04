@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "18"
 
@@ -27,13 +27,9 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Commit all changes to repo
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --staged --quiet || git commit -m "build: Update repository for ${GITHUB_REF_NAME}"
-          git push origin HEAD:main
+      # No push back to main here: this tag is cut from the 3.10.3 line, not from
+      # main's tip, so `git push origin HEAD:main` would be a non-fast-forward and
+      # would abort the job before the release is published.
 
       - name: Create release bundle
         run: |
@@ -43,7 +39,7 @@ jobs:
           zip ../first-line-is-title.zip main.js manifest.json styles.css
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             main.js

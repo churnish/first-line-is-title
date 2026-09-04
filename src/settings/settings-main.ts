@@ -117,7 +117,7 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
       this.previousTabId = tabInfo.id;
       this.plugin.settings.core.currentSettingsTab = tabInfo.id;
       void this.plugin.saveSettings();
-      void this.renderTab(tabInfo.id);
+      void this.renderActiveSubTab(tabInfo.id);
     };
 
     for (const tabInfo of Object.values(this.TABS)) {
@@ -266,7 +266,7 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
       cls: "flit-settings-page",
     });
 
-    void this.renderTab(this.plugin.settings.core.currentSettingsTab);
+    void this.renderActiveSubTab(this.plugin.settings.core.currentSettingsTab);
 
     // Remove focus from active tab to prevent outline on initial display
     setTimeout(() => {
@@ -299,7 +299,8 @@ export class FirstLineIsTitleSettings extends PluginSettingTab {
     this.containerEl.addEventListener("keydown", handleFirstTab);
   }
 
-  private renderTab(tabId: string): void {
+  // Must not be named `renderTab`: that shadows PluginSettingTab.prototype.renderTab(), which Obsidian's Settings modal calls to reach display(). The obsidian typings don't declare it, so the collision is invisible to the compiler.
+  private renderActiveSubTab(tabId: string): void {
     if (!this.settingsPage) return;
 
     this.settingsPage.empty();
