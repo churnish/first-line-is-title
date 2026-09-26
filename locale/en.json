@@ -97,7 +97,7 @@
     "renameWithExcludedTags": "Rename notes with excluded tags",
     "renameWithExcludedProperties": "Rename notes with excluded properties",
     "renameWithSubtags": "Rename notes with subtags (e.g., #tag/subtag)",
-    "resetAllSettings": "This will reset all plugin settings to their default values and delete all user rules. This cannot be undone.",
+    "resetAllSettings": "This will reset all First Line is Title settings to default and delete all user rules. This cannot be undone.",
     "disableEnableAddProperty": "This will add the property ",
     "disableEnableRemoveProperty": "This will remove the property ",
     "propertyTo": " to ",
@@ -760,7 +760,7 @@
       },
       "clearSettings": {
         "name": "Clear settings",
-        "desc": "Reset all plugin settings to their default values.",
+        "desc": "Reset all plugin settings to default.",
         "button": "Clear"
       },
       "titleCase": {

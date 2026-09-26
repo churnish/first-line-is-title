@@ -398,7 +398,7 @@ export function buildOtherPage(
                 });
 
                 new ConfirmationModal(plugin.app)
-                  .setTitle(t('modals.caution'))
+                  .setTitle(t('settings.other.clearSettings.name'))
                   .setContent(body)
                   .addButton((btn) =>
                     btn
