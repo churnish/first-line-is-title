@@ -754,7 +754,7 @@
       },
       "backupSettings": {
         "name": "Back up and restore",
-        "desc": "Export plugin settings to a file, or import from a backup.",
+        "desc": "Export plugin settings, or import from a backup.",
         "export": "Export",
         "import": "Import"
       },
