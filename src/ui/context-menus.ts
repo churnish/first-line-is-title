@@ -109,47 +109,26 @@ export class ContextMenuManager {
   }
 
   /**
-   * Gets the appropriate menu text for folder operations based on scope strategy.
+   * Menu text for folder operations. The scope strategy inverts which half of
+   * the pair is visible - see shouldShowDisableMenuForFolder - never its wording,
+   * so there is one phrasing per action rather than one per strategy.
    */
-  getFolderMenuText(_folderPath: string): { disable: string; enable: string } {
-    if (
-      this.plugin.settings.exclusions.folderScopeStrategy ===
-      EXCLUSION_STRATEGY.ONLY_EXCLUDE
-    ) {
-      // Only exclude strategy: list contains DISABLED folders
-      return {
-        disable: t('commands.disableRenamingInFolder'),
-        enable: t('commands.enableRenamingInFolder'),
-      };
-    } else {
-      // Exclude all except strategy: list contains ENABLED folders
-      return {
-        disable: t('commands.disableRenamingInFolder'),
-        enable: t('commands.enableRenamingInFolder'),
-      };
-    }
+  getFolderMenuText(): { disable: string; enable: string } {
+    return {
+      disable: t('commands.disableRenamingInFolder'),
+      enable: t('commands.enableRenamingInFolder'),
+    };
   }
 
   /**
-   * Gets the appropriate menu text for tag operations based on scope strategy.
+   * Menu text for tag operations. Strategy-independent for the same reason as
+   * getFolderMenuText.
    */
-  getTagMenuText(_tagName: string): { disable: string; enable: string } {
-    if (
-      this.plugin.settings.exclusions.tagScopeStrategy ===
-      EXCLUSION_STRATEGY.ONLY_EXCLUDE
-    ) {
-      // Only exclude strategy: list contains DISABLED tags
-      return {
-        disable: t('commands.disableRenamingForTag'),
-        enable: t('commands.enableRenamingForTag'),
-      };
-    } else {
-      // Exclude all except strategy: list contains ENABLED tags
-      return {
-        disable: t('commands.disableRenamingForTag'),
-        enable: t('commands.enableRenamingForTag'),
-      };
-    }
+  getTagMenuText(): { disable: string; enable: string } {
+    return {
+      disable: t('commands.disableRenamingForTag'),
+      enable: t('commands.enableRenamingForTag'),
+    };
   }
 
   /**
@@ -190,7 +169,7 @@ export class ContextMenuManager {
     if (!this.plugin.settings.core.enableTagCommands) return;
 
     const shouldShowDisable = this.shouldShowDisableMenuForTag(tagName);
-    const menuText = this.getTagMenuText(tagName);
+    const menuText = this.getTagMenuText();
 
     {
       const menuItem = menuEl.createDiv({ cls: 'menu-item' });

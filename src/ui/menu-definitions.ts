@@ -50,13 +50,7 @@ export class MenuDefinitions {
         },
         {
           id: 'tag-disable-renaming',
-          title: (context) => {
-            const tagContext = context as TagContext;
-            const menuText = this.plugin.contextMenuManager.getTagMenuText(
-              tagContext.tagName
-            );
-            return menuText.disable;
-          },
+          title: this.plugin.contextMenuManager.getTagMenuText().disable,
           icon: 'pen-off',
           visible: (context) => {
             if (!this.plugin.settings.core.enableTagCommands) return false;
@@ -74,13 +68,7 @@ export class MenuDefinitions {
         },
         {
           id: 'tag-enable-renaming',
-          title: (context) => {
-            const tagContext = context as TagContext;
-            const menuText = this.plugin.contextMenuManager.getTagMenuText(
-              tagContext.tagName
-            );
-            return menuText.enable;
-          },
+          title: this.plugin.contextMenuManager.getTagMenuText().enable,
           icon: 'file-pen',
           visible: (context) => {
             if (!this.plugin.settings.core.enableTagCommands) return false;
@@ -122,13 +110,7 @@ export class MenuDefinitions {
         },
         {
           id: 'folder-disable-renaming',
-          title: (context) => {
-            const folderContext = context as FolderContext;
-            const menuText = this.plugin.contextMenuManager.getFolderMenuText(
-              folderContext.folder.path
-            );
-            return menuText.disable;
-          },
+          title: this.plugin.contextMenuManager.getFolderMenuText().disable,
           icon: 'pen-off',
           visible: (context) => {
             if (!this.plugin.settings.core.enableFolderCommands) return false;
@@ -146,13 +128,7 @@ export class MenuDefinitions {
         },
         {
           id: 'folder-enable-renaming',
-          title: (context) => {
-            const folderContext = context as FolderContext;
-            const menuText = this.plugin.contextMenuManager.getFolderMenuText(
-              folderContext.folder.path
-            );
-            return menuText.enable;
-          },
+          title: this.plugin.contextMenuManager.getFolderMenuText().enable,
           icon: 'file-pen',
           visible: (context) => {
             if (!this.plugin.settings.core.enableFolderCommands) return false;

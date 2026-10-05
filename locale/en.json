@@ -57,7 +57,8 @@
     "settingsCleared": "Settings have been cleared",
     "settingsImported": "Settings have been imported successfully",
     "invalidImportFile": "Invalid settings file. Please select a valid JSON file.",
-    "settingsReset": "Due to major changes, all First Line is Title settings have been reset. A backup of your settings can be found in your Obsidian config folder under plugins/first-line-is-title/data_backup.json.",
+    "settingsReset": "Due to major changes, all First Line is Title settings have been reset. A backup of your previous settings was saved to your vault as {{path}}.",
+    "settingsResetWithoutBackup": "Due to major changes, all First Line is Title settings have been reset. Your previous settings could not be backed up.",
     "inactivityNotice": "First Line is Title is still active. Please ensure your settings and file backups are up to date.",
     "disabledRenamingForNNotes": "Disabled renaming for {{count}} notes",
     "enabledRenamingForNNotes": "Enabled renaming for {{count}} notes",
@@ -130,6 +131,43 @@
       "disable": "Disable",
       "enable": "Enable",
       "add": "Add"
+    },
+    "settingsTransfer": {
+      "export": {
+        "title": "Export settings",
+        "editor": {
+          "name": "Settings JSON",
+          "desc": "Only settings that differ from the defaults are included."
+        },
+        "copy": "Copy",
+        "download": "Download",
+        "copied": "Settings copied to clipboard",
+        "errors": {
+          "copyFailed": "Failed to copy settings: {{message}}"
+        }
+      },
+      "import": {
+        "title": "Import settings",
+        "file": {
+          "name": "Settings file",
+          "desc": "Select a settings file to load it into the editor below.",
+          "button": "Select file"
+        },
+        "editor": {
+          "name": "Settings JSON",
+          "desc": "Paste a settings file here, or edit the loaded one before importing.",
+          "placeholder": "Paste settings JSON here"
+        },
+        "button": "Import",
+        "confirm": {
+          "title": "Caution",
+          "message": "This replaces every plugin setting. Any setting missing from the file returns to its default. A backup of your current settings is saved to your vault first.",
+          "button": "Import"
+        },
+        "errors": {
+          "readFailed": "Failed to read file: {{message}}"
+        }
+      }
     }
   },
   "settings": {
@@ -773,7 +811,6 @@
     },
     "errors": {
       "saveFailed": "Failed to save settings",
-      "importFailed": "Failed to import settings",
       "importIncompatible": "This settings file comes from an incompatible plugin version. Your current settings were left unchanged."
     },
     "ruleCount": {

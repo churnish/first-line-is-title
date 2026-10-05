@@ -41,3 +41,29 @@
   flex-direction: column;
   gap: 4px;
 }
+
+// Settings import/export: a JSON editor plus a button row.
+
+// Wider than the 560px dialog default, which wraps a settings payload into
+// noise. Obsidian's own --dialog-max-width still caps this, so the mobile
+// safe-area calc it carries there keeps applying.
+.flit-settings-transfer {
+  width: var(--modal-max-width-narrow, 800px);
+}
+
+.flit-settings-transfer-editor {
+  width: 100%;
+  box-sizing: border-box;
+  // Roughly twelve lines: enough to read a payload without scrolling, and the
+  // handle is there when it is not.
+  min-height: 16em;
+  resize: vertical;
+  font-family: var(--font-monospace, monospace);
+  font-size: var(--font-ui-smaller, 12px);
+}
+
+// Raised by the adjacent button instead, so the picker belongs to the modal's
+// own document rather than the main window's.
+.flit-settings-transfer-file-input {
+  display: none;
+}

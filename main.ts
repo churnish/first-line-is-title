@@ -19,6 +19,7 @@ import { AliasManager } from './src/core/alias-manager';
 import { FileOperations } from './src/operations/file-operations';
 import { PropertyVisibility } from './src/ui/property-visibility';
 import { setDisableRenamingProperty } from './src/utils/property-value';
+import { createSettingsTransferFilename } from './src/settings/transfer';
 
 // High-performance cache system replaces all global variables
 import { CacheManager } from './src/core/cache-manager';
@@ -35,6 +36,9 @@ import { NotebookNavigatorIntegration } from './src/core/notebook-navigator-inte
 // Build-time constant injected by esbuild
 declare const BUILD_GIT_HASH: string;
 
+// Extra suffixed names tried when a settings backup collides with an existing file.
+const SETTINGS_BACKUP_NAME_ATTEMPTS = 5;
+
 export default class FirstLineIsTitle extends Plugin {
   settings: PluginSettings;
   isFullyLoaded: boolean = false;
@@ -45,6 +49,10 @@ export default class FirstLineIsTitle extends Plugin {
   // notice below. Transient by design: the schema stamp makes the reset a
   // one-time event, so no persisted "already shown" flag is needed.
   private settingsWereReset = false;
+
+  // Where `loadSettings` put the discarded file. The notice fires later, from
+  // `checkAndShowNotices`, so the path has to be parked here in between.
+  private settingsBackupPath: string | null = null;
 
   cacheManager: CacheManager;
   fileStateManager: FileStateManager;
@@ -473,7 +481,10 @@ export default class FirstLineIsTitle extends Plugin {
   private showSettingsResetNotice(): void {
     // Duration 0 keeps it up until dismissed: a timed notice is easy to miss,
     // and this is the only place a user is told their settings were replaced.
-    new Notice(t('notifications.settingsReset'), 0);
+    const message = this.settingsBackupPath
+      ? t('notifications.settingsReset', { path: this.settingsBackupPath })
+      : t('notifications.settingsResetWithoutBackup');
+    new Notice(message, 0);
   }
 
   private showInactivityNotice(): void {
@@ -743,7 +754,7 @@ export default class FirstLineIsTitle extends Plugin {
     // the first-run notice rather than the reset one.
     if (!isCurrentSchema && Object.keys(loadedData).length > 0) {
       this.settingsWereReset = true;
-      await this.backUpPriorSettings();
+      this.settingsBackupPath = await this.backUpPriorSettings();
     }
 
     // deepMerge deep-copies its defaults, so an empty source yields a fresh clone.
@@ -761,26 +772,60 @@ export default class FirstLineIsTitle extends Plugin {
   }
 
   /**
-   * Copies `data.json` to `data_backup.json` beside it before the schema reset
-   * discards the original. The 4.0.0 release notes tell users where to find it;
-   * nothing in the UI mentions it, so this reports nothing back.
+   * Copies the prior `data.json` to the vault root before the schema reset discards
+   * the original, and reports where it landed so the reset notice can name it.
    *
-   * Uses the adapter rather than the Vault API because the plugin's own folder
-   * lives under `.obsidian/`, which is outside the vault's file index. Failure is
-   * deliberately non-fatal: a missing backup must not stop the plugin loading.
+   * The copy is verbatim, NOT the transfer format: a transfer payload is a diff against
+   * the current defaults and only ever visits keys those defaults still have, and every
+   * pre-4.0.0 key was renamed — so diffing would drop exactly what this exists to keep.
+   *
+   * Reading still needs the adapter because the plugin's own folder lives under
+   * `.obsidian/`, outside the vault's file index. Failure is deliberately non-fatal: a
+   * missing backup must not stop the plugin loading.
    */
-  private async backUpPriorSettings(): Promise<void> {
+  private async backUpPriorSettings(): Promise<string | null> {
     const pluginDir = this.manifest?.dir;
-    if (!pluginDir) return;
+    if (!pluginDir) return null;
 
     const source = normalizePath(`${pluginDir}/data.json`);
-    const backup = normalizePath(`${pluginDir}/data_backup.json`);
     try {
       const raw = await this.app.vault.adapter.read(source);
-      await this.app.vault.adapter.write(backup, raw);
+      return await this.writeSettingsBackup(raw);
     } catch {
       // Nothing to do: the reset proceeds either way.
+      return null;
     }
+  }
+
+  /**
+   * Writes `contents` to a timestamped file at the vault root, returning its path or
+   * `null` if nothing could be written.
+   *
+   * The vault root rather than the plugin's own folder: a backup buried in `.obsidian/`
+   * is one the user cannot open from inside their own vault, and writing there needs the
+   * adapter instead of the Vault API the guidelines call for.
+   *
+   * Public because the settings import modal writes the outgoing settings the same way.
+   */
+  async writeSettingsBackup(contents: string): Promise<string | null> {
+    const fileName = createSettingsTransferFilename(new Date());
+    const stem = fileName.slice(0, -'.json'.length);
+
+    // `vault.create` throws on an existing path, and the timestamp is only second-
+    // resolution, so a same-second second write needs a suffix. A handful of attempts
+    // covers that; anything beyond it is a failing vault, not a collision.
+    for (let attempt = 0; attempt <= SETTINGS_BACKUP_NAME_ATTEMPTS; attempt++) {
+      const path = normalizePath(
+        attempt === 0 ? `${stem}.json` : `${stem}-${attempt}.json`
+      );
+      try {
+        return (await this.app.vault.create(path, contents)).path;
+      } catch {
+        // Collision or write failure: try the next name, then give up.
+      }
+    }
+
+    return null;
   }
 
   async saveSettings(): Promise<void> {

@@ -8,6 +8,12 @@ export interface FirstLineIsTitlePlugin {
   app: App;
   settings: PluginSettings;
   saveSettings(): Promise<void>;
+  /**
+   * Writes a timestamped settings backup at the vault root and resolves with its path,
+   * or `null` when the write failed. Declared here because the import modal types the
+   * plugin through this interface.
+   */
+  writeSettingsBackup(contents: string): Promise<string | null>;
   debugLog(settingName: string, value: unknown): void;
   editorLifecycle?: { initializeCheckingSystem(): void };
   renameEngine?: {

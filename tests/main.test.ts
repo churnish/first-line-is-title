@@ -177,10 +177,14 @@ describe('FirstLineIsTitle.loadSettings', () => {
 });
 
 describe('pre-4.0.0 settings backup', () => {
-  /** loadSettings against a stubbed adapter, reporting what it wrote where. */
+  /** loadSettings against a stubbed vault, reporting what it wrote where. */
   async function loadWithAdapter(
     stored: unknown,
-    opts: { readFails?: boolean; dir?: string | undefined } = {}
+    opts: {
+      readFails?: boolean;
+      createFails?: boolean;
+      dir?: string | undefined;
+    } = {}
   ) {
     const writes: Record<string, string> = {};
     const adapter = {
@@ -192,7 +196,12 @@ describe('pre-4.0.0 settings backup', () => {
         writes[p] = data;
       }),
     };
-    const app = { vault: { adapter } } as unknown as App;
+    const create = vi.fn(async (p: string, data: string) => {
+      if (opts.createFails) throw new Error('File already exists.');
+      writes[p] = data;
+      return { path: p };
+    });
+    const app = { vault: { adapter, create } } as unknown as App;
     const manifest = {
       dir: 'dir' in opts ? opts.dir : '.obsidian/plugins/first-line-is-title',
     } as PluginManifest;
@@ -205,36 +214,50 @@ describe('pre-4.0.0 settings backup', () => {
     plugin.loadData = vi.fn().mockResolvedValue(stored);
     plugin.saveData = vi.fn().mockResolvedValue(undefined);
     await plugin.loadSettings();
-    return { plugin, writes, adapter };
+    return { plugin, writes, adapter, create };
   }
 
-  it('copies data.json aside before discarding a pre-4.0.0 file', async () => {
+  /** `first-line-is-title-settings-YYYYMMDD-HHmmss.json`, at the vault root. */
+  const BACKUP_NAME = /^first-line-is-title-settings-\d{8}-\d{6}\.json$/;
+
+  it('copies data.json to the vault root before discarding a pre-4.0.0 file', async () => {
     const { writes } = await loadWithAdapter({
       renameNotes: 'automatically',
       core: { charCount: 42 },
     });
 
-    expect(
-      writes['.obsidian/plugins/first-line-is-title/data_backup.json']
-    ).toContain('renameNotes');
+    const [path, contents] = Object.entries(writes)[0];
+    // Vault root, not the plugin folder: a backup under .obsidian/ is one the user
+    // cannot open from inside their own vault.
+    expect(path).toMatch(BACKUP_NAME);
+    expect(contents).toContain('renameNotes');
+  });
+
+  it('copies the prior file verbatim rather than as a transfer payload', async () => {
+    // Every pre-4.0.0 key was renamed, and a transfer payload only ever visits keys the
+    // current defaults still have — so a diff would drop exactly what this preserves.
+    const stored = { renameNotes: 'automatically', charCount: 42 };
+    const { writes } = await loadWithAdapter(stored);
+
+    expect(Object.values(writes)[0]).toBe(JSON.stringify(stored));
   });
 
   it('writes no backup for a genuinely new install', async () => {
     // Nothing stored means nothing to lose; a backup here would be an empty file
     // and would wrongly make a new user look like an upgrader.
-    const { adapter } = await loadWithAdapter({});
-    expect(adapter.write).not.toHaveBeenCalled();
+    const { create } = await loadWithAdapter({});
+    expect(create).not.toHaveBeenCalled();
   });
 
   it('writes no backup when the stored file is already current', async () => {
-    const { adapter } = await loadWithAdapter({
+    const { create } = await loadWithAdapter({
       dataSchemaVersion: CURRENT_DATA_SCHEMA_VERSION,
       core: { charCount: 42 },
     });
-    expect(adapter.write).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
   });
 
-  it('still resets when the backup cannot be written', async () => {
+  it('still resets when the backup cannot be read', async () => {
     // Losing the backup must not block the reset, or a corrupt data.json would
     // wedge the plugin on every load.
     const { plugin } = await loadWithAdapter(
@@ -243,6 +266,30 @@ describe('pre-4.0.0 settings backup', () => {
     );
     expect(plugin.settings.core.charCount).toBe(
       DEFAULT_SETTINGS.core.charCount
+    );
+  });
+
+  it('still resets when the backup cannot be written', async () => {
+    const { plugin } = await loadWithAdapter(
+      { renameNotes: 'automatically', core: { charCount: 42 } },
+      { createFails: true }
+    );
+    expect(plugin.settings.dataSchemaVersion).toBe(CURRENT_DATA_SCHEMA_VERSION);
+  });
+
+  it('suffixes the name rather than giving up when the first one is taken', async () => {
+    // Nothing stored means loadSettings writes no backup, so the plugin here is just a
+    // vehicle for calling the writer directly.
+    const { plugin } = await loadWithAdapter({});
+    // `vault.create` throws on an existing path; only the unsuffixed name is taken.
+    const create = vi.fn(async (path: string) => {
+      if (/-\d{6}\.json$/.test(path)) throw new Error('File already exists.');
+      return { path };
+    });
+    (plugin.app.vault as unknown as { create: unknown }).create = create;
+
+    expect(await plugin.writeSettingsBackup('{}')).toMatch(
+      /^first-line-is-title-settings-\d{8}-\d{6}-1\.json$/
     );
   });
 

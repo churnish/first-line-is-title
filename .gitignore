@@ -3,6 +3,7 @@
 
 .claude/
 .vscode/
+coverage/
 node_modules/
 plans/
 

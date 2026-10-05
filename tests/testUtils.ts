@@ -99,6 +99,55 @@ export function waitFor(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** What a rendered menu item asked its MenuItem for. */
+export interface CapturedMenuItem {
+  title: string;
+  icon: string;
+  click: () => void | Promise<void>;
+}
+
+/**
+ * Read back the items a menu rendered, in menu order.
+ *
+ * Obsidian's Menu keeps its MenuItem instances private and so does the mock, so
+ * the only way to see what an item was configured with is to replay the recorded
+ * callback against a stand-in. Safe because menu callbacks only describe an item
+ * - they never act on the menu itself.
+ *
+ * @param addItem The `addItem` spy the menu recorded the callbacks on
+ */
+export function captureMenuItems(addItem: {
+  mock: { calls: unknown[][] };
+}): CapturedMenuItem[] {
+  return addItem.mock.calls.map((call) => {
+    const configure = call[0] as (item: unknown) => void;
+
+    const captured: CapturedMenuItem = {
+      title: '',
+      icon: '',
+      click: () => {},
+    };
+
+    const standInItem = {
+      setTitle: (title: string) => {
+        captured.title = title;
+        return standInItem;
+      },
+      setIcon: (icon: string) => {
+        captured.icon = icon;
+        return standInItem;
+      },
+      onClick: (handler: () => void | Promise<void>) => {
+        captured.click = handler;
+        return standInItem;
+      },
+    };
+
+    configure(standInItem);
+    return captured;
+  });
+}
+
 /**
  * Create a spy function that can be used to track calls
  */

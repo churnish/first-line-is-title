@@ -87,3 +87,7 @@ Until **First Line is Title** appears in the plugin directory, to install it:
 - Found a bug or have a feature request? [Open an issue](https://github.com/churnish/first-line-is-title/issues).
 - Have a question? [Start a discussion](https://github.com/churnish/first-line-is-title/discussions).
 - Contributors welcome.
+
+## Credits
+
+The settings import and export modals are adapted from [Notebook Navigator](https://github.com/johansan/notebook-navigator) by Johan Sanneblad, used under the GPL-3.0 licence.

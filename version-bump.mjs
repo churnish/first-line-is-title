@@ -1,13 +1,15 @@
 // This file is byte-identical across every plugin in the workspace and must stay generic: capability gates are feature-detected rather than hardcoded, so the same bytes work in the JS-only plugins.
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 import { basename, dirname, join } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 
 const run = (command) => execSync(command, { stdio: 'inherit' });
 const capture = (command) => execSync(command, { encoding: 'utf8' }).trim();
 const captureLines = (command) => capture(command).split('\n').filter(Boolean);
-const gitAdd = (path) => run(`git add "${path}"`);
+// Argument-array form spawns no shell, so a path carrying `$(…)` or a space cannot execute or split. Required wherever an argument originates outside this file — git's `core.quotePath` escapes control characters and non-ASCII, but passes `$` and backticks through untouched.
+const runGit = (args) => execFileSync('git', args, { stdio: 'inherit' });
+const gitAdd = (path) => runGit(['add', path]);
 const commandSucceeds = (command) => {
   try {
     execSync(command, { stdio: 'ignore' });
@@ -23,25 +25,49 @@ const targetVersion = process.env.npm_package_version;
 // GitHub is the source of truth for these: they are edited through the web UI, so their content is taken from origin whole rather than reconciled hunk by hunk. Local edits to them are expected to be overwritten — edit them in the web editor, not here.
 const WEB_EDITED_DOCS = ['README', 'CONTRIBUTING'];
 
+function unmergedPaths() {
+  return captureLines('git diff --name-only --diff-filter=U');
+}
+
 function isMergeInProgress() {
   return commandSucceeds('git rev-parse -q --verify MERGE_HEAD');
 }
 
-// `resolveFromOrigin` is every prefix-matching path in origin's tree, conflicted or not: the release takes these docs from origin whole, and the checkout doubles as the conflict resolution.
-export function classifyConflicts(conflicted, originFiles, prefixes) {
+/**
+ * Splits the paths a merge touched into the three outcomes the release can act on.
+ *
+ * `syncFromOrigin` is every prefix-matching path in origin's tree, conflicted or not — the release takes these docs from origin whole on every run, and resolving a conflict is a side effect of that rather than its purpose.
+ *
+ * @returns {{syncFromOrigin: string[], unexpected: string[], unresolvable: string[]}}
+ */
+export function classifyMergePaths(conflicted, originFiles, prefixes) {
   const matchesPrefix = (file) =>
     prefixes.some((prefix) => file.startsWith(prefix));
   return {
-    resolveFromOrigin: originFiles.filter(matchesPrefix),
+    syncFromOrigin: originFiles.filter(matchesPrefix),
     unexpected: conflicted.filter((file) => !matchesPrefix(file)),
+    // Conflicted and ours to resolve by prefix, but absent from origin — "deleted by them". No checkout can resolve it, so it must stop the release rather than reach `git commit`, which exits 128 on unmerged paths.
+    unresolvable: conflicted.filter(
+      (file) => matchesPrefix(file) && !originFiles.includes(file)
+    ),
   };
 }
 
-function abortOnUnexpectedConflicts(unexpected) {
-  if (unexpected.length === 0) return;
+function abortOnFatalConflicts({ unexpected, unresolvable }) {
+  if (unexpected.length === 0 && unresolvable.length === 0) return;
   run('git merge --abort');
+  if (unexpected.length > 0) {
+    console.error(
+      `\n⚠ Unexpected merge conflicts: ${unexpected.join(', ')}.\n`
+    );
+  }
+  if (unresolvable.length > 0) {
+    console.error(
+      `\n⚠ Conflicted but absent from origin: ${unresolvable.join(', ')}. No checkout can resolve these.\n`
+    );
+  }
   console.error(
-    `\n⚠ Unexpected merge conflicts: ${unexpected.join(', ')}. The merge has been aborted; resolve manually before releasing.\n`
+    'The merge has been aborted; resolve manually before releasing.\n'
   );
   process.exit(1);
 }
@@ -65,29 +91,48 @@ function mergeOriginMain() {
   }
 
   // Merging rather than copying keeps the web-edit commits in local history, which is what lets postversion fast-forward instead of force-pushing over them.
+  let mergeFailed = false;
   try {
     run('git merge origin/main --no-commit --no-ff');
   } catch {
     // Expected whenever both sides touched these files; resolved just below.
+    mergeFailed = true;
   }
 
-  const conflicted = captureLines('git diff --name-only --diff-filter=U');
+  // A failure that leaves no MERGE_HEAD means the merge never started — an untracked file colliding with one origin added, say, which the `-uno` guard admits by design. Nothing was staged and nothing needs aborting, but continuing would sync the docs and return as though origin had been merged, stranding a tag at postversion.
+  if (mergeFailed && !isMergeInProgress()) {
+    console.error(
+      '\n⚠ git merge could not start, so origin/main was not merged. Resolve the cause reported above before releasing.\n'
+    );
+    process.exit(1);
+  }
+
+  const conflicted = unmergedPaths();
   // Read before the abort decision because the classification needs both lists. ls-tree is read-only and reads the origin tree, so it works mid-merge.
   // Filtered rather than pathspec'd: ls-tree does not support glob pathspecs and returns an empty list for one instead of failing, which would silently stop syncing both files.
   const originFiles = captureLines('git ls-tree --name-only origin/main');
 
   // A conflict anywhere else means the histories diverged in a way this script has no business resolving unattended.
-  const { resolveFromOrigin, unexpected } = classifyConflicts(
+  const { syncFromOrigin, unexpected, unresolvable } = classifyMergePaths(
     conflicted,
     originFiles,
     WEB_EDITED_DOCS
   );
-  abortOnUnexpectedConflicts(unexpected);
+  abortOnFatalConflicts({ unexpected, unresolvable });
 
   // `git checkout <tree-ish> -- <path>` writes the index as well as the worktree, resolving a conflicted path outright, so no separate `git add` is needed.
-  for (const file of resolveFromOrigin) {
-    run(`git checkout origin/main -- "${file}"`);
+  for (const file of syncFromOrigin) {
+    runGit(['checkout', 'origin/main', '--', file]);
     console.log(`Updated ${file} from GitHub`);
+  }
+
+  // Belt and braces for anything the classifier did not foresee: `git commit` exits 128 on unmerged paths, and an uncaught throw there would strand a live merge behind a stack trace.
+  const stillUnmerged = unmergedPaths();
+  if (stillUnmerged.length > 0) {
+    console.error(
+      `\n⚠ Still unmerged after resolution: ${stillUnmerged.join(', ')}. Resolve manually before releasing.\n`
+    );
+    process.exit(1);
   }
 
   // MERGE_HEAD is absent when origin had nothing new. Committing here keeps the merge as its own commit rather than folding it into npm's version commit.
@@ -95,26 +140,27 @@ function mergeOriginMain() {
     run('git commit --no-edit');
     console.log('Merged origin/main');
   }
-
-  // A conflict git could not stage — "deleted by them", say — leaves the merge live without ever appearing in the unexpected list. Releasing from that state strands a half-merged tree with no tag.
-  if (isMergeInProgress()) {
-    console.error(
-      '\n⚠ A merge is still in progress after resolution. Resolve it manually before releasing.\n'
-    );
-    process.exit(1);
-  }
 }
 
-// Classifies `npm outdated --json` output. 'unknown' means the probe itself failed — a registry or network error exits non-zero exactly like a real "outdated" result does.
+/**
+ * Classifies `npm outdated --json` output.
+ *
+ * 'unknown' means the probe itself failed. A registry or network error exits non-zero exactly like a real "outdated" result does, but reports itself as *valid* JSON carrying a top-level `error` key — not as malformed output — so it has to be detected by shape rather than by a parse failure.
+ *
+ * @returns {{status: 'unknown'|'current'|'outdated', info?: Record<string, string>}}
+ */
 export function readOutdated(stdout, packageName) {
-  let info;
+  let parsed;
   try {
-    const entry = JSON.parse(stdout)[packageName];
-    // npm emits an array under a package key when one name has several outdated entries.
-    info = Array.isArray(entry) ? entry[0] : entry;
+    parsed = JSON.parse(stdout);
   } catch {
     return { status: 'unknown' };
   }
+  // Without this, a registry failure's package key is simply absent and the whole thing reads as "nothing outdated" — skipping the freshness check silently, which is the failure this function exists to surface.
+  if (!parsed || parsed.error) return { status: 'unknown' };
+  const entry = parsed[packageName];
+  // npm emits an array under a package key when one name has several outdated entries.
+  const info = Array.isArray(entry) ? entry[0] : entry;
   // An absent key means npm found nothing outdated for this package, not that the probe failed.
   if (!info) return { status: 'current' };
   return {
@@ -126,12 +172,12 @@ export function readOutdated(stdout, packageName) {
 // release.yml installs with no lockfile, so CI resolves the newest version inside every range. The gates have to run against that same tree — gating a staler local one is what let 82 lint errors reach CI after the tag was already pushed.
 // npm resolves upward to the workspace root from here, so these commands reify the shared tree — the AGENTS.md prohibition carves this out explicitly.
 function updateDependencies() {
-  // Everything else moves within its declared range, which is what CI's fresh install resolves to anyway. An interactive confirmation prompt was removed from here: it ran after the gates, so nothing re-checked what it changed, and it blocked on stdin.
+  // Dependencies other than eslint-plugin-obsidianmd move within their declared range, which is what CI's fresh install resolves to anyway. An interactive confirmation prompt was removed from here: it ran after the gates, so nothing re-checked what it changed, and it blocked on stdin.
   console.log('\n▶ Updating dependencies');
   run('npm update');
 
   let outdated = { status: 'current' };
-  // `npm outdated` exits non-zero when something IS outdated, so the catch is the normal path and the try body's value is discarded. `encoding` is what makes err.stdout a parseable string rather than a Buffer.
+  // `npm outdated` exits non-zero when something IS outdated, so the catch is the normal path and the try body's value is discarded. `capture` rather than `run` is what makes err.stdout a parseable string rather than an empty Buffer.
   try {
     capture('npm outdated eslint-plugin-obsidianmd --json');
   } catch (err) {
@@ -194,7 +240,7 @@ function runPreflight() {
     ...(existsSync('tsconfig.json')
       ? [{ label: 'Typecheck', command: 'npx tsc --noEmit' }]
       : []),
-    // Only two plugins carry a test suite.
+    // Not every plugin carries a test suite.
     ...(pkg.scripts?.test ? [{ label: 'Tests', command: 'npm test' }] : []),
     { label: 'Build', command: 'npm run build' },
   ];
