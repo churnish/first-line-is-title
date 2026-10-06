@@ -1,4 +1,4 @@
-import { EXCLUSION_STRATEGY, PluginSettings, TagMatchingMode } from './types';
+import { EXCLUSION_STRATEGY, PluginSettings } from './types';
 
 /**
  * Schema version of the settings this build understands. Bump it whenever the stored
@@ -88,7 +88,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     excludedTags: [],
     excludedProperties: [],
     matchSubfolders: true,
-    tagMatchingMode: 'In Properties and note body' as TagMatchingMode,
+    tagMatchingMode: 'In Properties and note body',
     matchSubtags: true,
     disableRenamingKey: 'no rename',
     disableRenamingValue: 'true',

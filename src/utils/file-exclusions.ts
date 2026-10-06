@@ -91,9 +91,7 @@ function resolveFrontmatterForExclusions(
   }
 
   const cachedFrontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
-  return cachedFrontmatter
-    ? (cachedFrontmatter as Record<string, unknown>)
-    : null;
+  return cachedFrontmatter ?? null;
 }
 
 /**
@@ -131,7 +129,7 @@ export function fileHasExcludedProperties(
     // tagged `#foo` and the exclusion silently fails open.
     const isTagsRule = propKey === 'tags';
     const foldValue = (value: unknown): string => {
-      const folded = String(value as string | number | boolean).toLowerCase();
+      const folded = String(value).toLowerCase();
       return isTagsRule ? normalizeTag(folded) : folded;
     };
 
