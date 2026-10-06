@@ -110,9 +110,8 @@ export function buildPluginLinkRouterGroup(app: App): SettingDefinitionGroup {
             setting.settingEl.ownerDocument;
           const handleClick = (event: MouseEvent) =>
             routePluginLinkClick(app, event);
-          host.addEventListener('click', handleClick as EventListener);
-          return () =>
-            host.removeEventListener('click', handleClick as EventListener);
+          host.addEventListener('click', handleClick);
+          return () => host.removeEventListener('click', handleClick);
         },
       },
     ],

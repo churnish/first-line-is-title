@@ -26,6 +26,16 @@ function isPluginAlias(alias: unknown): boolean {
   );
 }
 
+/** Check if an error is ENOENT, which a rename raises mid-edit. Narrows `unknown` because the review bot's type check cannot resolve `NodeJS.ErrnoException`. */
+function isFileNotFoundError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === 'ENOENT'
+  );
+}
+
 export class AliasManager {
   constructor(private plugin: FirstLineIsTitle) {}
 
@@ -692,14 +702,7 @@ export class AliasManager {
         `Updated alias \`${aliasToAdd}\` in ${currentFileForUpdate.path}`
       );
     } catch (error) {
-      // Check if this is an ENOENT error (file was renamed during async operation)
-      const errWithCode = error as NodeJS.ErrnoException;
-      if (
-        errWithCode &&
-        typeof errWithCode === 'object' &&
-        'code' in errWithCode &&
-        errWithCode.code === 'ENOENT'
-      ) {
+      if (isFileNotFoundError(error)) {
         // File was renamed during operation - this is expected race condition, log as info
         verboseLog(
           this.plugin,
@@ -825,14 +828,7 @@ export class AliasManager {
         `Removed plugin aliases from ${currentFileForRemoval.path}`
       );
     } catch (error) {
-      // Check if this is an ENOENT error (file was renamed during async operation)
-      const errWithCode = error as NodeJS.ErrnoException;
-      if (
-        errWithCode &&
-        typeof errWithCode === 'object' &&
-        'code' in errWithCode &&
-        errWithCode.code === 'ENOENT'
-      ) {
+      if (isFileNotFoundError(error)) {
         // File was renamed during operation - this is expected race condition, log as info
         verboseLog(
           this.plugin,

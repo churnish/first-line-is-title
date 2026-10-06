@@ -70,9 +70,7 @@ export const EXCLUSION_STRATEGY = {
 export type ExclusionStrategy =
   (typeof EXCLUSION_STRATEGY)[keyof typeof EXCLUSION_STRATEGY];
 export type TagMatchingMode =
-  | 'In Properties and note body'
-  | 'In Properties only'
-  | 'In note body only';
+  'In Properties and note body' | 'In Properties only' | 'In note body only';
 export type ContentReadMethod = 'Editor' | 'Cache' | 'File';
 
 export type PropertyHidingOption = 'never' | 'always' | 'when_empty';
@@ -258,7 +256,7 @@ export interface PluginSettings {
  * no implicit index signature, so `PluginSettings` would fail that check and the whole
  * type would collapse back to `T`.
  */
-export type DeepPartial<T> = T extends (infer _U)[]
+export type DeepPartial<T> = T extends unknown[]
   ? T
   : T extends object
     ? { [K in keyof T]?: DeepPartial<T[K]> }

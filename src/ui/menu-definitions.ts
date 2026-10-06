@@ -25,6 +25,11 @@ interface FileContext {
   file: TFile;
 }
 
+/** Case-folds an untyped property value for comparison. Takes `unknown` because inline `String()` on a narrowed value trips no-base-to-string, and a cast trips no-unnecessary-type-assertion. */
+function foldPropertyValue(value: unknown): string {
+  return String(value).toLowerCase();
+}
+
 export class MenuDefinitions {
   constructor(private plugin: FirstLineIsTitlePlugin) {}
 
@@ -194,10 +199,10 @@ export class MenuDefinitions {
             ];
             if (value === undefined) return true;
 
-            const valueStr = String(value as string).toLowerCase();
-            const expectedValue = String(
+            const valueStr = foldPropertyValue(value);
+            const expectedValue = foldPropertyValue(
               this.plugin.settings.exclusions.disableRenamingValue
-            ).toLowerCase();
+            );
             return valueStr !== expectedValue; // Show disable if property doesn't match
           },
           onClick: async (context) => {
@@ -244,10 +249,10 @@ export class MenuDefinitions {
             ];
             if (value === undefined) return false;
 
-            const valueStr = String(value as string).toLowerCase();
-            const expectedValue = String(
+            const valueStr = foldPropertyValue(value);
+            const expectedValue = foldPropertyValue(
               this.plugin.settings.exclusions.disableRenamingValue
-            ).toLowerCase();
+            );
             return valueStr === expectedValue; // Show enable if property matches
           },
           onClick: async (context) => {
