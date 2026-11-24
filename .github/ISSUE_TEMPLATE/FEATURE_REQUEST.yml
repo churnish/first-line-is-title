@@ -1,7 +1,7 @@
 name: Feature request
 description: Suggest an improvement or new feature for the First Line is Title plugin
+type: Feature
 labels:
-  - Feature request
   - '⚪️ Pending'
 body:
   - type: markdown
