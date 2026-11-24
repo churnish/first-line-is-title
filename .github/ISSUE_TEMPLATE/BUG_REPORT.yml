@@ -1,7 +1,7 @@
 name: Bug report
 description: Report something that is not working as expected in the First Line is Title plugin
+type: Bug
 labels:
-  - Bug report
   - '⚪️ Pending'
 body:
   - type: markdown
